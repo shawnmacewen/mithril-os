@@ -25,6 +25,7 @@ const OPS_ENV_FILE = process.env.OPS_ENV_FILE || "/mithril-os/apps/ops-console/.
 const AGENTS_ROOT = process.env.AGENTS_ROOT || "/home/mini-home-lab/.openclaw/agents";
 const AGENTS_ROOT_FALLBACK = "/home/node/.openclaw/agents";
 const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT || "/home/node/.openclaw/workspace";
+const WORKSPACE_ROOT_FALLBACK = "/home/mini-home-lab/.openclaw/workspace";
 
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(express.json());
@@ -384,22 +385,31 @@ async function getAgentMdIndex() {
   }
 
   // Main agent often uses workspace-level markdown docs (SOUL.md, USER.md, etc.)
+  let workspaceRootUsed = WORKSPACE_ROOT;
   if (discovered.main) {
-    try {
-      const wsKids = await fs.readdir(WORKSPACE_ROOT, { withFileTypes: true });
-      discovered.main.workspaceFiles = wsKids
-        .filter((k) => k.isFile() && k.name.toLowerCase().endsWith(".md"))
-        .map((k) => k.name)
-        .sort();
-    } catch {
-      discovered.main.workspaceFiles = [];
+    const workspaceCandidates = [WORKSPACE_ROOT, WORKSPACE_ROOT_FALLBACK];
+    for (const wsRoot of workspaceCandidates) {
+      try {
+        const wsKids = await fs.readdir(wsRoot, { withFileTypes: true });
+        const files = wsKids
+          .filter((k) => k.isFile() && k.name.toLowerCase().endsWith(".md"))
+          .map((k) => k.name)
+          .sort();
+        if (files.length > 0) {
+          discovered.main.workspaceFiles = files;
+          workspaceRootUsed = wsRoot;
+          break;
+        }
+      } catch {
+        // try next candidate
+      }
     }
   }
 
   return {
     ok: true,
     roots,
-    workspaceRoot: WORKSPACE_ROOT,
+    workspaceRoot: workspaceRootUsed,
     rows: Object.values(discovered).sort((a, b) => a.agentId.localeCompare(b.agentId)),
   };
 }
@@ -493,7 +503,14 @@ app.get("/api/agents/:agentId/files/:fileName", async (req, res) => {
     return res.status(404).json({ ok: false, error: `${fileName} not found for ${agentId}` });
   }
 
-  const fullPath = inAgentDir ? path.join(row.agentDir, fileName) : path.join(WORKSPACE_ROOT, fileName);
+  let workspaceRoot = WORKSPACE_ROOT;
+  try {
+    await fs.access(path.join(WORKSPACE_ROOT, fileName));
+  } catch {
+    workspaceRoot = WORKSPACE_ROOT_FALLBACK;
+  }
+
+  const fullPath = inAgentDir ? path.join(row.agentDir, fileName) : path.join(workspaceRoot, fileName);
   try {
     const text = await fs.readFile(fullPath, "utf8");
     return res.json({ ok: true, agentId, fileName, path: fullPath, source: inAgentDir ? "agent" : "workspace", text });
