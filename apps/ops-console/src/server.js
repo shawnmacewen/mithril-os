@@ -706,10 +706,26 @@ async function haRequest(pathname, opts = {}) {
   }
 }
 
+const HA_AREA_OVERRIDES = {
+  "light.wiz_dimmable_white_a134db": "living_room",
+  "light.wiz_dimmable_white_905fdd": "bedroom",
+  "light.wiz_dimmable_white_8ffb36": "bedroom",
+  "light.wiz_rgbw_tunable_b9eead": "dining_room",
+  "light.wiz_rgbww_tunable_994a2a": "bedroom",
+  "light.wiz_rgbw_tunable_3b5f12": "dining_room",
+  "light.wiz_rgbw_tunable_ba35cf": "dining_room",
+  "light.wiz_rgbw_tunable_b9e1f7": "dining_room",
+  "switch.wiz_socket_e14f25": "office",
+};
+
 function inferArea(entity) {
-  const e = `${entity.entity_id || ""} ${(entity.attributes?.friendly_name || "")}`.toLowerCase();
+  const id = entity.entity_id || "";
+  if (HA_AREA_OVERRIDES[id]) return HA_AREA_OVERRIDES[id];
+  const e = `${id} ${(entity.attributes?.friendly_name || "")}`.toLowerCase();
   if (e.includes("office")) return "office";
   if (e.includes("bedroom")) return "bedroom";
+  if (e.includes("living")) return "living_room";
+  if (e.includes("dining")) return "dining_room";
   return "other";
 }
 
@@ -738,10 +754,12 @@ app.get("/api/ha/areas", async (_req, res) => {
   const grouped = {
     office: entities.filter((e) => e.area === "office"),
     bedroom: entities.filter((e) => e.area === "bedroom"),
+    living_room: entities.filter((e) => e.area === "living_room"),
+    dining_room: entities.filter((e) => e.area === "dining_room"),
     other: entities.filter((e) => e.area === "other"),
   };
 
-  res.json({ ok: true, grouped, total: entities.length, note: "Area inferred from entity_id/friendly_name containing office/bedroom." });
+  res.json({ ok: true, grouped, total: entities.length, note: "Area inferred using explicit override map first, then friendly name/entity_id heuristics." });
 });
 
 app.post("/api/ha/entity/action", async (req, res) => {
