@@ -1,0 +1,17 @@
+[Unit]
+Description=Mithril-OS Ops Console (host)
+After=network.target
+
+[Service]
+Type=simple
+User=mini-home-lab
+WorkingDirectory=/mithril-os/apps/ops-console
+EnvironmentFile=-/mithril-os/apps/ops-console/.env
+ExecStart=/usr/bin/env node src/server.js
+Restart=always
+RestartSec=3
+StandardOutput=append:/tmp/mithril-os-ops-console.log
+StandardError=append:/tmp/mithril-os-ops-console.log
+
+[Install]
+WantedBy=multi-user.target

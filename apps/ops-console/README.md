@@ -25,3 +25,14 @@ Open:
 
 - `OPENCLAW_CONFIG` should point to your host OpenClaw config path.
 - `HA_TOKEN` is required for Home Assistant API checks.
+
+## Host service (systemd)
+
+To keep the Ops Console available on LAN after reboot:
+
+```bash
+/mithril-os/scripts/install-ops-console-service.sh
+```
+
+Service unit source:
+- `/mithril-os/systemd/mithril-ops-console.service`
