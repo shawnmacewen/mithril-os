@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Mithril backup timer
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+Persistent=true
+RandomizedDelaySec=300
+Unit=mithril-backup.service
+
+[Install]
+WantedBy=timers.target

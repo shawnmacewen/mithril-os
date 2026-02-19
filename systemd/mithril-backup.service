@@ -1,0 +1,11 @@
+[Unit]
+Description=Mithril Backup (OpenClaw + Home Assistant + Mithril-OS)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/env bash /mithril-os/scripts/backup-mithril.sh
+StandardOutput=journal
+StandardError=journal
