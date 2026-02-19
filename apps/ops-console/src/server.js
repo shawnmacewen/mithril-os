@@ -686,6 +686,85 @@ app.get("/api/system/docker", async (_req, res) => {
   res.json(await dockerPs());
 });
 
+async function haRequest(pathname, opts = {}) {
+  if (!HA_TOKEN) return { ok: false, error: "HA token missing" };
+  try {
+    const r = await fetch(`${HA_URL}${pathname}`, {
+      method: opts.method || "GET",
+      headers: {
+        Authorization: `Bearer ${HA_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+    });
+    const text = await r.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+    return { ok: r.ok, status: r.status, data, error: r.ok ? null : `HTTP ${r.status}` };
+  } catch (error) {
+    return { ok: false, error: String(error.message || error) };
+  }
+}
+
+function inferArea(entity) {
+  const e = `${entity.entity_id || ""} ${(entity.attributes?.friendly_name || "")}`.toLowerCase();
+  if (e.includes("office")) return "office";
+  if (e.includes("bedroom")) return "bedroom";
+  return "other";
+}
+
+app.get("/api/ha/areas", async (_req, res) => {
+  const states = await haRequest("/api/states");
+  if (!states.ok) return res.status(500).json(states);
+
+  const entities = (states.data || [])
+    .filter((s) => s.entity_id?.startsWith("light.") || s.entity_id?.startsWith("switch."))
+    .map((s) => {
+      const domain = s.entity_id.split(".")[0];
+      const brightness = domain === "light" && typeof s.attributes?.brightness === "number"
+        ? Math.round((s.attributes.brightness / 255) * 100)
+        : null;
+      return {
+        entity_id: s.entity_id,
+        domain,
+        area: inferArea(s),
+        name: s.attributes?.friendly_name || s.entity_id,
+        state: s.state,
+        supportsBrightness: domain === "light",
+        brightnessPct: brightness,
+      };
+    });
+
+  const grouped = {
+    office: entities.filter((e) => e.area === "office"),
+    bedroom: entities.filter((e) => e.area === "bedroom"),
+    other: entities.filter((e) => e.area === "other"),
+  };
+
+  res.json({ ok: true, grouped, total: entities.length, note: "Area inferred from entity_id/friendly_name containing office/bedroom." });
+});
+
+app.post("/api/ha/entity/action", async (req, res) => {
+  const entityId = String(req.body?.entity_id || "");
+  const action = String(req.body?.action || "toggle");
+  const brightnessPct = Number(req.body?.brightnessPct);
+  if (!entityId || !entityId.includes(".")) return res.status(400).json({ ok: false, error: "entity_id required" });
+
+  const [domain] = entityId.split(".");
+  let service = action;
+  if (!["toggle", "turn_on", "turn_off"].includes(service)) service = "toggle";
+
+  const body = { entity_id: entityId };
+  if (domain === "light" && service === "turn_on" && Number.isFinite(brightnessPct)) {
+    body.brightness_pct = Math.max(1, Math.min(100, Math.round(brightnessPct)));
+  }
+
+  const result = await haRequest(`/api/services/${domain}/${service}`, { method: "POST", body });
+  if (!result.ok) return res.status(500).json(result);
+
+  res.json({ ok: true, result: result.data || null });
+});
+
 app.get("/api/watchers", async (_req, res) => {
   res.json(await getWatchersStatus());
 });
