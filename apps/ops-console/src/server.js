@@ -133,21 +133,38 @@ function parseGatewayLogLine(line) {
 }
 
 async function getGatewayLogRows({ limit = 200, level = "", q = "" }) {
-  const filePath = await getGatewayLogPath();
-  if (!filePath) return { ok: false, error: "No log file path available", rows: [] };
-
   const safeLimit = Math.max(20, Math.min(Number(limit) || 200, 1000));
-  const tailed = await shell(`tail -n ${safeLimit} ${JSON.stringify(filePath)}`, 2500);
-  if (!tailed.ok) return { ok: false, error: tailed.stderr, rows: [] };
+  let source = "";
+  let rawText = "";
 
-  const rows = tailed.stdout
+  const filePath = await getGatewayLogPath();
+  if (filePath) {
+    const tailed = await shell(`tail -n ${safeLimit} ${JSON.stringify(filePath)}`, 2500);
+    if (tailed.ok) {
+      source = filePath;
+      rawText = tailed.stdout;
+    }
+  }
+
+  if (!rawText) {
+    // Fallback for host-run deployments where /tmp/openclaw is unavailable in runtime context
+    const dockerLogs = await shell(`docker logs --tail ${safeLimit} openclaw-gateway 2>&1`, 4000);
+    if (dockerLogs.ok || dockerLogs.stdout) {
+      source = "docker:openclaw-gateway";
+      rawText = dockerLogs.stdout || dockerLogs.stderr || "";
+    }
+  }
+
+  if (!rawText) return { ok: false, error: "No log source available", rows: [] };
+
+  const rows = rawText
     .split("\n")
     .map(parseGatewayLogLine)
     .filter(Boolean)
     .filter((r) => (level ? r.level === level.toUpperCase() : true))
     .filter((r) => (q ? r.text.toLowerCase().includes(q.toLowerCase()) : true));
 
-  return { ok: true, filePath, rows };
+  return { ok: true, source, rows };
 }
 
 async function getStatusPayload() {
@@ -511,10 +528,48 @@ app.get("/api/openclaw/models", async (_req, res) => {
 
   const parsed = cfg.parsed;
   const connectedProfiles = Object.keys(parsed?.auth?.profiles || {});
+  const primaryModel = parsed?.agents?.defaults?.model?.primary || null;
+
+  const providerByProfile = {
+    openai: "OpenAI",
+    anthropic: "Anthropic",
+    google: "Google",
+    xai: "xAI",
+    perplexity: "Perplexity",
+    openrouter: "OpenRouter",
+    voyage: "Voyage",
+  };
+
+  const modelRows = [
+    { name: "gpt-5.3-codex", company: "OpenAI", files: "text, code, json", version: "5.3", profile: "openai" },
+    { name: "gpt-5.2-codex", company: "OpenAI", files: "text, code, json", version: "5.2", profile: "openai" },
+    { name: "claude-sonnet-4.5", company: "Anthropic", files: "text, code, markdown", version: "4.5", profile: "anthropic" },
+    { name: "gemini-2.5-pro", company: "Google", files: "text, code, multimodal", version: "2.5", profile: "google" },
+    { name: "grok-4", company: "xAI", files: "text, code", version: "4", profile: "xai" },
+  ].map((m) => ({
+    ...m,
+    connected: connectedProfiles.includes(m.profile),
+    active: primaryModel === m.name,
+  }));
+
+  // Ensure currently configured model appears even if not in catalog list.
+  if (primaryModel && !modelRows.find((m) => m.name === primaryModel)) {
+    modelRows.unshift({
+      name: primaryModel,
+      company: providerByProfile[connectedProfiles[0]] || "Configured",
+      files: "text, code",
+      version: "unknown",
+      profile: connectedProfiles[0] || "unknown",
+      connected: true,
+      active: true,
+    });
+  }
+
   res.json({
     ok: true,
-    primaryModel: parsed?.agents?.defaults?.model?.primary || null,
+    primaryModel,
     connectedProfiles,
+    rows: modelRows,
   });
 });
 

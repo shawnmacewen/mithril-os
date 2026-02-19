@@ -167,7 +167,11 @@
         </section>
 
         <section id="view-openclaw" class="hidden"><h2>OpenClaw Overview</h2><pre id="openclawRaw">Loading…</pre></section>
-        <section id="view-models" class="hidden"><h2>Models + Connected Profiles</h2><pre id="modelsRaw">Loading…</pre></section>
+        <section id="view-models" class="hidden">
+          <h2>Models</h2>
+          <div id="modelsGrid" class="cards"></div>
+          <div class="card" style="margin-top:12px;"><details><summary>Show raw models JSON</summary><pre id="modelsRaw">Loading…</pre></details></div>
+        </section>
         <section id="view-homeassistant" class="hidden"><h2>Home Assistant</h2><pre id="haRaw">Loading…</pre></section>
 
         <section id="view-logs" class="hidden">
@@ -210,6 +214,11 @@
         <section id="view-audit" class="hidden">
           <h2>Commit Timeline</h2>
           <div class="card">
+            <div class="toolbar" style="margin:0 0 8px;">
+              <button id="commitsPrev">Prev</button>
+              <button id="commitsNext">Next</button>
+              <span id="commitsPageLabel" class="muted">Page 1</span>
+            </div>
             <table id="commitsTable">
               <thead><tr><th>Commit</th><th>Date</th><th>Author</th><th>Message</th></tr></thead>
               <tbody><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
@@ -225,6 +234,8 @@
       let autoTimer = null;
       let cache = {};
       let currentAgentFilesIndex = [];
+      let commitsPage = 1;
+      const commitsPageSize = 8;
 
       function setTheme(theme){
         document.documentElement.setAttribute('data-theme', theme);
@@ -403,11 +414,39 @@
 
       function renderCommitTimeline(data){
         const tbody = document.querySelector('#commitsTable tbody');
+        const label = document.getElementById('commitsPageLabel');
         if (!data?.ok) {
           tbody.innerHTML = `<tr><td colspan="4" class="bad">${data?.error || 'Failed to load commits'}</td></tr>`;
+          label.textContent = 'Page 1';
           return;
         }
-        tbody.innerHTML = (data.rows || []).map(r => `<tr><td><code>${r.short}</code></td><td>${r.date}</td><td>${r.author}</td><td>${r.subject}</td></tr>`).join('');
+
+        const rows = data.rows || [];
+        const totalPages = Math.max(1, Math.ceil(rows.length / commitsPageSize));
+        commitsPage = Math.min(commitsPage, totalPages);
+        const start = (commitsPage - 1) * commitsPageSize;
+        const pageRows = rows.slice(start, start + commitsPageSize);
+
+        label.textContent = `Page ${commitsPage} / ${totalPages}`;
+        tbody.innerHTML = pageRows.map(r => `<tr><td><code>${r.short}</code></td><td>${r.date}</td><td>${r.author}</td><td>${r.subject}</td></tr>`).join('');
+      }
+
+      function renderModelsTiles(models){
+        const grid = document.getElementById('modelsGrid');
+        const rows = models?.rows || [];
+        if (!rows.length) {
+          grid.innerHTML = `<div class='card'><span class='muted'>No model data available</span></div>`;
+          return;
+        }
+        grid.innerHTML = rows.map(m => `
+          <div class='card'>
+            <div class='row'><strong>${m.name}</strong><span class='${m.active ? 'ok' : 'muted'}'>${m.active ? 'active' : ''}</span></div>
+            <div class='muted'>Company: ${m.company || 'n/a'}</div>
+            <div class='muted'>Version: ${m.version || 'n/a'}</div>
+            <div class='muted'>Files: ${m.files || 'n/a'}</div>
+            <div class='muted'>Profile: ${m.profile || 'n/a'} ${m.connected ? '· connected' : ''}</div>
+          </div>
+        `).join('');
       }
 
       async function loadLogs(){
@@ -415,6 +454,11 @@
         const q = document.getElementById('logQuery').value;
         const data = await jget(`/api/logs/gateway?limit=300&level=${encodeURIComponent(level)}&q=${encodeURIComponent(q)}`);
         cache.logs = data;
+        if (!data.ok) {
+          document.querySelector('#logsTable tbody').innerHTML = `<tr><td colspan="3" class="bad">${data.error || 'No logs available'}</td></tr>`;
+          document.getElementById('logsRaw').textContent = data.error || 'No logs available';
+          return;
+        }
         renderLogsTable(data.rows || []);
       }
 
@@ -461,6 +505,7 @@
           document.getElementById('openclawRaw').textContent = JSON.stringify(oc, null, 2);
           document.getElementById('agentsRaw').textContent = JSON.stringify(agents, null, 2);
           renderAgentMdUI(agentsFiles.rows || []);
+          renderModelsTiles(models);
           document.getElementById('modelsRaw').textContent = JSON.stringify(models, null, 2);
           document.getElementById('haRaw').textContent = JSON.stringify(status.homeAssistant, null, 2);
           renderConfigValidator(configDiag);
@@ -481,6 +526,8 @@
       document.getElementById('refreshBtn').addEventListener('click', loadAll);
       document.getElementById('loadLogsBtn').addEventListener('click', loadLogs);
       document.getElementById('copyLogsBtn').addEventListener('click', async () => { await navigator.clipboard.writeText(document.getElementById('logsRaw').textContent || ''); });
+      document.getElementById('commitsPrev').addEventListener('click', () => { commitsPage = Math.max(1, commitsPage - 1); renderCommitTimeline(cache.commits || { ok:true, rows:[] }); });
+      document.getElementById('commitsNext').addEventListener('click', () => { commitsPage = commitsPage + 1; renderCommitTimeline(cache.commits || { ok:true, rows:[] }); });
 
       document.querySelectorAll('button[data-action]').forEach(btn => {
         btn.addEventListener('click', async () => {
