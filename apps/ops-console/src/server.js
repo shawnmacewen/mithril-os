@@ -743,6 +743,29 @@ app.get("/api/openclaw/deep", async (_req, res) => {
   res.json(data);
 });
 
+app.get("/api/openclaw/usage", async (_req, res) => {
+  // built-in session usage telemetry (best effort)
+  const try1 = await shell("openclaw session status --json 2>/dev/null || true", 3000);
+  let parsed = null;
+  if (try1.ok && try1.stdout.trim()) {
+    try { parsed = JSON.parse(try1.stdout); } catch {}
+  }
+
+  if (!parsed) {
+    const try2 = await shell("openclaw status --json 2>/dev/null || true", 3000);
+    if (try2.ok && try2.stdout.trim()) {
+      try { parsed = JSON.parse(try2.stdout); } catch {}
+    }
+  }
+
+  if (!parsed) {
+    return res.json({ ok: false, error: "Session usage telemetry unavailable in this runtime context." });
+  }
+
+  const usage = parsed.usage || parsed.session?.usage || parsed;
+  res.json({ ok: true, usage });
+});
+
 app.get("/api/openclaw/models", async (_req, res) => {
   const cfg = await readConfig();
   if (!cfg.ok) return res.status(500).json({ ok: false, error: cfg.error });
