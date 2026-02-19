@@ -108,29 +108,71 @@ async function getGatewayLogPath() {
   }
 }
 
+function normalizeSubsystem(rawSubsystem) {
+  if (!rawSubsystem) return "core";
+  if (typeof rawSubsystem !== "string") return String(rawSubsystem);
+  const s = rawSubsystem.trim();
+  if (s.startsWith("{") && s.includes("subsystem")) {
+    try {
+      const parsed = JSON.parse(s);
+      if (parsed?.subsystem) return String(parsed.subsystem);
+    } catch {
+      // ignore
+    }
+  }
+  return s;
+}
+
+function logTypeFromSubsystem(subsystem = "core") {
+  const s = subsystem.toLowerCase();
+  if (s.includes("discord")) return "discord";
+  if (s.includes("telegram")) return "telegram";
+  if (s.includes("whatsapp")) return "whatsapp";
+  if (s.includes("signal")) return "signal";
+  if (s.includes("agent")) return "agent";
+  if (s.includes("diagnostic") || s.includes("gateway")) return "gateway";
+  return "core";
+}
+
 function parseGatewayLogLine(line) {
   const trimmed = line.trim();
   if (!trimmed) return null;
 
   try {
     const obj = JSON.parse(trimmed);
-    const ts = obj.time || obj._meta?.date || null;
-    const level = obj._meta?.logLevelName || "INFO";
-    const subsystem =
-      obj?.subsystem ||
-      obj?._meta?.name ||
-      (typeof obj?.[0] === "string" && obj[0].includes('"subsystem"') ? obj[0] : "core");
-    const text = Object.entries(obj)
-      .filter(([k]) => !k.startsWith("_"))
-      .map(([, v]) => (typeof v === "string" ? v : JSON.stringify(v)))
-      .join(" ");
-    return { timestamp: ts, level: String(level).toUpperCase(), subsystem: String(subsystem), text, raw: trimmed };
+    const timestamp = obj.time || obj._meta?.date || null;
+    const level = String(obj._meta?.logLevelName || obj.level || "INFO").toUpperCase();
+
+    const subsystemRaw = obj?.subsystem || obj?.[0] || obj?._meta?.name || "core";
+    const subsystem = normalizeSubsystem(subsystemRaw);
+    const type = logTypeFromSubsystem(subsystem);
+
+    // OpenClaw log lines usually store human message in key "1"
+    const message =
+      (typeof obj?.[1] === "string" && obj[1]) ||
+      obj?.message ||
+      Object.entries(obj)
+        .filter(([k]) => !k.startsWith("_") && k !== "0" && k !== "1")
+        .map(([, v]) => (typeof v === "string" ? v : JSON.stringify(v)))
+        .join(" ");
+
+    return {
+      timestamp,
+      level,
+      subsystem,
+      type,
+      message: message || "",
+      text: message || "",
+      raw: trimmed,
+    };
   } catch {
     const levelMatch = trimmed.match(/\b(ERROR|WARN|INFO|DEBUG)\b/i);
     return {
       timestamp: null,
       level: (levelMatch?.[1] || "INFO").toUpperCase(),
       subsystem: "core",
+      type: "core",
+      message: trimmed,
       text: trimmed,
       raw: trimmed,
     };

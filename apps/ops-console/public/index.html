@@ -398,26 +398,23 @@
 
       function renderLogsTable(rows){
         const tbody = document.querySelector('#logsTable tbody');
-        const inferType = (r) => {
-          const s = `${r?.subsystem || ''} ${r?.text || ''}`.toLowerCase();
-          if (s.includes('discord')) return 'discord';
-          if (s.includes('telegram')) return 'telegram';
-          if (s.includes('gateway')) return 'gateway';
-          if (s.includes('homeassistant') || s.includes('home assistant')) return 'homeassistant';
-          if (s.includes('agent')) return 'agent';
-          return 'core';
-        };
 
         if (!rows?.length) {
           tbody.innerHTML = `<tr><td colspan="4" class="muted">No log lines</td></tr>`;
           document.getElementById('logsRaw').textContent = '(no log selected)';
           return;
         }
-        tbody.innerHTML = rows.map((r, i) => `<tr class="clickable-row" data-i="${i}"><td>${r.timestamp || '-'}</td><td>${inferType(r)}</td><td>${r.level}</td><td>${(r.text || '').slice(0,140)}</td></tr>`).join('');
+        tbody.innerHTML = rows.map((r, i) => {
+          const ts = r.timestamp ? new Date(r.timestamp).toLocaleString() : '-';
+          const type = r.type || r.subsystem || 'core';
+          const msg = (r.message || r.text || '').slice(0, 140);
+          return `<tr class="clickable-row" data-i="${i}"><td>${ts}</td><td>${type}</td><td>${r.level}</td><td>${msg}</td></tr>`;
+        }).join('');
+
         tbody.querySelectorAll('tr[data-i]').forEach(tr => {
           tr.addEventListener('click', () => {
             const row = rows[Number(tr.dataset.i)];
-            document.getElementById('logsRaw').textContent = row?.raw || row?.text || '';
+            document.getElementById('logsRaw').textContent = row?.raw || row?.message || row?.text || '';
           });
         });
       }
