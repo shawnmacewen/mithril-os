@@ -744,7 +744,24 @@ app.get("/api/openclaw/deep", async (_req, res) => {
 });
 
 app.get("/api/openclaw/usage", async (_req, res) => {
-  // built-in session usage telemetry (best effort)
+  // Preferred: read host-collected telemetry bridge file.
+  const candidates = [
+    "/backup/telemetry/openclaw-usage.json",
+    "/mithril-os/state/openclaw-usage.json",
+  ];
+
+  for (const p of candidates) {
+    try {
+      const raw = await fs.readFile(p, "utf8");
+      const parsed = JSON.parse(raw);
+      const usage = parsed.usage || parsed.session?.usage || parsed;
+      return res.json({ ok: true, source: p, usage });
+    } catch {
+      // try next source
+    }
+  }
+
+  // Fallback: local runtime CLI (often unavailable in host-deployed mode).
   const try1 = await shell("openclaw session status --json 2>/dev/null || true", 3000);
   let parsed = null;
   if (try1.ok && try1.stdout.trim()) {
@@ -759,11 +776,11 @@ app.get("/api/openclaw/usage", async (_req, res) => {
   }
 
   if (!parsed) {
-    return res.json({ ok: false, error: "Session usage telemetry unavailable in this runtime context." });
+    return res.json({ ok: false, error: "Session usage telemetry unavailable in this runtime context. Install host telemetry bridge service." });
   }
 
   const usage = parsed.usage || parsed.session?.usage || parsed;
-  res.json({ ok: true, usage });
+  res.json({ ok: true, source: "runtime-cli", usage });
 });
 
 app.get("/api/openclaw/models", async (_req, res) => {

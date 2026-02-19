@@ -1,0 +1,11 @@
+[Unit]
+Description=Collect OpenClaw usage telemetry every 10 minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=10min
+Persistent=true
+Unit=openclaw-usage-collector.service
+
+[Install]
+WantedBy=timers.target

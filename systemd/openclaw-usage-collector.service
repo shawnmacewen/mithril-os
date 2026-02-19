@@ -1,0 +1,10 @@
+[Unit]
+Description=Collect OpenClaw usage telemetry snapshot
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=mini-home-lab
+ExecStart=/usr/bin/env bash /mithril-os/scripts/collect-openclaw-usage.sh
+StandardOutput=journal
+StandardError=journal
