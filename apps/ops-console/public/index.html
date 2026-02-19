@@ -37,8 +37,9 @@
       .brand { font-weight:700; margin-bottom:18px; }
       .brand small { color:var(--muted); display:block; font-weight:500; margin-top:4px; }
       .nav-links { flex:1; }
-      .nav a { display:flex; align-items:center; gap:8px; color:var(--nav-text); text-decoration:none; padding:10px 12px; border-radius:10px; margin-bottom:6px; }
+      .nav a { display:flex; align-items:center; gap:10px; color:var(--nav-text); text-decoration:none; padding:10px 12px; border-radius:10px; margin-bottom:6px; }
       .nav a.active,.nav a:hover { background:color-mix(in srgb, var(--highlight) 16%, transparent); }
+      .nav-icon { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; flex:0 0 auto; opacity:.95; }
       .main { padding:20px; }
       .toolbar { display:flex; gap:10px; align-items:center; margin:8px 0 18px; flex-wrap:wrap; }
       .cards { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
@@ -73,17 +74,17 @@
         <div class="brand">Mithril-OS<small>Ops Console · v1.4</small></div>
 
         <div class="nav-links">
-          <a class="active" data-view="dashboard" href="#dashboard">🏠 Dashboard</a>
-          <a data-view="agents" href="#agents">🤖 Agents</a>
-          <a data-view="watchers" href="#watchers">👀 Watchers</a>
-          <a data-view="services" href="#services">🩺 Service Health</a>
-          <a data-view="openclaw" href="#openclaw">🧠 OpenClaw</a>
-          <a data-view="models" href="#models">🧬 Models</a>
-          <a data-view="homeassistant" href="#homeassistant">🏡 Home Assistant</a>
-          <a data-view="logs" href="#logs">📜 Logs</a>
-          <a data-view="actions" href="#actions">⚡ Quick Actions</a>
-          <a data-view="config" href="#config">🧩 Config Diagnostics</a>
-          <a data-view="audit" href="#audit">🕵️ Audit Trail</a>
+          <a class="active" data-view="dashboard" href="#dashboard"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Dashboard</a>
+          <a data-view="agents" href="#agents"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><path d="M12 6V3"/></svg>Agents</a>
+          <a data-view="watchers" href="#watchers"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/></svg>Watchers</a>
+          <a data-view="services" href="#services"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 21s-7-4.7-7-11V5l7-2 7 2v5c0 6.3-7 11-7 11Z"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>Service Health</a>
+          <a data-view="openclaw" href="#openclaw"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.7.5 1 1.1 1 1.8V18h6v-1.5c0-.7.3-1.3 1-1.8A7 7 0 0 0 12 2Z"/></svg>OpenClaw</a>
+          <a data-view="models" href="#models"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="12" cy="17" r="2"/><path d="M8 8.5l2.8 6"/><path d="M16 8.5l-2.8 6"/><path d="M8 7h8"/></svg>Models</a>
+          <a data-view="homeassistant" href="#homeassistant"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M6 10v11h12V10"/><path d="M10 21v-5h4v5"/></svg>Home Assistant</a>
+          <a data-view="logs" href="#logs"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M16 3v4h4"/><path d="M8 11h8"/><path d="M8 15h8"/></svg>Logs</a>
+          <a data-view="actions" href="#actions"><svg class="nav-icon" viewBox="0 0 24 24"><path d="m13 2-8 12h6l-1 8 9-13h-6z"/></svg>Quick Actions</a>
+          <a data-view="config" href="#config"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z"/></svg>Config Diagnostics</a>
+          <a data-view="audit" href="#audit"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3c4 0 7.4 2.5 8.8 6-1.4 3.5-4.8 6-8.8 6S4.6 12.5 3.2 9C4.6 5.5 8 3 12 3Z"/><circle cx="12" cy="9" r="2.5"/><path d="M7 21h10"/><path d="M12 15v6"/></svg>Audit Trail</a>
         </div>
 
         <div class="theme-wrap">
