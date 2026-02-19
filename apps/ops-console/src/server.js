@@ -134,6 +134,17 @@ function logTypeFromSubsystem(subsystem = "core") {
   return "core";
 }
 
+function stripAnsi(text = "") {
+  return String(text).replace(/\u001b\[[0-9;]*m/g, "").replace(/\x1b\[[0-9;]*m/g, "");
+}
+
+function extractBracketParts(text = "") {
+  const clean = stripAnsi(text);
+  const tags = [...clean.matchAll(/\[([^\]]+)\]/g)].map((m) => String(m[1]).trim()).filter(Boolean);
+  const timeTag = (clean.match(/\b\d{2}:\d{2}:\d{2}\b/) || [null])[0];
+  return { clean, tags, timeTag };
+}
+
 function parseGatewayLogLine(line) {
   const trimmed = line.trim();
   if (!trimmed) return null;
@@ -156,25 +167,32 @@ function parseGatewayLogLine(line) {
         .map(([, v]) => (typeof v === "string" ? v : JSON.stringify(v)))
         .join(" ");
 
+    const { clean, tags, timeTag } = extractBracketParts(message || "");
+
     return {
       timestamp,
       level,
       subsystem,
       type,
-      message: message || "",
-      text: message || "",
+      message: clean || "",
+      text: clean || "",
       raw: trimmed,
+      tags,
+      timeTag,
     };
   } catch {
     const levelMatch = trimmed.match(/\b(ERROR|WARN|INFO|DEBUG)\b/i);
+    const { clean, tags, timeTag } = extractBracketParts(trimmed);
     return {
       timestamp: null,
       level: (levelMatch?.[1] || "INFO").toUpperCase(),
-      subsystem: "core",
+      subsystem: tags.find((t) => /^[a-z0-9_\/-]+$/i.test(t)) || "core",
       type: "core",
-      message: trimmed,
-      text: trimmed,
+      message: clean,
+      text: clean,
       raw: trimmed,
+      tags,
+      timeTag,
     };
   }
 }
@@ -515,19 +533,58 @@ async function getAgentMdIndex() {
 
 async function getCommitTimeline(limit = 20) {
   const safeLimit = Math.max(1, Math.min(Number(limit) || 20, 100));
-  const cmd = `git -C ${JSON.stringify(OPS_REPO_DIR)} log -n ${safeLimit} --pretty=format:'%h|%H|%cI|%an|%s'`;
-  const out = await shell(cmd, 3000);
-  if (!out.ok) return { ok: false, error: out.stderr, rows: [] };
 
-  const rows = out.stdout
-    .split("\n")
-    .filter(Boolean)
-    .map((line) => {
-      const [short, full, date, author, subject] = line.split("|");
-      return { short, full, date, author, subject };
-    });
+  // Best-effort refresh of remote refs so "github" state stays current.
+  await shell(`git -C ${JSON.stringify(OPS_REPO_DIR)} fetch --all --prune`, 5000);
 
-  return { ok: true, rows };
+  const localOut = await shell(`git -C ${JSON.stringify(OPS_REPO_DIR)} log -n ${safeLimit * 3} --pretty=format:'%h|%H|%cI|%an|%s'`, 3000);
+  if (!localOut.ok) return { ok: false, error: localOut.stderr, rows: [] };
+
+  const upstreamRef = await shell(`git -C ${JSON.stringify(OPS_REPO_DIR)} rev-parse --abbrev-ref --symbolic-full-name @{u}`, 2000);
+  const upstreamName = upstreamRef.ok ? upstreamRef.stdout.trim() : "";
+
+  const remoteOut = upstreamName
+    ? await shell(`git -C ${JSON.stringify(OPS_REPO_DIR)} log -n ${safeLimit * 3} ${JSON.stringify(upstreamName)} --pretty=format:'%h|%H|%cI|%an|%s'`, 3000)
+    : { ok: false, stdout: "" };
+
+  const parseRows = (text) =>
+    String(text || "")
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => {
+        const [short, full, date, author, subject] = line.split("|");
+        return { short, full, date, author, subject };
+      });
+
+  const localRows = parseRows(localOut.stdout);
+  const remoteRows = remoteOut.ok ? parseRows(remoteOut.stdout) : [];
+
+  const localSet = new Set(localRows.map((r) => r.full));
+  const remoteSet = new Set(remoteRows.map((r) => r.full));
+
+  const mergedMap = new Map();
+  for (const r of [...localRows, ...remoteRows]) {
+    if (!mergedMap.has(r.full)) mergedMap.set(r.full, r);
+  }
+
+  const mergedRows = [...mergedMap.values()]
+    .map((r) => {
+      const inLocal = localSet.has(r.full);
+      const inRemote = remoteSet.has(r.full);
+      let type = "LOCAL";
+      if (inLocal && inRemote) type = "LOCAL+GITHUB";
+      else if (!inLocal && inRemote) type = "GITHUB";
+
+      return {
+        ...r,
+        type,
+        pushed: inRemote,
+      };
+    })
+    .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))
+    .slice(0, safeLimit);
+
+  return { ok: true, rows: mergedRows, upstream: upstreamName || null };
 }
 
 async function getAuditTrail() {
@@ -813,6 +870,30 @@ app.get("/api/audit/trail", async (_req, res) => {
 
 app.get("/api/git/commits", async (req, res) => {
   res.json(await getCommitTimeline(Number(req.query.limit || 20)));
+});
+
+app.get("/api/backups/status", async (_req, res) => {
+  const latest = await shell("readlink -f /backup/latest || true", 2000);
+  const timers = await shell("systemctl list-timers --all --no-pager | grep mithril-backup || true", 2500);
+  const service = await shell("systemctl status mithril-backup.service --no-pager -n 20 || true", 3000);
+  const snaps = await shell("find /backup/snapshots -mindepth 1 -maxdepth 1 -type d | wc -l", 2000);
+  const usage = await shell("du -sh /backup 2>/dev/null || true", 2000);
+
+  res.json({
+    ok: true,
+    latestSnapshot: latest.stdout.trim() || null,
+    snapshotCount: Number((snaps.stdout || "0").trim()) || 0,
+    timerLine: timers.stdout.trim() || null,
+    backupUsage: usage.stdout.trim() || null,
+    serviceStatusText: service.stdout || "",
+  });
+});
+
+app.post("/api/backups/run", async (_req, res) => {
+  const run = await shell("sudo -n systemctl start mithril-backup.service || systemctl start mithril-backup.service", 8000);
+  if (!run.ok) return res.status(500).json(run);
+  const status = await shell("systemctl status mithril-backup.service --no-pager -n 30 || true", 3000);
+  return res.json({ ok: true, run, status: status.stdout });
 });
 
 app.post("/api/actions/:action", async (req, res) => {

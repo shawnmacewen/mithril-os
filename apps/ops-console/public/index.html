@@ -37,14 +37,31 @@
       .bg-layer.far { opacity:.18; transform:translateY(var(--parallax-far,0px)); }
       .bg-layer.mid { opacity:.12; transform:translateY(var(--parallax-mid,0px)) scale(1.03); }
       .bg-layer.near { opacity:.08; transform:translateY(var(--parallax-near,0px)) scale(1.06); }
-      .layout { display:grid; grid-template-columns:280px 1fr; min-height:100vh; position:relative; z-index:1; }
-      .nav { background:var(--panel); border-right:1px solid var(--border); padding:16px; display:flex; flex-direction:column; }
-      .brand { font-weight:700; margin-bottom:18px; }
+      .layout { display:grid; grid-template-columns:280px 1fr; min-height:100vh; position:relative; z-index:1; transition:grid-template-columns .2s ease; }
+      .layout.nav-collapsed { grid-template-columns:84px 1fr; }
+      .nav { background:var(--panel); border-right:1px solid var(--border); padding:16px; display:flex; flex-direction:column; overflow:hidden; position:sticky; top:0; height:100vh; }
+      .brand { font-weight:700; margin-bottom:18px; display:flex; align-items:center; gap:10px; }
       .brand small { color:var(--muted); display:block; font-weight:500; margin-top:4px; }
+      .brand .brand-icon { display:block; width:34px; height:34px; border-radius:8px; object-fit:cover; object-position:center; background:#fff; margin-left:-5px; }
       .nav-links { flex:1; }
-      .nav a { display:flex; align-items:center; gap:10px; color:var(--nav-text); text-decoration:none; padding:10px 12px; border-radius:10px; margin-bottom:6px; }
+      .nav a { display:flex; align-items:center; gap:10px; color:var(--nav-text); text-decoration:none; padding:10px 12px; border-radius:10px; margin-bottom:6px; white-space:nowrap; }
       .nav a.active,.nav a:hover { background:color-mix(in srgb, var(--highlight) 16%, transparent); }
-      .nav-icon { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; flex:0 0 auto; opacity:.95; }
+      .nav-icon { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; flex:0 0 auto; opacity:.95; }
+      .nav a[data-view='dashboard'] .nav-icon { color:#8b5cf6; }
+      .nav a[data-view='homeassistant'] .nav-icon { color:#22c55e; }
+      .nav a[data-view='agents'] .nav-icon { color:#06b6d4; }
+      .nav a[data-view='watchers'] .nav-icon { color:#f59e0b; }
+      .nav a[data-view='openclaw'] .nav-icon { color:#3b82f6; }
+      .nav a[data-view='models'] .nav-icon { color:#ec4899; }
+      .nav a[data-view='logs'] .nav-icon { color:#ef4444; }
+      .nav a[data-view='config'] .nav-icon { color:#14b8a6; }
+      .layout.nav-collapsed .brand .brand-text,
+      .layout.nav-collapsed .brand small,
+      .layout.nav-collapsed .nav a { font-size:0; }
+      .layout.nav-collapsed .brand { padding-left:5px; }
+      .layout.nav-collapsed .brand .brand-icon { display:block; }
+      .layout.nav-collapsed .nav a { justify-content:center; padding:10px 8px; }
+      .layout.nav-collapsed .nav .nav-icon { width:22px; height:22px; margin:0; }
       .main { padding:20px; }
       .toolbar { display:flex; gap:10px; align-items:center; margin:8px 0 18px; flex-wrap:wrap; }
       .cards { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
@@ -68,6 +85,29 @@
       .active-badge { display:inline-flex; align-items:center; justify-content:center; height:20px; padding:0 8px; border-radius:999px; background:color-mix(in srgb, #22c55e 26%, var(--panel-2)); border:1px solid #22c55e; color:#22c55e; font-weight:700; font-size:10px; line-height:1; }
       .inactive-badge { display:inline-flex; align-items:center; justify-content:center; height:20px; padding:0 8px; border-radius:999px; border:1px solid var(--border); color:var(--muted); font-weight:700; font-size:10px; line-height:1; }
       .ha-item { border:1px solid var(--border); border-radius:10px; padding:8px; margin-bottom:8px; }
+
+      /* Home Assistant section: Mithril Glass style */
+      #view-homeassistant {
+        position: relative;
+        border-radius: 0;
+        margin: -20px;
+        padding: 24px;
+        min-height: calc(100vh - 70px);
+        background: center / cover no-repeat fixed url('/assets/mithril-os-ha-background-cats-lake-2560x1536.png');
+      }
+      #view-homeassistant .card {
+        background: rgba(20, 35, 30, 0.10);
+        border: 1px solid rgba(255,255,255,0.24);
+        border-radius: 20px;
+        box-shadow: 0 10px 28px rgba(0,0,0,0.22);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+      #view-homeassistant h2,
+      #view-homeassistant h3,
+      #view-homeassistant strong { color: #F5F8F4; }
+      #view-homeassistant .muted,
+      #view-homeassistant li { color: #D6E3DA; }
       .ha-item-top { display:flex; justify-content:space-between; gap:8px; align-items:center; }
       .ha-actions { display:flex; gap:6px; margin-top:6px; align-items:center; }
       .ha-actions input[type="range"] { width:130px; }
@@ -92,7 +132,18 @@
       .agent-file-row button { border-radius:999px; padding:5px 10px; font-size:12px; border:1px solid var(--chip-border,#5b6a8f); background:#ffffff; color:#1f2a3d; }
       .agent-file-row button.active { border-color:var(--chip-active,#7aa2ff); background:color-mix(in srgb, var(--chip-active,#7aa2ff) 26%, white); box-shadow:0 0 0 1px color-mix(in srgb, var(--chip-active,#7aa2ff) 45%, transparent); color:var(--text); font-weight:600; }
       details summary { cursor:pointer; color:var(--muted); margin-bottom:8px; }
-      .theme-wrap { padding-top:8px; border-top:1px solid var(--border); }
+      .theme-wrap { padding-top:8px; border-top:1px solid var(--border); display:grid; gap:10px; }
+      .switch-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+      .switch { position:relative; width:48px; height:28px; display:inline-block; }
+      .switch input { opacity:0; width:0; height:0; }
+      .slider { position:absolute; inset:0; cursor:pointer; background:var(--panel-2); border:1px solid var(--border); border-radius:999px; transition:all .18s ease; }
+      .slider:before { content:""; position:absolute; width:20px; height:20px; left:3px; top:3px; border-radius:50%; background:var(--text); transition:all .18s ease; }
+      .switch input:checked + .slider { background:color-mix(in srgb, var(--highlight) 28%, var(--panel-2)); }
+      .switch input:checked + .slider:before { transform:translateX(20px); }
+      .layout.nav-collapsed .switch-row .label-text,
+      .layout.nav-collapsed #navToggleLabel { display:none; }
+      .layout.nav-collapsed .theme-wrap { justify-items:center; }
+
     </style>
   </head>
   <body>
@@ -101,36 +152,35 @@
       <div class="bg-layer mid"></div>
       <div class="bg-layer near"></div>
     </div>
-    <div class="layout">
+    <div class="layout" id="layoutRoot">
       <aside class="nav">
-        <div class="brand">Mithril-OS<small>Ops Console · v1.4</small></div>
+        <div class="brand"><img class="brand-icon" src="/assets/mithril-os-nav-crystal.png" alt="mirthril-os" /><span class="brand-text">mirthril-os<small>Ops Console · v1.4</small></span></div>
 
         <div class="nav-links">
-          <a class="active" data-view="dashboard" href="#dashboard"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Dashboard</a>
+          <a data-view="homeassistant" href="#homeassistant"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M6 10v11h12V10"/><path d="M10 21v-5h4v5"/></svg>Home Assistant</a>
+          <a class="active" data-view="dashboard" href="#dashboard"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Dashboard</a>
           <a data-view="agents" href="#agents"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><path d="M12 6V3"/></svg>Agents</a>
           <a data-view="watchers" href="#watchers"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/></svg>Watchers</a>
-          <a data-view="services" href="#services"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 21s-7-4.7-7-11V5l7-2 7 2v5c0 6.3-7 11-7 11Z"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>Service Health</a>
           <a data-view="openclaw" href="#openclaw"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.7.5 1 1.1 1 1.8V18h6v-1.5c0-.7.3-1.3 1-1.8A7 7 0 0 0 12 2Z"/></svg>OpenClaw</a>
           <a data-view="models" href="#models"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="12" cy="17" r="2"/><path d="M8 8.5l2.8 6"/><path d="M16 8.5l-2.8 6"/><path d="M8 7h8"/></svg>Models</a>
-          <a data-view="homeassistant" href="#homeassistant"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M6 10v11h12V10"/><path d="M10 21v-5h4v5"/></svg>Home Assistant</a>
           <a data-view="logs" href="#logs"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M16 3v4h4"/><path d="M8 11h8"/><path d="M8 15h8"/></svg>Logs</a>
-          <a data-view="actions" href="#actions"><svg class="nav-icon" viewBox="0 0 24 24"><path d="m13 2-8 12h6l-1 8 9-13h-6z"/></svg>Quick Actions</a>
-          <a data-view="config" href="#config"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z"/></svg>Config Diagnostics</a>
-          <a data-view="audit" href="#audit"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3c4 0 7.4 2.5 8.8 6-1.4 3.5-4.8 6-8.8 6S4.6 12.5 3.2 9C4.6 5.5 8 3 12 3Z"/><circle cx="12" cy="9" r="2.5"/><path d="M7 21h10"/><path d="M12 15v6"/></svg>Audit Trail</a>
+          <a data-view="backups" href="#backups"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 20h16"/></svg>Backups</a>
+          <a data-view="config" href="#config"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z"/></svg>Diagnostics</a>
         </div>
 
         <div class="theme-wrap">
-          <button id="themeToggle">Toggle Light / Dark</button>
-          <div class="muted" id="themeLabel" style="margin-top:6px;">Theme: dark</div>
+          <button id="navToggle"><span id="navToggleLabel">Minimize Nav</span></button>
+          <div class="switch-row">
+            <span class="label-text muted">Theme</span>
+            <label class="switch" title="Toggle light/dark theme">
+              <input id="themeToggleSwitch" type="checkbox" />
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
       </aside>
 
       <main class="main">
-        <div class="toolbar">
-          <button id="refreshBtn">Refresh</button>
-          <label class="muted"><input id="autoRefresh" type="checkbox" /> Auto-refresh (10s)</label>
-          <span id="stamp" class="muted"></span>
-        </div>
 
         <section id="view-dashboard">
           <h2>Dashboard</h2>
@@ -186,13 +236,6 @@
           <div class="card" style="margin-top:12px;"><h3>Watchers Raw</h3><pre id="watchersRaw">Loading…</pre></div>
         </section>
 
-        <section id="view-services" class="hidden">
-          <h2>Service Health</h2>
-          <div class="card">
-            <table id="servicesTable"><thead><tr><th>Service</th><th>Status</th><th>Detail</th></tr></thead><tbody><tr><td colspan="3" class="muted">Loading…</td></tr></tbody></table>
-          </div>
-        </section>
-
         <section id="view-openclaw" class="hidden"><h2>OpenClaw Overview</h2><pre id="openclawRaw">Loading…</pre></section>
         <section id="view-models" class="hidden">
           <h2>Models</h2>
@@ -212,35 +255,79 @@
         </section>
 
         <section id="view-logs" class="hidden">
-          <h2>Gateway Logs 2.0</h2>
-          <div class="card">
+          <h2>Logs</h2>
+          <div class="toolbar" style="margin:0 0 8px;">
+            <button id="logsTabGateway">Gateway Logs</button>
+            <button id="logsTabAudit">Audit Trail</button>
+          </div>
+
+          <div id="logsGatewayPane" class="card">
             <div class="logs-controls">
               <select id="logLevel"><option value="">All levels</option><option value="ERROR">ERROR</option><option value="WARN">WARN</option><option value="INFO">INFO</option><option value="DEBUG">DEBUG</option></select>
               <input id="logQuery" placeholder="filter text" />
+              <select id="logPageSize"><option value="10">10 rows</option><option value="50" selected>50 rows</option><option value="100">100 rows</option></select>
               <button id="loadLogsBtn">Apply filter</button>
+              <button id="logsPrev">Prev</button>
+              <button id="logsNext">Next</button>
+              <span id="logsPageLabel" class="muted">Page 1</span>
             </div>
             <table id="logsTable">
-              <thead><tr><th>Timestamp</th><th>Type</th><th>Level</th><th>Message</th></tr></thead>
-              <tbody><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
+              <thead><tr><th>Time</th><th>Bracket Tags</th><th>Type</th><th>Level</th><th>Message</th></tr></thead>
+              <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
             </table>
             <h4 style="margin-top:12px;">Selected Log Row (raw)</h4>
             <pre id="logsRaw">Click a row to inspect full raw log.</pre>
             <button id="copyLogsBtn">Copy selected raw log</button>
           </div>
+
+          <div id="logsAuditPane" class="hidden">
+            <div class="card">
+              <div class="toolbar" style="margin:0 0 8px;">
+                <button id="commitsPrev">Prev</button>
+                <button id="commitsNext">Next</button>
+                <span id="commitsPageLabel" class="muted">Page 1</span>
+              </div>
+              <table id="commitsTable">
+                <thead><tr><th>Commit</th><th>Date</th><th>Author</th><th>Message</th><th>Type</th><th>Pushed</th></tr></thead>
+                <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+              </table>
+            </div>
+            <div class="card" style="margin-top:12px;"><h3>Audit Raw</h3><pre id="auditRaw">Loading…</pre></div>
+          </div>
         </section>
 
-        <section id="view-actions" class="hidden">
-          <h2>Quick Actions</h2>
-          <div class="grid2">
-            <div class="card"><h3>Ops Console</h3><button data-action="deploy-ops-console">Deploy Ops Console</button> <button data-action="restart-ops-console">Restart Ops Console</button></div>
-            <div class="card"><h3>Services</h3><button data-action="restart-watcher">Restart Watcher</button> <button class="danger" data-action="restart-homeassistant">Restart Home Assistant</button></div>
+        <section id="view-backups" class="hidden">
+          <h2>Backups</h2>
+          <div class="card">
+            <div class="row"><span>Latest snapshot</span><strong id="backupLatest">-</strong></div>
+            <div class="row"><span>Snapshots</span><strong id="backupCount">-</strong></div>
+            <div class="row"><span>Storage used</span><strong id="backupUsage">-</strong></div>
+            <div class="row"><span>Timer</span><strong id="backupTimer">-</strong></div>
+            <button id="runBackupBtn">Run Backup Now</button>
           </div>
-          <div class="card" style="margin-top:12px;"><h3>Action Output</h3><pre id="actionOutput">No action run yet.</pre></div>
+          <div class="card" style="margin-top:12px;"><h3>Service status</h3><pre id="backupStatusRaw">Loading…</pre></div>
         </section>
 
         <section id="view-config" class="hidden">
-          <h2>Config Validator</h2>
+          <h2>Diagnostics</h2>
+          <div class="toolbar">
+            <button id="refreshBtn">Refresh</button>
+            <label class="muted"><input id="autoRefresh" type="checkbox" /> Auto-refresh (10s)</label>
+            <span id="stamp" class="muted"></span>
+          </div>
+          <div class="card" style="margin-bottom:12px;">
+            <h3>Service Health</h3>
+            <table id="servicesTable"><thead><tr><th>Service</th><th>Status</th><th>Detail</th></tr></thead><tbody><tr><td colspan="3" class="muted">Loading…</td></tr></tbody></table>
+          </div>
+
+          <div class="grid2" style="margin-bottom:12px;">
+            <div class="card"><h3>Quick Actions</h3><button data-action="deploy-ops-console">Deploy Ops Console</button> <button data-action="restart-ops-console">Restart Ops Console</button></div>
+            <div class="card"><h3>Service Actions</h3><button data-action="restart-watcher">Restart Watcher</button> <button class="danger" data-action="restart-homeassistant">Restart Home Assistant</button></div>
+          </div>
+          <div class="card" style="margin-bottom:12px;"><h3>Action Output</h3><pre id="actionOutput">No action run yet.</pre></div>
+
           <div class="card">
+            <h3>Config Validator</h3>
             <div id="configSummary" class="muted">Loading…</div>
             <table id="configTable" style="margin-top:8px;">
               <thead><tr><th>Key</th><th>Status</th><th>Hint</th></tr></thead>
@@ -248,44 +335,50 @@
             </table>
           </div>
         </section>
-        <section id="view-audit" class="hidden">
-          <h2>Commit Timeline</h2>
-          <div class="card">
-            <div class="toolbar" style="margin:0 0 8px;">
-              <button id="commitsPrev">Prev</button>
-              <button id="commitsNext">Next</button>
-              <span id="commitsPageLabel" class="muted">Page 1</span>
-            </div>
-            <table id="commitsTable">
-              <thead><tr><th>Commit</th><th>Date</th><th>Author</th><th>Message</th></tr></thead>
-              <tbody><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
-            </table>
-          </div>
-          <div class="card" style="margin-top:12px;"><h3>Audit Raw</h3><pre id="auditRaw">Loading…</pre></div>
-        </section>
+        <!-- Audit Trail moved into Logs sub-nav -->
       </main>
     </div>
 
     <script>
-      const views = ["dashboard","agents","watchers","services","openclaw","models","homeassistant","logs","actions","config","audit"];
+      const views = ["dashboard","agents","watchers","openclaw","models","homeassistant","logs","backups","config"];
       let autoTimer = null;
       let cache = {};
       let currentAgentFilesIndex = [];
       let commitsPage = 1;
       const commitsPageSize = 8;
+      let logsPage = 1;
+      let logsRows = [];
+      let logsTab = 'gateway';
 
       function setTheme(theme){
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('mithril-theme', theme);
-        document.getElementById('themeLabel').textContent = `Theme: ${theme}`;
+        const next = theme === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('mithril-theme', next);
+        const toggle = document.getElementById('themeToggleSwitch');
+        if (toggle) toggle.checked = next === 'light';
       }
 
       function initTheme(){
         const saved = localStorage.getItem('mithril-theme') || 'dark';
         setTheme(saved);
-        document.getElementById('themeToggle').addEventListener('click', () => {
-          const current = document.documentElement.getAttribute('data-theme') || 'dark';
-          setTheme(current === 'dark' ? 'light' : 'dark');
+        document.getElementById('themeToggleSwitch').addEventListener('change', (e) => {
+          setTheme(e.target.checked ? 'light' : 'dark');
+        });
+      }
+
+      function setNavCollapsed(collapsed){
+        const layout = document.getElementById('layoutRoot');
+        layout.classList.toggle('nav-collapsed', Boolean(collapsed));
+        localStorage.setItem('mithril-nav-collapsed', collapsed ? '1' : '0');
+        document.getElementById('navToggleLabel').textContent = collapsed ? 'Expand Nav' : 'Minimize Nav';
+      }
+
+      function initNavCollapse(){
+        const collapsed = localStorage.getItem('mithril-nav-collapsed') === '1';
+        setNavCollapsed(collapsed);
+        document.getElementById('navToggle').addEventListener('click', () => {
+          const isCollapsed = document.getElementById('layoutRoot').classList.contains('nav-collapsed');
+          setNavCollapsed(!isCollapsed);
         });
       }
 
@@ -295,6 +388,18 @@
           const link = document.querySelector(`.nav a[data-view='${v}']`);
           if (link) link.classList.toggle("active", v === name);
         });
+      }
+
+      function setLogsTab(tab){
+        logsTab = tab === 'audit' ? 'audit' : 'gateway';
+        const gatewayPane = document.getElementById('logsGatewayPane');
+        const auditPane = document.getElementById('logsAuditPane');
+        const gatewayBtn = document.getElementById('logsTabGateway');
+        const auditBtn = document.getElementById('logsTabAudit');
+        gatewayPane.classList.toggle('hidden', logsTab !== 'gateway');
+        auditPane.classList.toggle('hidden', logsTab !== 'audit');
+        gatewayBtn.classList.toggle('active', logsTab === 'gateway');
+        auditBtn.classList.toggle('active', logsTab === 'audit');
       }
 
       async function jget(url){ const r = await fetch(url); return await r.json(); }
@@ -423,17 +528,25 @@
 
       function renderLogsTable(rows){
         const tbody = document.querySelector('#logsTable tbody');
+        const pageSize = Number(document.getElementById('logPageSize')?.value || 50);
+        const totalPages = Math.max(1, Math.ceil((rows?.length || 0) / pageSize));
+        logsPage = Math.min(logsPage, totalPages);
+        const start = (logsPage - 1) * pageSize;
+        const pageRows = (rows || []).slice(start, start + pageSize);
+        document.getElementById('logsPageLabel').textContent = `Page ${logsPage} / ${totalPages}`;
 
         if (!rows?.length) {
-          tbody.innerHTML = `<tr><td colspan="4" class="muted">No log lines</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5" class="muted">No log lines</td></tr>`;
           document.getElementById('logsRaw').textContent = '(no log selected)';
           return;
         }
-        tbody.innerHTML = rows.map((r, i) => {
-          const ts = r.timestamp ? new Date(r.timestamp).toLocaleString() : '-';
+
+        tbody.innerHTML = pageRows.map((r, i) => {
+          const timeCol = r.timeTag || '-';
+          const tags = Array.isArray(r.tags) && r.tags.length ? r.tags.slice(0, 3).join(' · ') : '-';
           const type = r.type || r.subsystem || 'core';
-          const msg = (r.message || r.text || '').slice(0, 140);
-          return `<tr class="clickable-row" data-i="${i}"><td>${ts}</td><td>${type}</td><td>${r.level}</td><td>${msg}</td></tr>`;
+          const msg = (r.message || r.text || '').slice(0, 180);
+          return `<tr class="clickable-row" data-i="${start + i}"><td>${timeCol}</td><td>${tags}</td><td>${type}</td><td>${r.level}</td><td>${msg}</td></tr>`;
         }).join('');
 
         tbody.querySelectorAll('tr[data-i]').forEach(tr => {
@@ -460,7 +573,7 @@
         const tbody = document.querySelector('#commitsTable tbody');
         const label = document.getElementById('commitsPageLabel');
         if (!data?.ok) {
-          tbody.innerHTML = `<tr><td colspan="4" class="bad">${data?.error || 'Failed to load commits'}</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="6" class="bad">${data?.error || 'Failed to load commits'}</td></tr>`;
           label.textContent = 'Page 1';
           return;
         }
@@ -472,7 +585,7 @@
         const pageRows = rows.slice(start, start + commitsPageSize);
 
         label.textContent = `Page ${commitsPage} / ${totalPages}`;
-        tbody.innerHTML = pageRows.map(r => `<tr><td><code>${r.short}</code></td><td>${r.date}</td><td>${r.author}</td><td>${r.subject}</td></tr>`).join('');
+        tbody.innerHTML = pageRows.map(r => `<tr><td><code>${r.short}</code></td><td>${r.date}</td><td>${r.author}</td><td>${r.subject}</td><td>${r.type || 'LOCAL'}</td><td>${r.pushed ? `<span class='pill ok'>yes</span>` : `<span class='pill bad'>no</span>`}</td></tr>`).join('');
       }
 
       function renderModelsTiles(models){
@@ -543,14 +656,15 @@
       async function loadLogs(){
         const level = document.getElementById('logLevel').value;
         const q = document.getElementById('logQuery').value;
-        const data = await jget(`/api/logs/gateway?limit=300&level=${encodeURIComponent(level)}&q=${encodeURIComponent(q)}`);
+        const data = await jget(`/api/logs/gateway?limit=800&level=${encodeURIComponent(level)}&q=${encodeURIComponent(q)}`);
         cache.logs = data;
         if (!data.ok) {
-          document.querySelector('#logsTable tbody').innerHTML = `<tr><td colspan="4" class="bad">${data.error || 'No logs available'}</td></tr>`;
+          document.querySelector('#logsTable tbody').innerHTML = `<tr><td colspan="5" class="bad">${data.error || 'No logs available'}</td></tr>`;
           document.getElementById('logsRaw').textContent = data.error || 'No logs available';
           return;
         }
-        renderLogsTable(data.rows || []);
+        logsRows = data.rows || [];
+        renderLogsTable(logsRows);
       }
 
       async function loadAll(){
@@ -558,7 +672,7 @@
         stamp.textContent = 'Refreshing…';
 
         try {
-          const [status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker, haAreas] = await Promise.all([
+          const [status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups] = await Promise.all([
             jget('/api/status'),
             jget('/api/openclaw/overview'),
             jget('/api/agents'),
@@ -570,10 +684,11 @@
             jget('/api/audit/trail'),
             jget('/api/git/commits?limit=25'),
             jget('/api/system/docker'),
-            jget('/api/ha/areas')
+            jget('/api/ha/areas'),
+            jget('/api/backups/status')
           ]);
 
-          cache = { status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker, haAreas };
+          cache = { status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
           document.getElementById('currentAgentName').textContent = 'OddEye';
@@ -610,6 +725,13 @@
           renderHaArea('haDiningRoom', haAreas.grouped?.dining_room || []);
           renderHaArea('haOther', haAreas.grouped?.other || []);
           document.getElementById('haRaw').textContent = JSON.stringify(haAreas, null, 2);
+
+          document.getElementById('backupLatest').textContent = backups.latestSnapshot || '-';
+          document.getElementById('backupCount').textContent = String(backups.snapshotCount ?? '-');
+          document.getElementById('backupUsage').textContent = backups.backupUsage || '-';
+          document.getElementById('backupTimer').textContent = backups.timerLine || '-';
+          document.getElementById('backupStatusRaw').textContent = backups.serviceStatusText || 'No status';
+
           renderConfigValidator(configDiag);
           renderCommitTimeline(commits);
           document.getElementById('auditRaw').textContent = JSON.stringify(audit, null, 2);
@@ -621,13 +743,29 @@
       }
 
       function initNav(){
-        function route(){ const h = (location.hash || '#dashboard').replace('#',''); showView(views.includes(h) ? h : 'dashboard'); }
+        function route(){
+          let h = (location.hash || '#dashboard').replace('#','');
+          if (h === 'services' || h === 'actions') h = 'config';
+          if (h === 'audit') h = 'logs';
+          showView(views.includes(h) ? h : 'dashboard');
+        }
         window.addEventListener('hashchange', route); route();
       }
 
       document.getElementById('refreshBtn').addEventListener('click', loadAll);
-      document.getElementById('loadLogsBtn').addEventListener('click', loadLogs);
+      document.getElementById('logsTabGateway').addEventListener('click', () => setLogsTab('gateway'));
+      document.getElementById('logsTabAudit').addEventListener('click', () => setLogsTab('audit'));
+      document.getElementById('loadLogsBtn').addEventListener('click', () => { logsPage = 1; loadLogs(); });
+      document.getElementById('logsPrev').addEventListener('click', () => { logsPage = Math.max(1, logsPage - 1); renderLogsTable(logsRows); });
+      document.getElementById('logsNext').addEventListener('click', () => { logsPage = logsPage + 1; renderLogsTable(logsRows); });
+      document.getElementById('logPageSize').addEventListener('change', () => { logsPage = 1; renderLogsTable(logsRows); });
       document.getElementById('copyLogsBtn').addEventListener('click', async () => { await navigator.clipboard.writeText(document.getElementById('logsRaw').textContent || ''); });
+      document.getElementById('runBackupBtn').addEventListener('click', async () => {
+        if (!confirm('Run backup now?')) return;
+        const out = await jpost('/api/backups/run', {});
+        document.getElementById('backupStatusRaw').textContent = JSON.stringify(out, null, 2);
+        await loadAll();
+      });
       document.getElementById('commitsPrev').addEventListener('click', () => { commitsPage = Math.max(1, commitsPage - 1); renderCommitTimeline(cache.commits || { ok:true, rows:[] }); });
       document.getElementById('commitsNext').addEventListener('click', () => { commitsPage = commitsPage + 1; renderCommitTimeline(cache.commits || { ok:true, rows:[] }); });
 
@@ -654,7 +792,9 @@
       }, { passive: true });
 
       initTheme();
+      initNavCollapse();
       initNav();
+      setLogsTab('gateway');
       loadAll();
     </script>
   </body>
