@@ -72,8 +72,16 @@
       .agent-tile-card.active { border-color:var(--highlight); box-shadow:0 0 0 1px color-mix(in srgb, var(--highlight) 35%, transparent); }
       .agent-tile-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
       .agent-file-row { display:flex; gap:8px; flex-wrap:wrap; }
-      .agent-file-row button { border-radius:999px; padding:5px 10px; font-size:12px; }
-      .agent-file-row button.active { border-color:var(--highlight); background:color-mix(in srgb, var(--highlight) 18%, var(--panel-2)); font-weight:600; }
+      .agent-file-row button { border-radius:999px; padding:5px 10px; font-size:12px; border:1px solid var(--chip-border,#5b6a8f); background:color-mix(in srgb, var(--chip-base,#6d7da6) 10%, var(--panel-2)); color:var(--text); }
+      .agent-file-row button.active { border-color:var(--chip-active,#7aa2ff); background:color-mix(in srgb, var(--chip-active,#7aa2ff) 26%, var(--panel-2)); box-shadow:0 0 0 1px color-mix(in srgb, var(--chip-active,#7aa2ff) 45%, transparent); font-weight:600; }
+      .agent-file-row button.tone-0 { --chip-base:#7aa2ff; --chip-border:#4f78d6; --chip-active:#7aa2ff; }
+      .agent-file-row button.tone-1 { --chip-base:#34d399; --chip-border:#1f9f71; --chip-active:#34d399; }
+      .agent-file-row button.tone-2 { --chip-base:#f59e0b; --chip-border:#c27708; --chip-active:#f59e0b; }
+      .agent-file-row button.tone-3 { --chip-base:#f472b6; --chip-border:#c25090; --chip-active:#f472b6; }
+      .agent-file-row button.tone-4 { --chip-base:#a78bfa; --chip-border:#7e64cf; --chip-active:#a78bfa; }
+      .agent-file-row button.tone-5 { --chip-base:#22d3ee; --chip-border:#1497ab; --chip-active:#22d3ee; }
+      .agent-file-row button.tone-6 { --chip-base:#f97316; --chip-border:#c55a10; --chip-active:#f97316; }
+      .agent-file-row button.tone-7 { --chip-base:#84cc16; --chip-border:#5f9610; --chip-active:#84cc16; }
       details summary { cursor:pointer; color:var(--muted); margin-bottom:8px; }
       .theme-wrap { padding-top:8px; border-top:1px solid var(--border); }
     </style>
@@ -297,7 +305,7 @@
           const files = [...new Set([...(main.workspaceFiles || []), ...(main.files || [])])];
           const selected = selectedFileByAgent.main || files[0] || null;
           mainButtons.innerHTML = files.length
-            ? files.map((f) => `<button data-agent-id="main" data-file="${f}" class="${selected===f?'active':''}">${f}</button>`).join('')
+            ? files.map((f, i) => `<button data-agent-id="main" data-file="${f}" class="tone-${i%8} ${selected===f?'active':''}">${f}</button>`).join('')
             : '<span class="muted">No markdown files</span>';
 
           mainButtons.querySelectorAll('button[data-agent-id][data-file]').forEach(btn => {
@@ -311,7 +319,7 @@
             const files = [...new Set([...(r.workspaceFiles || []), ...(r.files || [])])];
             const selected = selectedFileByAgent[r.agentId] || files[0] || null;
             const fileButtons = files.length
-              ? files.map((f) => `<button data-agent-id="${r.agentId}" data-file="${f}" class="${selected===f?'active':''}">${f}</button>`).join('')
+              ? files.map((f, i) => `<button data-agent-id="${r.agentId}" data-file="${f}" class="tone-${i%8} ${selected===f?'active':''}">${f}</button>`).join('')
               : `<span class="muted">No markdown files</span>`;
 
             return `
