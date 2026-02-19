@@ -309,7 +309,13 @@
         </section>
 
         <section id="view-backups" class="hidden">
-          <h2>Backups</h2>
+          <h2>Diagnostics</h2>
+          <div class="toolbar" style="margin:0 0 10px;">
+            <button onclick="location.hash='config'">Overview</button>
+            <button onclick="location.hash='jobs'">Scheduled Jobs</button>
+            <button onclick="location.hash='backups'">Backups</button>
+          </div>
+          <h3>Backups</h3>
           <div class="card">
             <div class="row"><span>Latest snapshot</span><strong id="backupLatest">-</strong></div>
             <div class="row"><span>Snapshots</span><strong id="backupCount">-</strong></div>
@@ -321,7 +327,13 @@
         </section>
 
         <section id="view-jobs" class="hidden">
-          <h2>Scheduled Jobs</h2>
+          <h2>Diagnostics</h2>
+          <div class="toolbar" style="margin:0 0 10px;">
+            <button onclick="location.hash='config'">Overview</button>
+            <button onclick="location.hash='jobs'">Scheduled Jobs</button>
+            <button onclick="location.hash='backups'">Backups</button>
+          </div>
+          <h3>Scheduled Jobs</h3>
           <div class="card">
             <table id="jobsTable">
               <thead><tr><th>Kind</th><th>Name</th><th>Schedule</th><th>Status</th><th>Detail</th></tr></thead>
@@ -332,6 +344,11 @@
 
         <section id="view-config" class="hidden">
           <h2>Diagnostics</h2>
+          <div class="toolbar" style="margin:0 0 10px;">
+            <button onclick="location.hash='config'">Overview</button>
+            <button onclick="location.hash='jobs'">Scheduled Jobs</button>
+            <button onclick="location.hash='backups'">Backups</button>
+          </div>
           <div class="toolbar">
             <button id="refreshBtn">Refresh</button>
             <label class="muted"><input id="autoRefresh" type="checkbox" /> Auto-refresh (10s)</label>
