@@ -745,6 +745,32 @@ app.get("/api/openclaw/deep", async (_req, res) => {
 
 app.get("/api/openclaw/usage", async (_req, res) => {
   // Preferred: read host-collected telemetry bridge file.
+  const eventFiles = [
+    "/backup/telemetry/openclaw-usage-events.jsonl",
+    "/mithril-os/state/openclaw-usage-events.jsonl",
+  ];
+
+  for (const p of eventFiles) {
+    try {
+      const raw = await fs.readFile(p, "utf8");
+      const lines = raw.trim().split("\n").filter(Boolean);
+      if (lines.length) {
+        const parsed = JSON.parse(lines[lines.length - 1]);
+        const usage = parsed.usage || parsed.session?.usage || parsed;
+        return res.json({
+          ok: Boolean(parsed.ok !== false),
+          source: parsed.source || p,
+          capturedAt: parsed.capturedAt || null,
+          note: parsed.note || null,
+          collector: parsed.collector || null,
+          usage,
+        });
+      }
+    } catch {
+      // try next source
+    }
+  }
+
   const candidates = [
     "/backup/telemetry/openclaw-usage.json",
     "/mithril-os/state/openclaw-usage.json",

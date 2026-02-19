@@ -3,6 +3,7 @@ set -euo pipefail
 
 OUT_DIR="/backup/telemetry"
 OUT_FILE="$OUT_DIR/openclaw-usage.json"
+EVENTS_FILE="$OUT_DIR/openclaw-usage-events.jsonl"
 mkdir -p "$OUT_DIR"
 
 NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -11,12 +12,12 @@ GW_STATE="$(docker inspect -f '{{.State.Status}}' openclaw-gateway 2>/dev/null |
 
 docker logs --tail 4000 openclaw-gateway 2>&1 > /tmp/openclaw-gateway-tail.log || true
 
-python3 - <<'PY' "/tmp/openclaw-gateway-tail.log" "$OUT_FILE" "$NOW" "$TIMER_STATE" "$GW_STATE"
+python3 - <<'PY' "/tmp/openclaw-gateway-tail.log" "$OUT_FILE" "$EVENTS_FILE" "$NOW" "$TIMER_STATE" "$GW_STATE"
 import json
 import re
 import sys
 
-log_path, out_path, now, timer_state, gw_state = sys.argv[1:6]
+log_path, out_path, events_path, now, timer_state, gw_state = sys.argv[1:7]
 
 usage = {
     "inputTokens": None,
@@ -27,7 +28,6 @@ usage = {
 
 raw_line = None
 
-# Candidate key names seen across providers/tooling
 INPUT_KEYS = {"inputtokens", "prompttokens", "input_tokens", "prompt_tokens", "input"}
 OUTPUT_KEYS = {"outputtokens", "completiontokens", "output_tokens", "completion_tokens", "output"}
 TOTAL_KEYS = {"totaltokens", "total_tokens", "total"}
@@ -109,7 +109,6 @@ for line in reversed(lines):
     except Exception:
         obj_hits = {}
 
-    # Normalize keys from obj extraction
     merged = {
         "in": obj_hits.get("in") if obj_hits.get("in") is not None else text_hits.get("in"),
         "out": obj_hits.get("out") if obj_hits.get("out") is not None else text_hits.get("out"),
@@ -132,7 +131,7 @@ if usage["totalTokens"] is None:
 
 payload = {
     "ok": True,
-    "source": "gateway-logs-parser-v2",
+    "source": "gateway-logs-parser-v3",
     "capturedAt": now,
     "usage": usage,
     "collector": {
@@ -148,4 +147,7 @@ if raw_line:
 
 with open(out_path, "w", encoding="utf-8") as f:
     json.dump(payload, f)
+
+with open(events_path, "a", encoding="utf-8") as f:
+    f.write(json.dumps(payload) + "\n")
 PY
