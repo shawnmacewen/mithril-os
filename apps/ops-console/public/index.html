@@ -321,6 +321,7 @@
             <div class="card">
               <h3>Backup Health</h3>
               <div class="row"><span>Status</span><strong id="backupHealth">-</strong></div>
+              <div class="muted" id="backupHealthReason">-</div>
               <div class="row"><span>Latest snapshot</span><strong id="backupLatest">-</strong></div>
               <div class="row"><span>Snapshots</span><strong id="backupCount">-</strong></div>
               <div class="row"><span>Storage used</span><strong id="backupUsage">-</strong></div>
@@ -665,6 +666,7 @@
         const health = backups.backupHealth || 'warning';
         const healthCls = health === 'healthy' ? 'ok' : (health === 'failed' ? 'bad' : 'warn');
         document.getElementById('backupHealth').innerHTML = `<span class='status-pill ${healthCls}'>${health.toUpperCase()}</span>`;
+        document.getElementById('backupHealthReason').textContent = backups.backupHealthReason || '';
         document.getElementById('backupLatest').textContent = backups.latestSnapshot || '-';
         document.getElementById('backupCount').textContent = String(backups.snapshotCount ?? '-');
         document.getElementById('backupUsage').textContent = backups.backupUsage || '-';

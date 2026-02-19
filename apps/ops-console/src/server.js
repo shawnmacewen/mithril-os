@@ -902,9 +902,27 @@ app.get("/api/backups/status", async (_req, res) => {
   const latestMeta = latestName ? (snapshotRows.find((r) => r.name === latestName) || null) : null;
 
   const serviceText = service.stdout || "";
-  const active = /Active:\s+active/.test(serviceText);
   const failed = /Active:\s+failed/.test(serviceText) || /Result:\s+exit-code/.test(serviceText);
-  const health = failed ? "failed" : active ? "healthy" : "warning";
+
+  const timerText = timers.stdout.trim() || "";
+  const timerLooksPresent = timerText.length > 0;
+  const snapshotCount = Number((snaps.stdout || "0").trim()) || 0;
+
+  let health = "warning";
+  let healthReason = "Waiting for first successful backup run.";
+  if (failed) {
+    health = "failed";
+    healthReason = "Latest backup service run indicates failure.";
+  } else if (timerLooksPresent && snapshotCount > 0) {
+    health = "healthy";
+    healthReason = "Timer is configured and at least one snapshot exists.";
+  } else if (!timerLooksPresent && snapshotCount > 0) {
+    health = "warning";
+    healthReason = "Snapshots exist, but backup timer is not detected.";
+  } else if (timerLooksPresent && snapshotCount === 0) {
+    health = "warning";
+    healthReason = "Timer detected, but no snapshots exist yet.";
+  }
 
   const logText = logs.stdout || "";
   const sourceStatus = [
@@ -933,12 +951,13 @@ app.get("/api/backups/status", async (_req, res) => {
     latestSnapshot,
     latestSnapshotName: latestName,
     latestSnapshotMeta: latestMeta,
-    snapshotCount: Number((snaps.stdout || "0").trim()) || 0,
+    snapshotCount,
     snapshotRows,
     timerLine: timers.stdout.trim() || null,
     backupUsage: usage.stdout.trim() || null,
     serviceStatusText: serviceText,
     backupHealth: health,
+    backupHealthReason: healthReason,
     retention: { daily: 14, weekly: 8, monthly: 6 },
     sourceStatus,
     logsText: logText,
