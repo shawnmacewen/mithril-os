@@ -22,6 +22,8 @@ const WATCHERS_STATE_DIR = process.env.WATCHERS_STATE_DIR || "/mithril-os/watche
 const OPS_REPO_DIR = process.env.OPS_REPO_DIR || "/mithril-os";
 const OPS_APP_DIR = process.env.OPS_APP_DIR || "/mithril-os/apps/ops-console";
 const OPS_ENV_FILE = process.env.OPS_ENV_FILE || "/mithril-os/apps/ops-console/.env";
+const AGENTS_ROOT = process.env.AGENTS_ROOT || "/home/mini-home-lab/.openclaw/agents";
+const AGENTS_ROOT_FALLBACK = "/home/node/.openclaw/agents";
 
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(express.json());
@@ -338,6 +340,55 @@ async function getConfigDiagnostics() {
   };
 }
 
+async function getAgentMdIndex() {
+  const roots = [AGENTS_ROOT, AGENTS_ROOT_FALLBACK];
+  const cfg = await readConfig();
+  const bindingIds = cfg.ok ? [...new Set((cfg.parsed?.bindings || []).map((b) => b.agentId).filter(Boolean))] : [];
+
+  const discovered = {};
+  for (const root of roots) {
+    try {
+      const entries = await fs.readdir(root, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        const agentId = entry.name;
+        const agentDir = path.join(root, agentId, "agent");
+        let files = [];
+        try {
+          const kids = await fs.readdir(agentDir, { withFileTypes: true });
+          files = kids
+            .filter((k) => k.isFile() && k.name.toLowerCase().endsWith(".md"))
+            .map((k) => k.name)
+            .sort();
+        } catch {
+          files = [];
+        }
+
+        if (!discovered[agentId]) {
+          discovered[agentId] = { agentId, root, agentDir, files };
+        } else if (files.length > discovered[agentId].files.length) {
+          discovered[agentId] = { agentId, root, agentDir, files };
+        }
+      }
+    } catch {
+      // ignore missing roots
+    }
+  }
+
+  // Ensure known binding agent IDs are represented even if no md files found yet.
+  for (const agentId of bindingIds) {
+    if (!discovered[agentId]) {
+      discovered[agentId] = { agentId, root: null, agentDir: null, files: [] };
+    }
+  }
+
+  return {
+    ok: true,
+    roots,
+    rows: Object.values(discovered).sort((a, b) => a.agentId.localeCompare(b.agentId)),
+  };
+}
+
 async function getAuditTrail() {
   const branch = await shell(`git -C ${JSON.stringify(OPS_REPO_DIR)} rev-parse --abbrev-ref HEAD`, 2000);
   const commit = await shell(`git -C ${JSON.stringify(OPS_REPO_DIR)} log -1 --pretty=format:'%H|%h|%s|%cI'`, 2000);
@@ -398,6 +449,39 @@ app.get("/api/agents", async (_req, res) => {
   const uniqueAgentIds = [...new Set(bindings.map((b) => b.agentId).filter(Boolean))];
 
   res.json({ ok: true, agentIds: uniqueAgentIds, bindings });
+});
+
+app.get("/api/agents/files", async (_req, res) => {
+  res.json(await getAgentMdIndex());
+});
+
+app.get("/api/agents/:agentId/files/:fileName", async (req, res) => {
+  const agentId = String(req.params.agentId || "");
+  const fileName = String(req.params.fileName || "");
+
+  if (!/^[a-zA-Z0-9._-]+$/.test(agentId)) {
+    return res.status(400).json({ ok: false, error: "Invalid agentId" });
+  }
+  if (!/^[a-zA-Z0-9._-]+\.md$/i.test(fileName)) {
+    return res.status(400).json({ ok: false, error: "Only .md files are allowed" });
+  }
+
+  const index = await getAgentMdIndex();
+  const row = index.rows.find((r) => r.agentId === agentId);
+  if (!row || !row.agentDir) {
+    return res.status(404).json({ ok: false, error: `Agent path not found for ${agentId}` });
+  }
+  if (!row.files.includes(fileName)) {
+    return res.status(404).json({ ok: false, error: `${fileName} not found for ${agentId}` });
+  }
+
+  const fullPath = path.join(row.agentDir, fileName);
+  try {
+    const text = await fs.readFile(fullPath, "utf8");
+    return res.json({ ok: true, agentId, fileName, path: fullPath, text });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: String(error.message || error) });
+  }
 });
 
 app.get("/api/logs/gateway", async (req, res) => {

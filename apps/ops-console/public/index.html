@@ -64,6 +64,8 @@
       input, select { background:var(--panel-2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:6px 8px; }
       .agent-tile { display:flex; align-items:center; gap:12px; }
       .avatar { width:52px; height:52px; border-radius:50%; border:2px solid var(--highlight); display:flex; align-items:center; justify-content:center; font-size:24px; background:var(--panel-2); }
+      .agent-file-buttons { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 12px; }
+      .agent-file-buttons button.active { border-color:var(--highlight); box-shadow:0 0 0 1px color-mix(in srgb, var(--highlight) 45%, transparent); }
       details summary { cursor:pointer; color:var(--muted); margin-bottom:8px; }
       .theme-wrap { padding-top:8px; border-top:1px solid var(--border); }
     </style>
@@ -121,6 +123,16 @@
               </div>
             </div>
           </div>
+
+          <div class="card" style="margin-bottom:12px;">
+            <h3>Agent Markdown Viewer</h3>
+            <div class="muted" style="margin-bottom:6px;">Select an agent, then select an available .md file.</div>
+            <label class="muted">Agent:</label>
+            <select id="agentSelect"></select>
+            <div id="agentFileButtons" class="agent-file-buttons"></div>
+            <pre id="agentMdContent">Select an agent and file to view markdown content.</pre>
+          </div>
+
           <div class="card">
             <details>
               <summary>Show raw Agents + Bindings JSON</summary>
@@ -182,6 +194,7 @@
       const views = ["dashboard","agents","watchers","services","openclaw","models","homeassistant","logs","actions","config","audit"];
       let autoTimer = null;
       let cache = {};
+      let currentAgentFilesIndex = [];
 
       function setTheme(theme){
         document.documentElement.setAttribute('data-theme', theme);
@@ -238,6 +251,55 @@
         tbody.innerHTML = rows.map(r => `<tr><td>${r.service}</td><td>${r.status === 'healthy' ? `<span class='pill ok'>healthy</span>` : `<span class='pill bad'>${r.status}</span>`}</td><td>${r.detail || ''}</td></tr>`).join('');
       }
 
+      async function loadAgentMdFile(agentId, fileName){
+        const data = await jget(`/api/agents/${encodeURIComponent(agentId)}/files/${encodeURIComponent(fileName)}`);
+        if (!data.ok) {
+          document.getElementById('agentMdContent').textContent = data.error || 'Failed to load file';
+          return;
+        }
+        document.getElementById('agentMdContent').textContent = data.text || '(empty file)';
+      }
+
+      function renderAgentMdUI(indexRows){
+        currentAgentFilesIndex = indexRows || [];
+        const sel = document.getElementById('agentSelect');
+        const buttons = document.getElementById('agentFileButtons');
+
+        sel.innerHTML = currentAgentFilesIndex.map(r => `<option value="${r.agentId}">${r.agentId}</option>`).join('');
+        if (!currentAgentFilesIndex.length) {
+          sel.innerHTML = '<option value="">No agents found</option>';
+          buttons.innerHTML = '';
+          document.getElementById('agentMdContent').textContent = 'No agent markdown files found.';
+          return;
+        }
+
+        const drawFiles = () => {
+          const agentId = sel.value;
+          const row = currentAgentFilesIndex.find(r => r.agentId === agentId);
+          const files = row?.files || [];
+
+          if (!files.length) {
+            buttons.innerHTML = '';
+            document.getElementById('agentMdContent').textContent = `No markdown files available for ${agentId}.`;
+            return;
+          }
+
+          buttons.innerHTML = files.map((f, i) => `<button data-file="${f}" class="${i===0?'active':''}">${f}</button>`).join('');
+          loadAgentMdFile(agentId, files[0]);
+
+          buttons.querySelectorAll('button[data-file]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              buttons.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+              btn.classList.add('active');
+              loadAgentMdFile(agentId, btn.dataset.file);
+            });
+          });
+        };
+
+        sel.onchange = drawFiles;
+        drawFiles();
+      }
+
       async function loadLogs(){
         const level = document.getElementById('logLevel').value;
         const q = document.getElementById('logQuery').value;
@@ -252,11 +314,20 @@
         stamp.textContent = 'Refreshing…';
 
         try {
-          const [status, oc, agents, models, watchers, services, configDiag, audit, docker] = await Promise.all([
-            jget('/api/status'), jget('/api/openclaw/overview'), jget('/api/agents'), jget('/api/openclaw/models'), jget('/api/watchers'), jget('/api/services/health'), jget('/api/config/diagnostics'), jget('/api/audit/trail'), jget('/api/system/docker')
+          const [status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, docker] = await Promise.all([
+            jget('/api/status'),
+            jget('/api/openclaw/overview'),
+            jget('/api/agents'),
+            jget('/api/agents/files'),
+            jget('/api/openclaw/models'),
+            jget('/api/watchers'),
+            jget('/api/services/health'),
+            jget('/api/config/diagnostics'),
+            jget('/api/audit/trail'),
+            jget('/api/system/docker')
           ]);
 
-          cache = { status, oc, agents, models, watchers, services, configDiag, audit, docker };
+          cache = { status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, docker };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
           document.getElementById('currentAgentName').textContent = 'OddEye';
@@ -279,6 +350,7 @@
           document.getElementById('watchersRaw').textContent = JSON.stringify(watchers, null, 2);
           document.getElementById('openclawRaw').textContent = JSON.stringify(oc, null, 2);
           document.getElementById('agentsRaw').textContent = JSON.stringify(agents, null, 2);
+          renderAgentMdUI(agentsFiles.rows || []);
           document.getElementById('modelsRaw').textContent = JSON.stringify(models, null, 2);
           document.getElementById('haRaw').textContent = JSON.stringify(status.homeAssistant, null, 2);
           document.getElementById('configRaw').textContent = JSON.stringify(configDiag, null, 2);
