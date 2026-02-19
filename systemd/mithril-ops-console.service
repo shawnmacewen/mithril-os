@@ -10,8 +10,8 @@ EnvironmentFile=-/mithril-os/apps/ops-console/.env
 ExecStart=/usr/bin/env node src/server.js
 Restart=always
 RestartSec=3
-StandardOutput=append:/tmp/mithril-os-ops-console.log
-StandardError=append:/tmp/mithril-os-ops-console.log
+StandardOutput=file:/tmp/mithril-os-ops-console.log
+StandardError=file:/tmp/mithril-os-ops-console.log
 
 [Install]
 WantedBy=multi-user.target
