@@ -24,6 +24,7 @@ const OPS_APP_DIR = process.env.OPS_APP_DIR || "/mithril-os/apps/ops-console";
 const OPS_ENV_FILE = process.env.OPS_ENV_FILE || "/mithril-os/apps/ops-console/.env";
 const AGENTS_ROOT = process.env.AGENTS_ROOT || "/home/mini-home-lab/.openclaw/agents";
 const AGENTS_ROOT_FALLBACK = "/home/node/.openclaw/agents";
+const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT || "/home/node/.openclaw/workspace";
 
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(express.json());
@@ -365,9 +366,9 @@ async function getAgentMdIndex() {
         }
 
         if (!discovered[agentId]) {
-          discovered[agentId] = { agentId, root, agentDir, files };
+          discovered[agentId] = { agentId, root, agentDir, files, workspaceFiles: [] };
         } else if (files.length > discovered[agentId].files.length) {
-          discovered[agentId] = { agentId, root, agentDir, files };
+          discovered[agentId] = { agentId, root, agentDir, files, workspaceFiles: [] };
         }
       }
     } catch {
@@ -378,13 +379,27 @@ async function getAgentMdIndex() {
   // Ensure known binding agent IDs are represented even if no md files found yet.
   for (const agentId of bindingIds) {
     if (!discovered[agentId]) {
-      discovered[agentId] = { agentId, root: null, agentDir: null, files: [] };
+      discovered[agentId] = { agentId, root: null, agentDir: null, files: [], workspaceFiles: [] };
+    }
+  }
+
+  // Main agent often uses workspace-level markdown docs (SOUL.md, USER.md, etc.)
+  if (discovered.main) {
+    try {
+      const wsKids = await fs.readdir(WORKSPACE_ROOT, { withFileTypes: true });
+      discovered.main.workspaceFiles = wsKids
+        .filter((k) => k.isFile() && k.name.toLowerCase().endsWith(".md"))
+        .map((k) => k.name)
+        .sort();
+    } catch {
+      discovered.main.workspaceFiles = [];
     }
   }
 
   return {
     ok: true,
     roots,
+    workspaceRoot: WORKSPACE_ROOT,
     rows: Object.values(discovered).sort((a, b) => a.agentId.localeCompare(b.agentId)),
   };
 }
@@ -471,14 +486,17 @@ app.get("/api/agents/:agentId/files/:fileName", async (req, res) => {
   if (!row || !row.agentDir) {
     return res.status(404).json({ ok: false, error: `Agent path not found for ${agentId}` });
   }
-  if (!row.files.includes(fileName)) {
+  const inAgentDir = row.files.includes(fileName);
+  const inWorkspace = row.workspaceFiles?.includes(fileName);
+
+  if (!inAgentDir && !inWorkspace) {
     return res.status(404).json({ ok: false, error: `${fileName} not found for ${agentId}` });
   }
 
-  const fullPath = path.join(row.agentDir, fileName);
+  const fullPath = inAgentDir ? path.join(row.agentDir, fileName) : path.join(WORKSPACE_ROOT, fileName);
   try {
     const text = await fs.readFile(fullPath, "utf8");
-    return res.json({ ok: true, agentId, fileName, path: fullPath, text });
+    return res.json({ ok: true, agentId, fileName, path: fullPath, source: inAgentDir ? "agent" : "workspace", text });
   } catch (error) {
     return res.status(500).json({ ok: false, error: String(error.message || error) });
   }

@@ -65,7 +65,8 @@
       .agent-tile { display:flex; align-items:center; gap:12px; }
       .avatar { width:52px; height:52px; border-radius:50%; border:2px solid var(--highlight); display:flex; align-items:center; justify-content:center; font-size:24px; background:var(--panel-2); }
       .agent-file-buttons { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 12px; }
-      .agent-file-buttons button.active { border-color:var(--highlight); box-shadow:0 0 0 1px color-mix(in srgb, var(--highlight) 45%, transparent); }
+      .agent-file-buttons button { border-radius:999px; padding:6px 12px; }
+      .agent-file-buttons button.active { border-color:var(--highlight); background:color-mix(in srgb, var(--highlight) 18%, var(--panel-2)); box-shadow:0 0 0 1px color-mix(in srgb, var(--highlight) 45%, transparent); font-weight:600; }
       details summary { cursor:pointer; color:var(--muted); margin-bottom:8px; }
       .theme-wrap { padding-top:8px; border-top:1px solid var(--border); }
     </style>
@@ -127,7 +128,7 @@
           <div class="card" style="margin-bottom:12px;">
             <h3>Agent Markdown Viewer</h3>
             <div class="muted" style="margin-bottom:6px;">Select an agent, then select an available .md file.</div>
-            <label class="muted">Agent:</label>
+            <label class="muted" id="agentSelectLabel">Agent:</label>
             <select id="agentSelect"></select>
             <div id="agentFileButtons" class="agent-file-buttons"></div>
             <pre id="agentMdContent">Select an agent and file to view markdown content.</pre>
@@ -263,6 +264,7 @@
       function renderAgentMdUI(indexRows){
         currentAgentFilesIndex = indexRows || [];
         const sel = document.getElementById('agentSelect');
+        const selLabel = document.getElementById('agentSelectLabel');
         const buttons = document.getElementById('agentFileButtons');
 
         sel.innerHTML = currentAgentFilesIndex.map(r => `<option value="${r.agentId}">${r.agentId}</option>`).join('');
@@ -273,10 +275,18 @@
           return;
         }
 
+        if (currentAgentFilesIndex.length === 1) {
+          sel.style.display = 'none';
+          selLabel.style.display = 'none';
+        } else {
+          sel.style.display = '';
+          selLabel.style.display = '';
+        }
+
         const drawFiles = () => {
-          const agentId = sel.value;
+          const agentId = sel.value || currentAgentFilesIndex[0].agentId;
           const row = currentAgentFilesIndex.find(r => r.agentId === agentId);
-          const files = row?.files || [];
+          const files = [...new Set([...(row?.workspaceFiles || []), ...(row?.files || [])])];
 
           if (!files.length) {
             buttons.innerHTML = '';
@@ -284,7 +294,11 @@
             return;
           }
 
-          buttons.innerHTML = files.map((f, i) => `<button data-file="${f}" class="${i===0?'active':''}">${f}</button>`).join('');
+          buttons.innerHTML = files.map((f, i) => {
+            const label = f.replace(/\.md$/i, '');
+            return `<button data-file="${f}" class="${i===0?'active':''}">${label}</button>`;
+          }).join('');
+
           loadAgentMdFile(agentId, files[0]);
 
           buttons.querySelectorAll('button[data-file]').forEach(btn => {
