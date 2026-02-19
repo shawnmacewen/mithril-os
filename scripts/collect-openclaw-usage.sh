@@ -5,61 +5,147 @@ OUT_DIR="/backup/telemetry"
 OUT_FILE="$OUT_DIR/openclaw-usage.json"
 mkdir -p "$OUT_DIR"
 
-docker logs --tail 2500 openclaw-gateway 2>&1 > /tmp/openclaw-gateway-tail.log || true
+NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+TIMER_STATE="$(systemctl is-active openclaw-usage-collector.timer 2>/dev/null || true)"
+GW_STATE="$(docker inspect -f '{{.State.Status}}' openclaw-gateway 2>/dev/null || echo unknown)"
 
-python3 - <<'PY' "/tmp/openclaw-gateway-tail.log" "$OUT_FILE"
+docker logs --tail 4000 openclaw-gateway 2>&1 > /tmp/openclaw-gateway-tail.log || true
+
+python3 - <<'PY' "/tmp/openclaw-gateway-tail.log" "$OUT_FILE" "$NOW" "$TIMER_STATE" "$GW_STATE"
 import json
 import re
 import sys
-import datetime
 
-log_path = sys.argv[1]
-out_path = sys.argv[2]
+log_path, out_path, now, timer_state, gw_state = sys.argv[1:6]
 
-best = None
+usage = {
+    "inputTokens": None,
+    "outputTokens": None,
+    "totalTokens": None,
+    "costUsd": None,
+}
 
-with open(log_path, 'r', encoding='utf-8', errors='ignore') as f:
-    lines = f.readlines()
+raw_line = None
+
+# Candidate key names seen across providers/tooling
+INPUT_KEYS = {"inputtokens", "prompttokens", "input_tokens", "prompt_tokens", "input"}
+OUTPUT_KEYS = {"outputtokens", "completiontokens", "output_tokens", "completion_tokens", "output"}
+TOTAL_KEYS = {"totaltokens", "total_tokens", "total"}
+COST_KEYS = {"costusd", "cost_usd", "cost", "estimatedcostusd", "estimated_cost_usd"}
+
+
+def normalize_key(k: str) -> str:
+    return re.sub(r"[^a-z0-9_]", "", k.lower())
+
+
+def extract_from_obj(obj):
+    found = {"in": None, "out": None, "tot": None, "cost": None}
+
+    def walk(x):
+        if isinstance(x, dict):
+            for k, v in x.items():
+                nk = normalize_key(str(k))
+                if isinstance(v, (int, float, str)):
+                    sv = str(v)
+                    num = None
+                    try:
+                        if isinstance(v, (int, float)):
+                            num = float(v)
+                        elif re.fullmatch(r"\d+(?:\.\d+)?", sv.strip()):
+                            num = float(sv.strip())
+                    except Exception:
+                        num = None
+
+                    if num is not None:
+                        if nk in INPUT_KEYS and found["in"] is None:
+                            found["in"] = int(num)
+                        elif nk in OUTPUT_KEYS and found["out"] is None:
+                            found["out"] = int(num)
+                        elif nk in TOTAL_KEYS and found["tot"] is None:
+                            found["tot"] = int(num)
+                        elif nk in COST_KEYS and found["cost"] is None:
+                            found["cost"] = float(num)
+                walk(v)
+        elif isinstance(x, list):
+            for i in x:
+                walk(i)
+
+    walk(obj)
+    return found
+
+
+def extract_from_text(line):
+    out = {}
+    patterns = {
+        "in": r"(?:input|prompt)[_ ]?tokens?[:=]\s*(\d+)",
+        "out": r"(?:output|completion)[_ ]?tokens?[:=]\s*(\d+)",
+        "tot": r"total[_ ]?tokens?[:=]\s*(\d+)",
+        "cost": r"(?:cost(?:_usd| usd)?|estimated[_ ]?cost(?:_usd)?)[:=]\s*([0-9]+(?:\.[0-9]+)?)",
+    }
+    for k, p in patterns.items():
+        m = re.search(p, line, re.I)
+        if m:
+            out[k] = float(m.group(1)) if k == "cost" else int(m.group(1))
+    return out
+
+
+try:
+    with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+        lines = f.readlines()
+except Exception:
+    lines = []
 
 for line in reversed(lines):
     s = line.strip()
     if not s:
         continue
 
-    in_tok = re.search(r'input[_ ]?tokens?[:=]\s*(\d+)', s, re.I)
-    out_tok = re.search(r'output[_ ]?tokens?[:=]\s*(\d+)', s, re.I)
-    tot_tok = re.search(r'total[_ ]?tokens?[:=]\s*(\d+)', s, re.I)
-    cost = re.search(r'cost(?:_usd| usd)?[:=]\s*([0-9]+(?:\.[0-9]+)?)', s, re.I)
+    text_hits = extract_from_text(s)
 
-    if in_tok or out_tok or tot_tok or cost:
-        best = {
-            "inputTokens": int(in_tok.group(1)) if in_tok else None,
-            "outputTokens": int(out_tok.group(1)) if out_tok else None,
-            "totalTokens": int(tot_tok.group(1)) if tot_tok else None,
-            "costUsd": float(cost.group(1)) if cost else None,
-            "rawLine": s[:1200],
-        }
+    obj_hits = {}
+    try:
+        o = json.loads(s)
+        obj_hits = extract_from_obj(o)
+    except Exception:
+        obj_hits = {}
+
+    # Normalize keys from obj extraction
+    merged = {
+        "in": obj_hits.get("in") if obj_hits.get("in") is not None else text_hits.get("in"),
+        "out": obj_hits.get("out") if obj_hits.get("out") is not None else text_hits.get("out"),
+        "tot": obj_hits.get("tot") if obj_hits.get("tot") is not None else text_hits.get("tot"),
+        "cost": obj_hits.get("cost") if obj_hits.get("cost") is not None else text_hits.get("cost"),
+    }
+
+    if any(v is not None for v in merged.values()):
+        usage["inputTokens"] = merged["in"]
+        usage["outputTokens"] = merged["out"]
+        usage["totalTokens"] = merged["tot"]
+        usage["costUsd"] = merged["cost"]
+        raw_line = s[:1600]
         break
 
-if best is None:
-    payload = {
-        "ok": False,
-        "source": "gateway-logs",
-        "error": "no token/cost markers found in recent logs",
-    }
-else:
-    if best["totalTokens"] is None:
-        a = best["inputTokens"] or 0
-        b = best["outputTokens"] or 0
-        best["totalTokens"] = (a + b) if (a + b) > 0 else None
+if usage["totalTokens"] is None:
+    a = usage["inputTokens"] or 0
+    b = usage["outputTokens"] or 0
+    usage["totalTokens"] = (a + b) if (a + b) > 0 else None
 
-    payload = {
-        "ok": True,
-        "source": "gateway-logs",
-        "capturedAt": datetime.datetime.utcnow().isoformat() + "Z",
-        "usage": best,
-    }
+payload = {
+    "ok": True,
+    "source": "gateway-logs-parser-v2",
+    "capturedAt": now,
+    "usage": usage,
+    "collector": {
+        "timerState": timer_state,
+        "gatewayContainerState": gw_state,
+        "rawLineFound": bool(raw_line),
+    },
+    "note": "If token fields remain null, current logs do not include token/cost markers.",
+}
 
-with open(out_path, 'w', encoding='utf-8') as f:
+if raw_line:
+    payload["rawLine"] = raw_line
+
+with open(out_path, "w", encoding="utf-8") as f:
     json.dump(payload, f)
 PY
