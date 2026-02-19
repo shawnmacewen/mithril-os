@@ -239,7 +239,49 @@
           <div class="card" style="margin-top:12px;"><h3>Watchers Raw</h3><pre id="watchersRaw">Loading…</pre></div>
         </section>
 
-        <section id="view-openclaw" class="hidden"><h2>OpenClaw Overview</h2><pre id="openclawRaw">Loading…</pre></section>
+        <section id="view-openclaw" class="hidden">
+          <h2>OpenClaw</h2>
+          <div class="cards">
+            <div class="card">
+              <h3>Gateway Health</h3>
+              <div class="row"><span>TCP 18789</span><strong id="ocTcp">-</strong></div>
+              <div class="row"><span>Uptime</span><strong id="ocUptime">-</strong></div>
+              <div class="row"><span>Config readable</span><strong id="ocCfg">-</strong></div>
+            </div>
+            <div class="card">
+              <h3>Model Runtime</h3>
+              <div class="row"><span>Primary</span><strong id="ocPrimaryModel">-</strong></div>
+              <div class="row"><span>Fallback</span><strong id="ocFallbackModel">-</strong></div>
+              <div class="row"><span>Profiles</span><strong id="ocProfiles">-</strong></div>
+            </div>
+            <div class="card">
+              <h3>Session / Queue</h3>
+              <div class="row"><span>Active</span><strong id="ocQueueActive">-</strong></div>
+              <div class="row"><span>Waiting</span><strong id="ocQueueWaiting">-</strong></div>
+              <div class="row"><span>Queued</span><strong id="ocQueueQueued">-</strong></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>Channel Bindings Matrix</h3>
+            <table id="ocBindingsTable"><thead><tr><th>#</th><th>Channel</th><th>Chat</th><th>Agent</th><th>Note</th></tr></thead><tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody></table>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>Tool Permissions</h3>
+            <div class="row"><span>exec.security</span><strong id="ocExecSecurity">-</strong></div>
+            <div class="row"><span>exec.ask</span><strong id="ocExecAsk">-</strong></div>
+            <div class="muted" id="ocToolsList">-</div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>Config Explorer (read-only)</h3>
+            <input id="ocConfigSearch" placeholder="search config path/value" />
+            <table id="ocConfigTable" style="margin-top:8px;"><thead><tr><th>Path</th><th>Value</th></tr></thead><tbody><tr><td colspan="2" class="muted">Loading…</td></tr></tbody></table>
+          </div>
+
+          <div class="card" style="margin-top:12px;"><details><summary>OpenClaw Raw JSON</summary><pre id="openclawRaw">Loading…</pre></details></div>
+        </section>
         <section id="view-models" class="hidden">
           <h2>Models</h2>
           <div id="modelsGrid" class="cards"></div>
@@ -655,6 +697,41 @@
         }).join('');
       }
 
+      function renderOpenclawDeep(data){
+        if (!data?.ok) return;
+        document.getElementById('ocTcp').textContent = data.gateway?.tcpOk ? 'OK' : 'DOWN';
+        document.getElementById('ocUptime').textContent = data.gateway?.uptime || '-';
+        document.getElementById('ocCfg').textContent = String(data.gateway?.configReadable ?? '-');
+
+        document.getElementById('ocPrimaryModel').textContent = data.models?.primary || '-';
+        document.getElementById('ocFallbackModel').textContent = data.models?.fallback || '-';
+        document.getElementById('ocProfiles').textContent = (data.models?.connectedProfiles || []).join(', ') || '-';
+
+        document.getElementById('ocQueueActive').textContent = data.queue?.active ?? '-';
+        document.getElementById('ocQueueWaiting').textContent = data.queue?.waiting ?? '-';
+        document.getElementById('ocQueueQueued').textContent = data.queue?.queued ?? '-';
+
+        document.getElementById('ocExecSecurity').textContent = data.tools?.execSecurity || '-';
+        document.getElementById('ocExecAsk').textContent = data.tools?.execAsk || '-';
+        document.getElementById('ocToolsList').textContent = `tools: ${(data.tools?.available || []).join(', ') || '-'}`;
+
+        const bTbody = document.querySelector('#ocBindingsTable tbody');
+        bTbody.innerHTML = (data.bindings || []).length
+          ? (data.bindings || []).map(r => `<tr><td>${r.id}</td><td>${r.channel}</td><td>${r.chat}</td><td>${r.agentId}</td><td>${r.note || ''}</td></tr>`).join('')
+          : `<tr><td colspan='5' class='muted'>No bindings</td></tr>`;
+
+        const cfgRows = data.configFlat || [];
+        const cfgTbody = document.querySelector('#ocConfigTable tbody');
+        const drawCfg = (q='') => {
+          const qq = q.trim().toLowerCase();
+          const rows = !qq ? cfgRows : cfgRows.filter(r => `${r.path} ${r.value}`.toLowerCase().includes(qq));
+          cfgTbody.innerHTML = rows.slice(0, 120).map(r => `<tr><td class='muted'>${r.path}</td><td>${r.value}</td></tr>`).join('') || `<tr><td colspan='2' class='muted'>No matches</td></tr>`;
+        };
+        drawCfg('');
+        const inp = document.getElementById('ocConfigSearch');
+        inp.oninput = () => drawCfg(inp.value || '');
+      }
+
       function renderBackupsPage(backups){
         const health = backups.backupHealth || 'warning';
         const healthCls = health === 'healthy' ? 'ok' : (health === 'failed' ? 'bad' : 'warn');
@@ -799,9 +876,10 @@
         stamp.textContent = 'Refreshing…';
 
         try {
-          const [status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs] = await Promise.all([
+          const [status, oc, ocDeep, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs] = await Promise.all([
             jget('/api/status'),
             jget('/api/openclaw/overview'),
+            jget('/api/openclaw/deep'),
             jget('/api/agents'),
             jget('/api/agents/files'),
             jget('/api/openclaw/models'),
@@ -816,7 +894,7 @@
             jget('/api/scheduled-jobs')
           ]);
 
-          cache = { status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs };
+          cache = { status, oc, ocDeep, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
           document.getElementById('currentAgentName').textContent = 'OddEye';
@@ -842,7 +920,8 @@
           document.getElementById('metricContainers').textContent = String((docker.rows || []).length || 0);
 
           document.getElementById('watchersRaw').textContent = JSON.stringify(watchers, null, 2);
-          document.getElementById('openclawRaw').textContent = JSON.stringify(oc, null, 2);
+          renderOpenclawDeep(ocDeep);
+          document.getElementById('openclawRaw').textContent = JSON.stringify(ocDeep, null, 2);
           document.getElementById('agentsRaw').textContent = JSON.stringify(agents, null, 2);
           renderAgentMdUI(agentsFiles.rows || []);
           renderModelsTiles(models);

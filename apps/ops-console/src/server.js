@@ -587,6 +587,117 @@ async function getCommitTimeline(limit = 20) {
   return { ok: true, rows: mergedRows, upstream: upstreamName || null };
 }
 
+function flattenObject(obj, prefix = "", out = []) {
+  if (obj === null || obj === undefined) return out;
+  if (typeof obj !== "object") {
+    out.push({ path: prefix || "(root)", value: String(obj) });
+    return out;
+  }
+  if (Array.isArray(obj)) {
+    obj.forEach((v, i) => flattenObject(v, `${prefix}[${i}]`, out));
+    return out;
+  }
+  for (const [k, v] of Object.entries(obj)) {
+    const next = prefix ? `${prefix}.${k}` : k;
+    flattenObject(v, next, out);
+  }
+  return out;
+}
+
+function redactConfigValue(path, value) {
+  const p = path.toLowerCase();
+  if (p.includes("token") || p.includes("secret") || p.includes("password") || p.includes("apikey") || p.includes("auth")) {
+    return "[REDACTED]";
+  }
+  return value;
+}
+
+async function getOpenclawDeep() {
+  const cfg = await readConfig();
+  const status = await getStatusPayload();
+  const docker = await dockerPs();
+
+  const parsed = cfg.ok ? cfg.parsed : {};
+  const bindings = parsed?.bindings || [];
+  const channelsObj = parsed?.channels || {};
+
+  const channelRows = Object.entries(channelsObj).map(([name, conf]) => ({
+    channel: name,
+    configured: true,
+    summary: typeof conf === "object" ? Object.keys(conf || {}).join(", ") : String(conf),
+  }));
+
+  const bindingRows = bindings.map((b, i) => ({
+    id: i + 1,
+    channel: b.channel || b.provider || "n/a",
+    chat: b.chat || b.chatId || b.target || "*",
+    agentId: b.agentId || "main",
+    note: b.requireMention === false ? "no-mention" : "",
+  }));
+
+  const toolPermissions = parsed?.tools || {};
+  const execConf = parsed?.tools?.exec || {};
+
+  const models = {
+    primary: parsed?.agents?.defaults?.model?.primary || null,
+    fallback: parsed?.agents?.defaults?.model?.fallback || null,
+    connectedProfiles: Object.keys(parsed?.auth?.profiles || {}),
+  };
+
+  let gatewayUptime = "unknown";
+  if (docker.ok) {
+    const gw = docker.rows.find((r) => (r.name || "").includes("openclaw-gateway"));
+    if (gw) gatewayUptime = gw.status;
+  }
+
+  // Queue monitor (best effort from recent gateway logs)
+  const logs = await getGatewayLogRows({ limit: 120, level: "", q: "lane" });
+  let queueHints = { active: null, waiting: null, queued: null, text: "n/a" };
+  if (logs.ok && logs.rows?.length) {
+    const line = [...logs.rows].reverse().find((r) => /active=|queued=|waiting=/.test(r.text || ""));
+    if (line) {
+      const t = line.text || "";
+      const mA = t.match(/active=(\d+)/);
+      const mW = t.match(/waiting=(\d+)/);
+      const mQ = t.match(/queued=(\d+)/);
+      queueHints = {
+        active: mA ? Number(mA[1]) : null,
+        waiting: mW ? Number(mW[1]) : null,
+        queued: mQ ? Number(mQ[1]) : null,
+        text: t,
+      };
+    }
+  }
+
+  const flat = flattenObject(parsed)
+    .slice(0, 500)
+    .map((r) => ({ path: r.path, value: redactConfigValue(r.path, r.value) }));
+
+  return {
+    ok: true,
+    gateway: {
+      tcpOk: status.openclaw.gatewayTcp18789?.ok || false,
+      uptime: gatewayUptime,
+      configReadable: status.openclaw.configReadable,
+      configError: status.openclaw.configError || null,
+      model: status.openclaw.model,
+      channelsCount: Object.keys(channelsObj).length,
+      bindingsCount: bindings.length,
+    },
+    channels: channelRows,
+    bindings: bindingRows,
+    tools: {
+      execSecurity: execConf.security || "n/a",
+      execAsk: execConf.ask || "n/a",
+      available: Object.keys(toolPermissions || {}),
+      raw: toolPermissions,
+    },
+    models,
+    queue: queueHints,
+    configFlat: flat,
+  };
+}
+
 async function getAuditTrail() {
   const branch = await shell(`git -C ${JSON.stringify(OPS_REPO_DIR)} rev-parse --abbrev-ref HEAD`, 2000);
   const commit = await shell(`git -C ${JSON.stringify(OPS_REPO_DIR)} log -1 --pretty=format:'%H|%h|%s|%cI'`, 2000);
@@ -624,6 +735,12 @@ app.get("/api/openclaw/overview", async (_req, res) => {
     gateway: parsed?.gateway || {},
     exec: parsed?.tools?.exec || {},
   });
+});
+
+app.get("/api/openclaw/deep", async (_req, res) => {
+  const data = await getOpenclawDeep();
+  if (!data.ok) return res.status(500).json(data);
+  res.json(data);
 });
 
 app.get("/api/openclaw/models", async (_req, res) => {
