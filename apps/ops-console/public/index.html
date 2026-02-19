@@ -194,7 +194,10 @@
           <div class="cards">
             <div class="card"><h3>Office</h3><div id="haOffice">Loading…</div></div>
             <div class="card"><h3>Bedroom</h3><div id="haBedroom">Loading…</div></div>
+            <div class="card"><h3>Living Room</h3><div id="haLivingRoom">Loading…</div></div>
+            <div class="card"><h3>Dining Room</h3><div id="haDiningRoom">Loading…</div></div>
           </div>
+          <div class="card" style="margin-top:12px;"><details><summary>Other / Unmapped Devices</summary><div id="haOther">Loading…</div></details></div>
           <div class="card" style="margin-top:12px;"><details><summary>Show raw HA JSON</summary><pre id="haRaw">Loading…</pre></details></div>
         </section>
 
@@ -519,6 +522,9 @@
             const fresh = await jget('/api/ha/areas');
             renderHaArea('haOffice', fresh.grouped?.office || []);
             renderHaArea('haBedroom', fresh.grouped?.bedroom || []);
+            renderHaArea('haLivingRoom', fresh.grouped?.living_room || []);
+            renderHaArea('haDiningRoom', fresh.grouped?.dining_room || []);
+            renderHaArea('haOther', fresh.grouped?.other || []);
             document.getElementById('haRaw').textContent = JSON.stringify(fresh, null, 2);
           });
         });
@@ -590,6 +596,9 @@
           document.getElementById('modelsRaw').textContent = JSON.stringify(models, null, 2);
           renderHaArea('haOffice', haAreas.grouped?.office || []);
           renderHaArea('haBedroom', haAreas.grouped?.bedroom || []);
+          renderHaArea('haLivingRoom', haAreas.grouped?.living_room || []);
+          renderHaArea('haDiningRoom', haAreas.grouped?.dining_room || []);
+          renderHaArea('haOther', haAreas.grouped?.other || []);
           document.getElementById('haRaw').textContent = JSON.stringify(haAreas, null, 2);
           renderConfigValidator(configDiag);
           renderCommitTimeline(commits);
