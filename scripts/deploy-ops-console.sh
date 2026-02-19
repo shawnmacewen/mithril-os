@@ -29,9 +29,9 @@ fi
 
 if command -v rsync >/dev/null 2>&1; then
   # Do not delete runtime .env
-  rsync -av --delete --exclude '.env' "$SRC/" "$DST/"
+  rsync -av --delete --exclude '.env' --exclude '.git' "$SRC/" "$DST/"
 else
-  find "$DST" -mindepth 1 -maxdepth 1 ! -name '.env' -exec rm -rf {} +
+  find "$DST" -mindepth 1 -maxdepth 1 ! -name '.env' ! -name '.git' -exec rm -rf {} +
   cp -a "$SRC/." "$DST/"
 fi
 

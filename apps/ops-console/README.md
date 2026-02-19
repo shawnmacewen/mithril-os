@@ -1,14 +1,12 @@
 # Mithril-OS Ops Console (Phase 1)
 
-Phase 1.2 delivers:
-- Left-hand navigation shell with sections
-- Dashboard page (OpenClaw + HA + Docker status)
-- Watchers page (running/systemd/interval/last update table)
-- OpenClaw overview page
-- Agents page (bindings-based)
-- Models page (primary model + connected auth profiles)
-- Home Assistant status page
-- Gateway logs page
+Phase 1.3 delivers:
+- Watchers page with per-row controls (start/stop/restart)
+- Service Health table
+- Logs UX: level filter, text filter, auto-refresh, copy
+- Config diagnostics panel
+- Quick Actions panel
+- Audit trail widget (branch/remote/last commit)
 
 ## Run
 

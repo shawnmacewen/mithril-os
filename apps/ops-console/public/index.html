@@ -5,51 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mithril-OS · Ops Console</title>
     <style>
-      :root { --bg:#0b1020; --panel:#121a2f; --muted:#8fa1c7; --text:#e7eeff; --accent:#69d2ff; --ok:#43d17f; --bad:#ff6b6b; }
+      :root { --bg:#0b1020; --panel:#121a2f; --muted:#8fa1c7; --text:#e7eeff; --ok:#43d17f; --bad:#ff6b6b; }
       * { box-sizing: border-box; }
       body { margin:0; font-family:Inter,system-ui,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text); }
       .layout { display:grid; grid-template-columns:260px 1fr; min-height:100vh; }
       .nav { background:var(--panel); border-right:1px solid #223052; padding:16px; }
-      .brand { font-weight:700; letter-spacing:.3px; margin-bottom:18px; }
+      .brand { font-weight:700; margin-bottom:18px; }
       .brand small { color:var(--muted); display:block; font-weight:500; margin-top:4px; }
       .nav a { display:block; color:var(--text); text-decoration:none; padding:10px 12px; border-radius:10px; margin-bottom:6px; }
       .nav a.active,.nav a:hover { background:#1a2645; }
       .main { padding:20px; }
+      .toolbar { display:flex; gap:10px; align-items:center; margin:8px 0 18px; flex-wrap:wrap; }
       .cards { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
       .card { background:var(--panel); border:1px solid #223052; border-radius:14px; padding:14px; }
       .muted { color:var(--muted); font-size:13px; }
       .row { display:flex; justify-content:space-between; gap:10px; margin:8px 0; }
       .ok { color:var(--ok); }
       .bad { color:var(--bad); }
-      pre { white-space:pre-wrap; background:#0f1730; border:1px solid #223052; border-radius:10px; padding:10px; max-height:420px; overflow:auto; }
-      .toolbar { display:flex; gap:10px; align-items:center; margin:12px 0 18px; }
+      .hidden { display:none; }
       button { background:#1b2a4d; border:1px solid #2f477d; color:var(--text); padding:8px 12px; border-radius:9px; cursor:pointer; }
       button:hover { background:#21345f; }
-      .hidden { display:none; }
+      button.danger { border-color:#8a3a3a; background:#3a1e27; }
+      pre { white-space:pre-wrap; background:#0f1730; border:1px solid #223052; border-radius:10px; padding:10px; max-height:420px; overflow:auto; }
       table { width:100%; border-collapse:collapse; font-size:14px; }
       th, td { border-bottom:1px solid #223052; padding:8px; text-align:left; vertical-align:top; }
       th { color:var(--muted); font-weight:600; }
       .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid #2f477d; }
       .pill.ok { color:var(--ok); border-color:rgba(67,209,127,.5); }
       .pill.bad { color:var(--bad); border-color:rgba(255,107,107,.5); }
+      .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+      .logs-controls { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+      input, select { background:#0f1730; border:1px solid #2f477d; color:var(--text); border-radius:8px; padding:6px 8px; }
     </style>
   </head>
   <body>
     <div class="layout">
       <aside class="nav">
-        <div class="brand">Mithril-OS<small>Ops Console · v1.2</small></div>
+        <div class="brand">Mithril-OS<small>Ops Console · v1.3</small></div>
         <a class="active" data-view="dashboard" href="#dashboard">Dashboard</a>
         <a data-view="watchers" href="#watchers">Watchers</a>
+        <a data-view="services" href="#services">Service Health</a>
         <a data-view="openclaw" href="#openclaw">OpenClaw</a>
         <a data-view="agents" href="#agents">Agents</a>
         <a data-view="models" href="#models">Models</a>
         <a data-view="homeassistant" href="#homeassistant">Home Assistant</a>
         <a data-view="logs" href="#logs">Logs</a>
-        <a data-view="dev" href="#dev">Dev Launchpad</a>
+        <a data-view="actions" href="#actions">Quick Actions</a>
+        <a data-view="config" href="#config">Config Diagnostics</a>
+        <a data-view="audit" href="#audit">Audit Trail</a>
       </aside>
       <main class="main">
         <div class="toolbar">
           <button id="refreshBtn">Refresh</button>
+          <label class="muted"><input id="autoRefresh" type="checkbox" /> Auto-refresh (10s)</label>
           <span id="stamp" class="muted"></span>
         </div>
 
@@ -68,66 +76,79 @@
             <table id="watchersTable">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Running</th>
-                  <th>Systemd</th>
-                  <th>Interval (s)</th>
-                  <th>Last Update</th>
-                  <th>Script</th>
+                  <th>Name</th><th>Running</th><th>Systemd</th><th>Interval</th><th>Last Update</th><th>Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr><td colspan="6" class="muted">Loading…</td></tr>
-              </tbody>
+              <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
             </table>
           </div>
-          <div class="card" style="margin-top:12px;">
-            <h3>Watchers Raw</h3>
-            <pre id="watchersRaw">Loading…</pre>
+          <div class="card" style="margin-top:12px;"><h3>Watchers Raw</h3><pre id="watchersRaw">Loading…</pre></div>
+        </section>
+
+        <section id="view-services" class="hidden">
+          <h2>Service Health</h2>
+          <div class="card">
+            <table id="servicesTable"><thead><tr><th>Service</th><th>Status</th><th>Detail</th></tr></thead><tbody><tr><td colspan="3" class="muted">Loading…</td></tr></tbody></table>
           </div>
         </section>
 
-        <section id="view-openclaw" class="hidden">
-          <h2>OpenClaw Overview</h2>
-          <pre id="openclawRaw">Loading…</pre>
-        </section>
-
-        <section id="view-agents" class="hidden">
-          <h2>Agents + Bindings</h2>
-          <pre id="agentsRaw">Loading…</pre>
-        </section>
-
-        <section id="view-models" class="hidden">
-          <h2>Models + Connected Profiles</h2>
-          <pre id="modelsRaw">Loading…</pre>
-        </section>
-
-        <section id="view-homeassistant" class="hidden">
-          <h2>Home Assistant</h2>
-          <pre id="haRaw">Loading…</pre>
-        </section>
+        <section id="view-openclaw" class="hidden"><h2>OpenClaw Overview</h2><pre id="openclawRaw">Loading…</pre></section>
+        <section id="view-agents" class="hidden"><h2>Agents + Bindings</h2><pre id="agentsRaw">Loading…</pre></section>
+        <section id="view-models" class="hidden"><h2>Models + Connected Profiles</h2><pre id="modelsRaw">Loading…</pre></section>
+        <section id="view-homeassistant" class="hidden"><h2>Home Assistant</h2><pre id="haRaw">Loading…</pre></section>
 
         <section id="view-logs" class="hidden">
           <h2>Gateway Logs</h2>
-          <pre id="logsRaw">Loading…</pre>
+          <div class="card">
+            <div class="logs-controls">
+              <select id="logLevel">
+                <option value="">All levels</option>
+                <option value="ERROR">ERROR</option>
+                <option value="WARN">WARN</option>
+                <option value="INFO">INFO</option>
+                <option value="DEBUG">DEBUG</option>
+              </select>
+              <input id="logQuery" placeholder="filter text" />
+              <button id="loadLogsBtn">Apply filter</button>
+            </div>
+            <pre id="logsRaw">Loading…</pre>
+            <button id="copyLogsBtn">Copy visible logs</button>
+          </div>
         </section>
 
-        <section id="view-dev" class="hidden">
-          <h2>Dev Launchpad (planned)</h2>
-          <div class="card">
-            <ul>
-              <li>Project switcher</li>
-              <li>Run coding agents from UI</li>
-              <li>OpenClaw tools panel</li>
-              <li>Task queue + run history</li>
-            </ul>
+        <section id="view-actions" class="hidden">
+          <h2>Quick Actions</h2>
+          <div class="grid2">
+            <div class="card">
+              <h3>Ops Console</h3>
+              <button data-action="deploy-ops-console">Deploy Ops Console</button>
+              <button data-action="restart-ops-console">Restart Ops Console</button>
+            </div>
+            <div class="card">
+              <h3>Services</h3>
+              <button data-action="restart-watcher">Restart Watcher</button>
+              <button class="danger" data-action="restart-homeassistant">Restart Home Assistant</button>
+            </div>
           </div>
+          <div class="card" style="margin-top:12px;"><h3>Action Output</h3><pre id="actionOutput">No action run yet.</pre></div>
+        </section>
+
+        <section id="view-config" class="hidden">
+          <h2>Config Diagnostics</h2>
+          <div class="card"><pre id="configRaw">Loading…</pre></div>
+        </section>
+
+        <section id="view-audit" class="hidden">
+          <h2>Audit Trail</h2>
+          <div class="card"><pre id="auditRaw">Loading…</pre></div>
         </section>
       </main>
     </div>
 
     <script>
-      const views = ["dashboard","watchers","openclaw","agents","models","homeassistant","logs","dev"];
+      const views = ["dashboard","watchers","services","openclaw","agents","models","homeassistant","logs","actions","config","audit"];
+      let autoTimer = null;
+      let cache = {};
 
       function showView(name){
         views.forEach(v => {
@@ -137,10 +158,8 @@
         });
       }
 
-      async function jget(url){
-        const r = await fetch(url);
-        return await r.json();
-      }
+      async function jget(url){ const r = await fetch(url); return await r.json(); }
+      async function jpost(url, body){ const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await r.json(); }
 
       function renderWatchersTable(rows){
         const tbody = document.querySelector('#watchersTable tbody');
@@ -159,28 +178,67 @@
               <td>${w.name || w.id}</td>
               <td>${running}</td>
               <td>${systemd}</td>
-              <td>${w.effectiveIntervalSeconds ?? ''}</td>
+              <td>${w.effectiveIntervalSeconds ?? ''}s</td>
               <td>${w.lastUpdatedAt || ''}</td>
-              <td class="muted">${w.script || ''}</td>
+              <td>
+                <button data-watch='${w.id}' data-op='start'>Start</button>
+                <button data-watch='${w.id}' data-op='stop'>Stop</button>
+                <button data-watch='${w.id}' data-op='restart'>Restart</button>
+              </td>
             </tr>
           `;
         }).join('');
+
+        tbody.querySelectorAll('button[data-watch]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = btn.dataset.watch;
+            const op = btn.dataset.op;
+            const resp = await jpost(`/api/watchers/${id}/action`, { action: op });
+            cache.watchers = { ok: true, rows: resp.watchers || [] };
+            renderWatchersTable(cache.watchers.rows);
+            document.getElementById('watchersRaw').textContent = JSON.stringify(resp, null, 2);
+          });
+        });
+      }
+
+      function renderServicesTable(rows){
+        const tbody = document.querySelector('#servicesTable tbody');
+        tbody.innerHTML = rows.map(r => `
+          <tr>
+            <td>${r.service}</td>
+            <td>${r.status === 'healthy' ? `<span class='pill ok'>healthy</span>` : `<span class='pill bad'>${r.status}</span>`}</td>
+            <td>${r.detail || ''}</td>
+          </tr>
+        `).join('');
+      }
+
+      async function loadLogs(){
+        const level = document.getElementById('logLevel').value;
+        const q = document.getElementById('logQuery').value;
+        const data = await jget(`/api/logs/gateway?limit=300&level=${encodeURIComponent(level)}&q=${encodeURIComponent(q)}`);
+        cache.logs = data;
+        const lines = (data.rows || []).map(r => `${r.timestamp || '-'} [${r.level}] ${r.text}`).join('\n');
+        document.getElementById('logsRaw').textContent = lines || '(no log lines)';
       }
 
       async function loadAll(){
         const stamp = document.getElementById('stamp');
         stamp.textContent = 'Refreshing…';
+
         try {
-          const [status, oc, agents, models, logs, docker, watchers] = await Promise.all([
+          const [status, oc, agents, models, watchers, services, configDiag, audit, docker] = await Promise.all([
             jget('/api/status'),
             jget('/api/openclaw/overview'),
             jget('/api/agents'),
             jget('/api/openclaw/models'),
-            jget('/api/logs/gateway?lines=120'),
-            jget('/api/system/docker'),
-            jget('/api/watchers')
+            jget('/api/watchers'),
+            jget('/api/services/health'),
+            jget('/api/config/diagnostics'),
+            jget('/api/audit/trail'),
+            jget('/api/system/docker')
           ]);
 
+          cache = { status, oc, agents, models, watchers, services, configDiag, audit, docker };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
           const gw = status.openclaw.gatewayTcp18789;
@@ -206,14 +264,17 @@
           }
 
           renderWatchersTable(watchers.rows || []);
-          document.getElementById('watchersRaw').textContent = JSON.stringify(watchers, null, 2);
+          renderServicesTable(services.rows || []);
 
+          document.getElementById('watchersRaw').textContent = JSON.stringify(watchers, null, 2);
           document.getElementById('openclawRaw').textContent = JSON.stringify(oc, null, 2);
           document.getElementById('agentsRaw').textContent = JSON.stringify(agents, null, 2);
           document.getElementById('modelsRaw').textContent = JSON.stringify(models, null, 2);
           document.getElementById('haRaw').textContent = JSON.stringify(status.homeAssistant, null, 2);
-          document.getElementById('logsRaw').textContent = logs.ok ? logs.text : JSON.stringify(logs, null, 2);
+          document.getElementById('configRaw').textContent = JSON.stringify(configDiag, null, 2);
+          document.getElementById('auditRaw').textContent = JSON.stringify(audit, null, 2);
 
+          await loadLogs();
         } catch (e) {
           stamp.textContent = `Error: ${e.message}`;
         }
@@ -229,6 +290,30 @@
       }
 
       document.getElementById('refreshBtn').addEventListener('click', loadAll);
+      document.getElementById('loadLogsBtn').addEventListener('click', loadLogs);
+      document.getElementById('copyLogsBtn').addEventListener('click', async () => {
+        await navigator.clipboard.writeText(document.getElementById('logsRaw').textContent || '');
+      });
+
+      document.querySelectorAll('button[data-action]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const action = btn.dataset.action;
+          if (!confirm(`Run action: ${action}?`)) return;
+          const out = await jpost(`/api/actions/${action}`, { confirm: 'yes' });
+          document.getElementById('actionOutput').textContent = JSON.stringify(out, null, 2);
+          await loadAll();
+        });
+      });
+
+      document.getElementById('autoRefresh').addEventListener('change', (e) => {
+        if (e.target.checked) {
+          autoTimer = setInterval(loadAll, 10000);
+        } else if (autoTimer) {
+          clearInterval(autoTimer);
+          autoTimer = null;
+        }
+      });
+
       initNav();
       loadAll();
     </script>
