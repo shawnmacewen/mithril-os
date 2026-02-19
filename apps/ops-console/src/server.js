@@ -755,7 +755,14 @@ app.get("/api/openclaw/usage", async (_req, res) => {
       const raw = await fs.readFile(p, "utf8");
       const parsed = JSON.parse(raw);
       const usage = parsed.usage || parsed.session?.usage || parsed;
-      return res.json({ ok: true, source: p, usage });
+      return res.json({
+        ok: Boolean(parsed.ok !== false),
+        source: parsed.source || p,
+        capturedAt: parsed.capturedAt || null,
+        note: parsed.note || null,
+        collector: parsed.collector || null,
+        usage,
+      });
     } catch {
       // try next source
     }
@@ -780,7 +787,7 @@ app.get("/api/openclaw/usage", async (_req, res) => {
   }
 
   const usage = parsed.usage || parsed.session?.usage || parsed;
-  res.json({ ok: true, source: "runtime-cli", usage });
+  res.json({ ok: true, source: "runtime-cli", capturedAt: new Date().toISOString(), usage });
 });
 
 app.get("/api/openclaw/models", async (_req, res) => {

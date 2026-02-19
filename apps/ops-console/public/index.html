@@ -270,6 +270,8 @@
               <div class="row"><span>Output tokens</span><strong id="ocTokOut">-</strong></div>
               <div class="row"><span>Total tokens</span><strong id="ocTokTotal">-</strong></div>
               <div class="row"><span>Est. cost</span><strong id="ocTokCost">-</strong></div>
+              <div class="row"><span>Source</span><strong id="ocTokSource">-</strong></div>
+              <div class="row"><span>Captured</span><strong id="ocTokCaptured">-</strong></div>
               <div class="muted" id="ocTokNote">Built-in session telemetry</div>
             </div>
           </div>
@@ -771,7 +773,9 @@
         document.getElementById('ocTokOut').textContent = outTok ?? '-';
         document.getElementById('ocTokTotal').textContent = totalTok ?? '-';
         document.getElementById('ocTokCost').textContent = cost !== null && cost !== undefined ? `$${Number(cost).toFixed(4)}` : '-';
-        document.getElementById('ocTokNote').textContent = usage?.ok ? 'Built-in session telemetry' : (usage?.error || 'Telemetry unavailable in this runtime');
+        document.getElementById('ocTokSource').textContent = usage?.source || '-';
+        document.getElementById('ocTokCaptured').textContent = usage?.capturedAt ? new Date(usage.capturedAt).toLocaleString() : '-';
+        document.getElementById('ocTokNote').textContent = usage?.ok ? (usage?.note || 'Telemetry bridge active') : (usage?.error || 'Telemetry unavailable in this runtime');
       }
 
       function renderBackupsPage(backups){
