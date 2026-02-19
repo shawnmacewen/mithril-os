@@ -54,6 +54,8 @@
       button.danger { border-color:#8a3a3a; background:#3a1e27; color:#fff; }
       pre { white-space:pre-wrap; background:var(--panel-2); border:1px solid var(--border); border-radius:10px; padding:10px; max-height:420px; overflow:auto; }
       table { width:100%; border-collapse:collapse; font-size:14px; }
+      .clickable-row { cursor:pointer; }
+      .clickable-row:hover { background:color-mix(in srgb, var(--highlight) 10%, transparent); }
       th, td { border-bottom:1px solid var(--border); padding:8px; text-align:left; vertical-align:top; }
       th { color:var(--muted); font-weight:600; }
       .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border); }
@@ -169,15 +171,20 @@
         <section id="view-homeassistant" class="hidden"><h2>Home Assistant</h2><pre id="haRaw">Loading…</pre></section>
 
         <section id="view-logs" class="hidden">
-          <h2>Gateway Logs</h2>
+          <h2>Gateway Logs 2.0</h2>
           <div class="card">
             <div class="logs-controls">
               <select id="logLevel"><option value="">All levels</option><option value="ERROR">ERROR</option><option value="WARN">WARN</option><option value="INFO">INFO</option><option value="DEBUG">DEBUG</option></select>
               <input id="logQuery" placeholder="filter text" />
               <button id="loadLogsBtn">Apply filter</button>
             </div>
-            <pre id="logsRaw">Loading…</pre>
-            <button id="copyLogsBtn">Copy visible logs</button>
+            <table id="logsTable">
+              <thead><tr><th>Time</th><th>Level</th><th>Message</th></tr></thead>
+              <tbody><tr><td colspan="3" class="muted">Loading…</td></tr></tbody>
+            </table>
+            <h4 style="margin-top:12px;">Selected Log Row (raw)</h4>
+            <pre id="logsRaw">Click a row to inspect full raw log.</pre>
+            <button id="copyLogsBtn">Copy selected raw log</button>
           </div>
         </section>
 
@@ -190,8 +197,26 @@
           <div class="card" style="margin-top:12px;"><h3>Action Output</h3><pre id="actionOutput">No action run yet.</pre></div>
         </section>
 
-        <section id="view-config" class="hidden"><h2>Config Diagnostics</h2><div class="card"><pre id="configRaw">Loading…</pre></div></section>
-        <section id="view-audit" class="hidden"><h2>Audit Trail</h2><div class="card"><pre id="auditRaw">Loading…</pre></div></section>
+        <section id="view-config" class="hidden">
+          <h2>Config Validator</h2>
+          <div class="card">
+            <div id="configSummary" class="muted">Loading…</div>
+            <table id="configTable" style="margin-top:8px;">
+              <thead><tr><th>Key</th><th>Status</th><th>Hint</th></tr></thead>
+              <tbody><tr><td colspan="3" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+        <section id="view-audit" class="hidden">
+          <h2>Commit Timeline</h2>
+          <div class="card">
+            <table id="commitsTable">
+              <thead><tr><th>Commit</th><th>Date</th><th>Author</th><th>Message</th></tr></thead>
+              <tbody><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="card" style="margin-top:12px;"><h3>Audit Raw</h3><pre id="auditRaw">Loading…</pre></div>
+        </section>
       </main>
     </div>
 
@@ -348,13 +373,49 @@
         }
       }
 
+      function renderLogsTable(rows){
+        const tbody = document.querySelector('#logsTable tbody');
+        if (!rows?.length) {
+          tbody.innerHTML = `<tr><td colspan="3" class="muted">No log lines</td></tr>`;
+          document.getElementById('logsRaw').textContent = '(no log selected)';
+          return;
+        }
+        tbody.innerHTML = rows.map((r, i) => `<tr class="clickable-row" data-i="${i}"><td>${r.timestamp || '-'}</td><td>${r.level}</td><td>${(r.text || '').slice(0,160)}</td></tr>`).join('');
+        tbody.querySelectorAll('tr[data-i]').forEach(tr => {
+          tr.addEventListener('click', () => {
+            const row = rows[Number(tr.dataset.i)];
+            document.getElementById('logsRaw').textContent = row?.raw || row?.text || '';
+          });
+        });
+      }
+
+      function renderConfigValidator(data){
+        const summary = document.getElementById('configSummary');
+        const tbody = document.querySelector('#configTable tbody');
+        if (!data?.ok) {
+          summary.textContent = data?.error || 'Config validation failed';
+          tbody.innerHTML = `<tr><td colspan="3" class="bad">No checks available</td></tr>`;
+          return;
+        }
+        summary.textContent = `Path: ${data.envPath} · pass:${data.summary.pass} · warnings:${data.summary.warnings} · errors:${data.summary.errors}`;
+        tbody.innerHTML = (data.checks || []).map(c => `<tr><td>${c.key}</td><td>${c.ok ? `<span class='pill ok'>ok</span>` : `<span class='pill bad'>${c.level}</span>`}</td><td>${c.hint || ''}</td></tr>`).join('');
+      }
+
+      function renderCommitTimeline(data){
+        const tbody = document.querySelector('#commitsTable tbody');
+        if (!data?.ok) {
+          tbody.innerHTML = `<tr><td colspan="4" class="bad">${data?.error || 'Failed to load commits'}</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = (data.rows || []).map(r => `<tr><td><code>${r.short}</code></td><td>${r.date}</td><td>${r.author}</td><td>${r.subject}</td></tr>`).join('');
+      }
+
       async function loadLogs(){
         const level = document.getElementById('logLevel').value;
         const q = document.getElementById('logQuery').value;
         const data = await jget(`/api/logs/gateway?limit=300&level=${encodeURIComponent(level)}&q=${encodeURIComponent(q)}`);
         cache.logs = data;
-        const lines = (data.rows || []).map(r => `${r.timestamp || '-'} [${r.level}] ${r.text}`).join('\n');
-        document.getElementById('logsRaw').textContent = lines || '(no log lines)';
+        renderLogsTable(data.rows || []);
       }
 
       async function loadAll(){
@@ -362,7 +423,7 @@
         stamp.textContent = 'Refreshing…';
 
         try {
-          const [status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, docker] = await Promise.all([
+          const [status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker] = await Promise.all([
             jget('/api/status'),
             jget('/api/openclaw/overview'),
             jget('/api/agents'),
@@ -372,10 +433,11 @@
             jget('/api/services/health'),
             jget('/api/config/diagnostics'),
             jget('/api/audit/trail'),
+            jget('/api/git/commits?limit=25'),
             jget('/api/system/docker')
           ]);
 
-          cache = { status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, docker };
+          cache = { status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
           document.getElementById('currentAgentName').textContent = 'OddEye';
@@ -401,7 +463,8 @@
           renderAgentMdUI(agentsFiles.rows || []);
           document.getElementById('modelsRaw').textContent = JSON.stringify(models, null, 2);
           document.getElementById('haRaw').textContent = JSON.stringify(status.homeAssistant, null, 2);
-          document.getElementById('configRaw').textContent = JSON.stringify(configDiag, null, 2);
+          renderConfigValidator(configDiag);
+          renderCommitTimeline(commits);
           document.getElementById('auditRaw').textContent = JSON.stringify(audit, null, 2);
 
           await loadLogs();

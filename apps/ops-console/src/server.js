@@ -326,19 +326,54 @@ async function getConfigDiagnostics() {
     .map((l) => l.trim())
     .filter((l) => l && !l.startsWith("#"));
 
-  const present = Object.fromEntries(
+  const values = Object.fromEntries(
     keys.map((k) => {
       const line = lines.find((l) => l.startsWith(`${k}=`));
-      const value = line ? line.slice(k.length + 1) : "";
-      return [k, Boolean(line && value.length > 0)];
+      return [k, line ? line.slice(k.length + 1) : ""];
     }),
   );
+
+  const present = Object.fromEntries(keys.map((k) => [k, Boolean(values[k]) || k === "OPENCLAW_LOG_FILE"]));
+
+  const checks = [];
+  checks.push({ key: "PORT", ok: /^\d+$/.test(values.PORT || ""), level: "error", hint: "Set PORT to a number (e.g. 3001)." });
+
+  try {
+    if (values.OPENCLAW_CONFIG) await fs.access(values.OPENCLAW_CONFIG);
+    checks.push({ key: "OPENCLAW_CONFIG", ok: Boolean(values.OPENCLAW_CONFIG), level: "error", hint: "Path should point to openclaw.json" });
+  } catch {
+    checks.push({ key: "OPENCLAW_CONFIG", ok: false, level: "error", hint: `Config file not readable: ${values.OPENCLAW_CONFIG || "(empty)"}` });
+  }
+
+  try {
+    if (values.WATCHERS_REGISTRY) await fs.access(values.WATCHERS_REGISTRY);
+    checks.push({ key: "WATCHERS_REGISTRY", ok: Boolean(values.WATCHERS_REGISTRY), level: "warn", hint: "watchers.json should exist" });
+  } catch {
+    checks.push({ key: "WATCHERS_REGISTRY", ok: false, level: "warn", hint: `Registry missing: ${values.WATCHERS_REGISTRY || "(empty)"}` });
+  }
+
+  try {
+    if (values.WATCHERS_STATE_DIR) await fs.access(values.WATCHERS_STATE_DIR);
+    checks.push({ key: "WATCHERS_STATE_DIR", ok: Boolean(values.WATCHERS_STATE_DIR), level: "warn", hint: "state dir should exist" });
+  } catch {
+    checks.push({ key: "WATCHERS_STATE_DIR", ok: false, level: "warn", hint: `State dir missing: ${values.WATCHERS_STATE_DIR || "(empty)"}` });
+  }
+
+  checks.push({ key: "HA_URL", ok: /^https?:\/\//.test(values.HA_URL || ""), level: "error", hint: "Use full URL like http://host:8123" });
+  checks.push({ key: "HA_TOKEN", ok: Boolean(values.HA_TOKEN), level: "error", hint: "Add Home Assistant long-lived token" });
 
   return {
     ok: true,
     envPath: OPS_ENV_FILE,
     present,
+    values: { ...values, HA_TOKEN: values.HA_TOKEN ? "[SET]" : "" },
     missing: keys.filter((k) => !present[k]),
+    checks,
+    summary: {
+      errors: checks.filter((c) => !c.ok && c.level === "error").length,
+      warnings: checks.filter((c) => !c.ok && c.level === "warn").length,
+      pass: checks.filter((c) => c.ok).length,
+    },
   };
 }
 
@@ -412,6 +447,23 @@ async function getAgentMdIndex() {
     workspaceRoot: workspaceRootUsed,
     rows: Object.values(discovered).sort((a, b) => a.agentId.localeCompare(b.agentId)),
   };
+}
+
+async function getCommitTimeline(limit = 20) {
+  const safeLimit = Math.max(1, Math.min(Number(limit) || 20, 100));
+  const cmd = `git -C ${JSON.stringify(OPS_REPO_DIR)} log -n ${safeLimit} --pretty=format:'%h|%H|%cI|%an|%s'`;
+  const out = await shell(cmd, 3000);
+  if (!out.ok) return { ok: false, error: out.stderr, rows: [] };
+
+  const rows = out.stdout
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      const [short, full, date, author, subject] = line.split("|");
+      return { short, full, date, author, subject };
+    });
+
+  return { ok: true, rows };
 }
 
 async function getAuditTrail() {
@@ -558,6 +610,10 @@ app.get("/api/config/diagnostics", async (_req, res) => {
 
 app.get("/api/audit/trail", async (_req, res) => {
   res.json(await getAuditTrail());
+});
+
+app.get("/api/git/commits", async (req, res) => {
+  res.json(await getCommitTimeline(Number(req.query.limit || 20)));
 });
 
 app.post("/api/actions/:action", async (req, res) => {
