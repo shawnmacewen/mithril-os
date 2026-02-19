@@ -60,7 +60,8 @@
       .metric-card { background:var(--panel); border:1px solid var(--border); border-left:4px solid var(--highlight); border-radius:12px; padding:10px; }
       .metric-label { color:var(--muted); font-size:12px; }
       .metric-value { font-size:22px; font-weight:700; margin-top:3px; }
-      .active-badge { display:inline-block; padding:3px 10px; border-radius:999px; background:color-mix(in srgb, #22c55e 26%, var(--panel-2)); border:1px solid #22c55e; color:#22c55e; font-weight:700; font-size:12px; }
+      .active-badge { display:inline-block; padding:2px 8px; border-radius:999px; background:color-mix(in srgb, #22c55e 26%, var(--panel-2)); border:1px solid #22c55e; color:#22c55e; font-weight:700; font-size:10px; line-height:1.1; }
+      .inactive-badge { display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--border); color:var(--muted); font-weight:700; font-size:10px; line-height:1.1; }
       th, td { border-bottom:1px solid var(--border); padding:8px; text-align:left; vertical-align:top; }
       th { color:var(--muted); font-weight:600; }
       .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border); }
@@ -457,15 +458,19 @@
           grid.innerHTML = `<div class='card'><span class='muted'>No model data available</span></div>`;
           return;
         }
-        grid.innerHTML = rows.map(m => `
+        grid.innerHTML = rows.map(m => {
+          const badge = m.active
+            ? `<span class='active-badge'>ACTIVE</span>`
+            : (m.connected ? `<span class='inactive-badge'>DISABLED</span>` : `<span class='inactive-badge'>NOT INSTALLED</span>`);
+          return `
           <div class='card'>
-            <div class='row'><strong>${m.name}</strong>${m.active ? `<span class='active-badge'>ACTIVE</span>` : ''}</div>
+            <div class='row'><strong>${m.name}</strong>${badge}</div>
             <div class='muted'>Company: ${m.company || 'n/a'}</div>
             <div class='muted'>Version: ${m.version || 'n/a'}</div>
             <div class='muted'>Files: ${m.files || 'n/a'}</div>
             <div class='muted'>Profile: ${m.profile || 'n/a'} ${m.connected ? '· connected' : ''}</div>
           </div>
-        `).join('');
+        `;}).join('');
       }
 
       async function loadLogs(){
