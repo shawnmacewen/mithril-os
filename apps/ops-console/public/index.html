@@ -316,13 +316,43 @@
             <button onclick="location.hash='backups'">Backups</button>
           </div>
           <h3>Backups</h3>
-          <div class="card">
-            <div class="row"><span>Latest snapshot</span><strong id="backupLatest">-</strong></div>
-            <div class="row"><span>Snapshots</span><strong id="backupCount">-</strong></div>
-            <div class="row"><span>Storage used</span><strong id="backupUsage">-</strong></div>
-            <div class="row"><span>Timer</span><strong id="backupTimer">-</strong></div>
-            <button id="runBackupBtn">Run Backup Now</button>
+
+          <div class="cards">
+            <div class="card">
+              <h3>Backup Health</h3>
+              <div class="row"><span>Status</span><strong id="backupHealth">-</strong></div>
+              <div class="row"><span>Latest snapshot</span><strong id="backupLatest">-</strong></div>
+              <div class="row"><span>Snapshots</span><strong id="backupCount">-</strong></div>
+              <div class="row"><span>Storage used</span><strong id="backupUsage">-</strong></div>
+              <div class="row"><span>Timer</span><strong id="backupTimer">-</strong></div>
+              <button id="runBackupBtn">Run Backup Now</button>
+            </div>
+            <div class="card">
+              <h3>Retention Policy</h3>
+              <div class="row"><span>Daily</span><strong id="retDaily">-</strong></div>
+              <div class="row"><span>Weekly</span><strong id="retWeekly">-</strong></div>
+              <div class="row"><span>Monthly</span><strong id="retMonthly">-</strong></div>
+              <div class="muted">Preview: based on latest snapshots and configured retention windows.</div>
+            </div>
           </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>Backup Targets</h3>
+            <table id="backupTargetsTable">
+              <thead><tr><th>Target</th><th>Status</th><th>Detail</th></tr></thead>
+              <tbody><tr><td colspan="3" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>Snapshots</h3>
+            <table id="snapshotsTable">
+              <thead><tr><th>Name</th><th>Size</th><th>Files</th><th>Checksum</th><th>Path</th></tr></thead>
+              <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="card" style="margin-top:12px;"><h3>Run Logs</h3><pre id="backupLogs">Loading…</pre></div>
           <div class="card" style="margin-top:12px;"><h3>Service status</h3><pre id="backupStatusRaw">Loading…</pre></div>
         </section>
 
@@ -631,6 +661,34 @@
         }).join('');
       }
 
+      function renderBackupsPage(backups){
+        const health = backups.backupHealth || 'warning';
+        const healthCls = health === 'healthy' ? 'ok' : (health === 'failed' ? 'bad' : 'warn');
+        document.getElementById('backupHealth').innerHTML = `<span class='status-pill ${healthCls}'>${health.toUpperCase()}</span>`;
+        document.getElementById('backupLatest').textContent = backups.latestSnapshot || '-';
+        document.getElementById('backupCount').textContent = String(backups.snapshotCount ?? '-');
+        document.getElementById('backupUsage').textContent = backups.backupUsage || '-';
+        document.getElementById('backupTimer').textContent = backups.timerLine || '-';
+        document.getElementById('backupStatusRaw').textContent = backups.serviceStatusText || 'No status';
+        document.getElementById('backupLogs').textContent = backups.logsText || 'No logs yet';
+
+        document.getElementById('retDaily').textContent = String(backups.retention?.daily ?? '-');
+        document.getElementById('retWeekly').textContent = String(backups.retention?.weekly ?? '-');
+        document.getElementById('retMonthly').textContent = String(backups.retention?.monthly ?? '-');
+
+        const tBody = document.querySelector('#backupTargetsTable tbody');
+        const targets = backups.sourceStatus || [];
+        tBody.innerHTML = targets.length
+          ? targets.map(t => `<tr><td>${t.name}</td><td><span class='status-pill ${t.ok ? 'ok':'warn'}'>${t.ok ? 'OK':'CHECK'}</span></td><td>${t.detail || ''}</td></tr>`).join('')
+          : `<tr><td colspan='3' class='muted'>No target status yet</td></tr>`;
+
+        const sBody = document.querySelector('#snapshotsTable tbody');
+        const rows = backups.snapshotRows || [];
+        sBody.innerHTML = rows.length
+          ? rows.map(r => `<tr><td>${r.name}</td><td>${r.size}</td><td>${r.fileCount}</td><td>${r.checksum}</td><td class='muted'>${r.path}</td></tr>`).join('')
+          : `<tr><td colspan='5' class='muted'>No snapshots found</td></tr>`;
+      }
+
       function renderConfigValidator(data){
         const summary = document.getElementById('configSummary');
         const tbody = document.querySelector('#configTable tbody');
@@ -801,12 +859,7 @@
           renderHaArea('haOther', haAreas.grouped?.other || []);
           document.getElementById('haRaw').textContent = JSON.stringify(haAreas, null, 2);
 
-          document.getElementById('backupLatest').textContent = backups.latestSnapshot || '-';
-          document.getElementById('backupCount').textContent = String(backups.snapshotCount ?? '-');
-          document.getElementById('backupUsage').textContent = backups.backupUsage || '-';
-          document.getElementById('backupTimer').textContent = backups.timerLine || '-';
-          document.getElementById('backupStatusRaw').textContent = backups.serviceStatusText || 'No status';
-
+          renderBackupsPage(backups);
           renderScheduledJobs(jobs);
           renderConfigValidator(configDiag);
           renderCommitTimeline(commits);

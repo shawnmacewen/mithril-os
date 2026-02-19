@@ -875,17 +875,73 @@ app.get("/api/git/commits", async (req, res) => {
 app.get("/api/backups/status", async (_req, res) => {
   const latest = await shell("readlink -f /backup/latest || true", 2000);
   const timers = await shell("systemctl list-timers --all --no-pager | grep mithril-backup || true", 2500);
-  const service = await shell("systemctl status mithril-backup.service --no-pager -n 20 || true", 3000);
+  const service = await shell("systemctl status mithril-backup.service --no-pager -n 40 || true", 3500);
   const snaps = await shell("find /backup/snapshots -mindepth 1 -maxdepth 1 -type d | wc -l", 2000);
   const usage = await shell("du -sh /backup 2>/dev/null || true", 2000);
+  const list = await shell("find /backup/snapshots -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -r | head -n 40", 3000);
+  const logs = await shell("journalctl -u mithril-backup.service -n 140 --no-pager || true", 4000);
+
+  const snapshotNames = list.stdout.trim() ? list.stdout.trim().split("\n") : [];
+  const snapshotRows = [];
+  for (const s of snapshotNames) {
+    const p = `/backup/snapshots/${s}`;
+    const sizeOut = await shell(`du -sh ${JSON.stringify(p)} 2>/dev/null | awk '{print $1}'`, 2000);
+    const countOut = await shell(`find ${JSON.stringify(p)} -type f | wc -l`, 2000);
+    const shaOut = await shell(`[ -f ${JSON.stringify(p + "/sha256sums.txt")} ] && echo ok || echo missing`, 1000);
+    snapshotRows.push({
+      name: s,
+      path: p,
+      size: sizeOut.stdout.trim() || "?",
+      fileCount: Number((countOut.stdout || "0").trim()) || 0,
+      checksum: shaOut.stdout.trim() || "missing",
+    });
+  }
+
+  const latestSnapshot = latest.stdout.trim() || null;
+  const latestName = latestSnapshot ? latestSnapshot.split("/").pop() : null;
+  const latestMeta = latestName ? (snapshotRows.find((r) => r.name === latestName) || null) : null;
+
+  const serviceText = service.stdout || "";
+  const active = /Active:\s+active/.test(serviceText);
+  const failed = /Active:\s+failed/.test(serviceText) || /Result:\s+exit-code/.test(serviceText);
+  const health = failed ? "failed" : active ? "healthy" : "warning";
+
+  const logText = logs.stdout || "";
+  const sourceStatus = [
+    {
+      key: "openclaw",
+      name: "OpenClaw",
+      ok: logText.includes("ok: copied /home/mini-home-lab/.openclaw"),
+      detail: logText.includes("ok: copied /home/mini-home-lab/.openclaw") ? "copied" : "not confirmed",
+    },
+    {
+      key: "homeassistant",
+      name: "Home Assistant",
+      ok: logText.includes("ok: copied /home/mini-home-lab/homelab/homeassistant/config"),
+      detail: logText.includes("ok: copied /home/mini-home-lab/homelab/homeassistant/config") ? "copied" : "not confirmed",
+    },
+    {
+      key: "mithril",
+      name: "Mithril-OS",
+      ok: logText.includes("ok: copied /mithril-os"),
+      detail: logText.includes("ok: copied /mithril-os") ? "copied" : "not confirmed",
+    },
+  ];
 
   res.json({
     ok: true,
-    latestSnapshot: latest.stdout.trim() || null,
+    latestSnapshot,
+    latestSnapshotName: latestName,
+    latestSnapshotMeta: latestMeta,
     snapshotCount: Number((snaps.stdout || "0").trim()) || 0,
+    snapshotRows,
     timerLine: timers.stdout.trim() || null,
     backupUsage: usage.stdout.trim() || null,
-    serviceStatusText: service.stdout || "",
+    serviceStatusText: serviceText,
+    backupHealth: health,
+    retention: { daily: 14, weekly: 8, monthly: 6 },
+    sourceStatus,
+    logsText: logText,
   });
 });
 
