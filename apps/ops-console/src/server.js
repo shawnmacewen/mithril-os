@@ -116,16 +116,21 @@ function parseGatewayLogLine(line) {
     const obj = JSON.parse(trimmed);
     const ts = obj.time || obj._meta?.date || null;
     const level = obj._meta?.logLevelName || "INFO";
+    const subsystem =
+      obj?.subsystem ||
+      obj?._meta?.name ||
+      (typeof obj?.[0] === "string" && obj[0].includes('"subsystem"') ? obj[0] : "core");
     const text = Object.entries(obj)
       .filter(([k]) => !k.startsWith("_"))
       .map(([, v]) => (typeof v === "string" ? v : JSON.stringify(v)))
       .join(" ");
-    return { timestamp: ts, level: String(level).toUpperCase(), text, raw: trimmed };
+    return { timestamp: ts, level: String(level).toUpperCase(), subsystem: String(subsystem), text, raw: trimmed };
   } catch {
     const levelMatch = trimmed.match(/\b(ERROR|WARN|INFO|DEBUG)\b/i);
     return {
       timestamp: null,
       level: (levelMatch?.[1] || "INFO").toUpperCase(),
+      subsystem: "core",
       text: trimmed,
       raw: trimmed,
     };
