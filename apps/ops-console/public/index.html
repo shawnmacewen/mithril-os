@@ -5,55 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mithril-OS · Ops Console</title>
     <style>
-      :root { --bg:#0b1020; --panel:#121a2f; --muted:#8fa1c7; --text:#e7eeff; --ok:#43d17f; --bad:#ff6b6b; }
+      :root {
+        --bg:#0b1020;
+        --panel:#121a2f;
+        --panel-2:#0f1730;
+        --border:#223052;
+        --muted:#8fa1c7;
+        --text:#e7eeff;
+        --ok:#43d17f;
+        --bad:#ff6b6b;
+        --highlight:#f3c64b;
+        --nav-text:#e7eeff;
+      }
+      :root[data-theme="light"] {
+        --bg:#ffffff;
+        --panel:#f9fafc;
+        --panel-2:#ffffff;
+        --border:#d7dce7;
+        --muted:#5f6f8f;
+        --text:#1f2a3d;
+        --ok:#228a4d;
+        --bad:#c53939;
+        --highlight:#d4a514;
+        --nav-text:#3c4558;
+      }
+
       * { box-sizing: border-box; }
       body { margin:0; font-family:Inter,system-ui,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text); }
-      .layout { display:grid; grid-template-columns:260px 1fr; min-height:100vh; }
-      .nav { background:var(--panel); border-right:1px solid #223052; padding:16px; }
+      .layout { display:grid; grid-template-columns:280px 1fr; min-height:100vh; }
+      .nav { background:var(--panel); border-right:1px solid var(--border); padding:16px; display:flex; flex-direction:column; }
       .brand { font-weight:700; margin-bottom:18px; }
       .brand small { color:var(--muted); display:block; font-weight:500; margin-top:4px; }
-      .nav a { display:block; color:var(--text); text-decoration:none; padding:10px 12px; border-radius:10px; margin-bottom:6px; }
-      .nav a.active,.nav a:hover { background:#1a2645; }
+      .nav-links { flex:1; }
+      .nav a { display:flex; align-items:center; gap:8px; color:var(--nav-text); text-decoration:none; padding:10px 12px; border-radius:10px; margin-bottom:6px; }
+      .nav a.active,.nav a:hover { background:color-mix(in srgb, var(--highlight) 16%, transparent); }
       .main { padding:20px; }
       .toolbar { display:flex; gap:10px; align-items:center; margin:8px 0 18px; flex-wrap:wrap; }
       .cards { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
-      .card { background:var(--panel); border:1px solid #223052; border-radius:14px; padding:14px; }
+      .card { background:var(--panel); border:1px solid var(--border); border-left:4px solid var(--highlight); border-radius:14px; padding:14px; }
       .muted { color:var(--muted); font-size:13px; }
       .row { display:flex; justify-content:space-between; gap:10px; margin:8px 0; }
       .ok { color:var(--ok); }
       .bad { color:var(--bad); }
       .hidden { display:none; }
-      button { background:#1b2a4d; border:1px solid #2f477d; color:var(--text); padding:8px 12px; border-radius:9px; cursor:pointer; }
-      button:hover { background:#21345f; }
-      button.danger { border-color:#8a3a3a; background:#3a1e27; }
-      pre { white-space:pre-wrap; background:#0f1730; border:1px solid #223052; border-radius:10px; padding:10px; max-height:420px; overflow:auto; }
+      button { background:var(--panel-2); border:1px solid var(--border); color:var(--text); padding:8px 12px; border-radius:9px; cursor:pointer; }
+      button:hover { filter:brightness(1.04); }
+      button.danger { border-color:#8a3a3a; background:#3a1e27; color:#fff; }
+      pre { white-space:pre-wrap; background:var(--panel-2); border:1px solid var(--border); border-radius:10px; padding:10px; max-height:420px; overflow:auto; }
       table { width:100%; border-collapse:collapse; font-size:14px; }
-      th, td { border-bottom:1px solid #223052; padding:8px; text-align:left; vertical-align:top; }
+      th, td { border-bottom:1px solid var(--border); padding:8px; text-align:left; vertical-align:top; }
       th { color:var(--muted); font-weight:600; }
-      .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid #2f477d; }
-      .pill.ok { color:var(--ok); border-color:rgba(67,209,127,.5); }
-      .pill.bad { color:var(--bad); border-color:rgba(255,107,107,.5); }
+      .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border); }
+      .pill.ok { color:var(--ok); }
+      .pill.bad { color:var(--bad); }
       .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
       .logs-controls { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
-      input, select { background:#0f1730; border:1px solid #2f477d; color:var(--text); border-radius:8px; padding:6px 8px; }
+      input, select { background:var(--panel-2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:6px 8px; }
+      .agent-tile { display:flex; align-items:center; gap:12px; }
+      .avatar { width:52px; height:52px; border-radius:50%; border:2px solid var(--highlight); display:flex; align-items:center; justify-content:center; font-size:24px; background:var(--panel-2); }
+      details summary { cursor:pointer; color:var(--muted); margin-bottom:8px; }
+      .theme-wrap { padding-top:8px; border-top:1px solid var(--border); }
     </style>
   </head>
   <body>
     <div class="layout">
       <aside class="nav">
-        <div class="brand">Mithril-OS<small>Ops Console · v1.3</small></div>
-        <a class="active" data-view="dashboard" href="#dashboard">Dashboard</a>
-        <a data-view="watchers" href="#watchers">Watchers</a>
-        <a data-view="services" href="#services">Service Health</a>
-        <a data-view="openclaw" href="#openclaw">OpenClaw</a>
-        <a data-view="agents" href="#agents">Agents</a>
-        <a data-view="models" href="#models">Models</a>
-        <a data-view="homeassistant" href="#homeassistant">Home Assistant</a>
-        <a data-view="logs" href="#logs">Logs</a>
-        <a data-view="actions" href="#actions">Quick Actions</a>
-        <a data-view="config" href="#config">Config Diagnostics</a>
-        <a data-view="audit" href="#audit">Audit Trail</a>
+        <div class="brand">Mithril-OS<small>Ops Console · v1.4</small></div>
+
+        <div class="nav-links">
+          <a class="active" data-view="dashboard" href="#dashboard">🏠 Dashboard</a>
+          <a data-view="agents" href="#agents">🤖 Agents</a>
+          <a data-view="watchers" href="#watchers">👀 Watchers</a>
+          <a data-view="services" href="#services">🩺 Service Health</a>
+          <a data-view="openclaw" href="#openclaw">🧠 OpenClaw</a>
+          <a data-view="models" href="#models">🧬 Models</a>
+          <a data-view="homeassistant" href="#homeassistant">🏡 Home Assistant</a>
+          <a data-view="logs" href="#logs">📜 Logs</a>
+          <a data-view="actions" href="#actions">⚡ Quick Actions</a>
+          <a data-view="config" href="#config">🧩 Config Diagnostics</a>
+          <a data-view="audit" href="#audit">🕵️ Audit Trail</a>
+        </div>
+
+        <div class="theme-wrap">
+          <button id="themeToggle">Toggle Light / Dark</button>
+          <div class="muted" id="themeLabel" style="margin-top:6px;">Theme: dark</div>
+        </div>
       </aside>
+
       <main class="main">
         <div class="toolbar">
           <button id="refreshBtn">Refresh</button>
@@ -70,15 +108,31 @@
           </div>
         </section>
 
+        <section id="view-agents" class="hidden">
+          <h2>Agents</h2>
+          <div class="card" style="margin-bottom:12px;">
+            <h3>Current Agent</h3>
+            <div class="agent-tile">
+              <div class="avatar" id="currentAgentAvatar">👁️</div>
+              <div>
+                <div style="font-weight:700;" id="currentAgentName">OddEye</div>
+                <div class="muted" id="currentAgentModel">Model: loading…</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <details>
+              <summary>Show raw Agents + Bindings JSON</summary>
+              <pre id="agentsRaw">Loading…</pre>
+            </details>
+          </div>
+        </section>
+
         <section id="view-watchers" class="hidden">
           <h2>Watchers</h2>
           <div class="card">
             <table id="watchersTable">
-              <thead>
-                <tr>
-                  <th>Name</th><th>Running</th><th>Systemd</th><th>Interval</th><th>Last Update</th><th>Actions</th>
-                </tr>
-              </thead>
+              <thead><tr><th>Name</th><th>Running</th><th>Systemd</th><th>Interval</th><th>Last Update</th><th>Actions</th></tr></thead>
               <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
             </table>
           </div>
@@ -93,7 +147,6 @@
         </section>
 
         <section id="view-openclaw" class="hidden"><h2>OpenClaw Overview</h2><pre id="openclawRaw">Loading…</pre></section>
-        <section id="view-agents" class="hidden"><h2>Agents + Bindings</h2><pre id="agentsRaw">Loading…</pre></section>
         <section id="view-models" class="hidden"><h2>Models + Connected Profiles</h2><pre id="modelsRaw">Loading…</pre></section>
         <section id="view-homeassistant" class="hidden"><h2>Home Assistant</h2><pre id="haRaw">Loading…</pre></section>
 
@@ -101,13 +154,7 @@
           <h2>Gateway Logs</h2>
           <div class="card">
             <div class="logs-controls">
-              <select id="logLevel">
-                <option value="">All levels</option>
-                <option value="ERROR">ERROR</option>
-                <option value="WARN">WARN</option>
-                <option value="INFO">INFO</option>
-                <option value="DEBUG">DEBUG</option>
-              </select>
+              <select id="logLevel"><option value="">All levels</option><option value="ERROR">ERROR</option><option value="WARN">WARN</option><option value="INFO">INFO</option><option value="DEBUG">DEBUG</option></select>
               <input id="logQuery" placeholder="filter text" />
               <button id="loadLogsBtn">Apply filter</button>
             </div>
@@ -119,36 +166,36 @@
         <section id="view-actions" class="hidden">
           <h2>Quick Actions</h2>
           <div class="grid2">
-            <div class="card">
-              <h3>Ops Console</h3>
-              <button data-action="deploy-ops-console">Deploy Ops Console</button>
-              <button data-action="restart-ops-console">Restart Ops Console</button>
-            </div>
-            <div class="card">
-              <h3>Services</h3>
-              <button data-action="restart-watcher">Restart Watcher</button>
-              <button class="danger" data-action="restart-homeassistant">Restart Home Assistant</button>
-            </div>
+            <div class="card"><h3>Ops Console</h3><button data-action="deploy-ops-console">Deploy Ops Console</button> <button data-action="restart-ops-console">Restart Ops Console</button></div>
+            <div class="card"><h3>Services</h3><button data-action="restart-watcher">Restart Watcher</button> <button class="danger" data-action="restart-homeassistant">Restart Home Assistant</button></div>
           </div>
           <div class="card" style="margin-top:12px;"><h3>Action Output</h3><pre id="actionOutput">No action run yet.</pre></div>
         </section>
 
-        <section id="view-config" class="hidden">
-          <h2>Config Diagnostics</h2>
-          <div class="card"><pre id="configRaw">Loading…</pre></div>
-        </section>
-
-        <section id="view-audit" class="hidden">
-          <h2>Audit Trail</h2>
-          <div class="card"><pre id="auditRaw">Loading…</pre></div>
-        </section>
+        <section id="view-config" class="hidden"><h2>Config Diagnostics</h2><div class="card"><pre id="configRaw">Loading…</pre></div></section>
+        <section id="view-audit" class="hidden"><h2>Audit Trail</h2><div class="card"><pre id="auditRaw">Loading…</pre></div></section>
       </main>
     </div>
 
     <script>
-      const views = ["dashboard","watchers","services","openclaw","agents","models","homeassistant","logs","actions","config","audit"];
+      const views = ["dashboard","agents","watchers","services","openclaw","models","homeassistant","logs","actions","config","audit"];
       let autoTimer = null;
       let cache = {};
+
+      function setTheme(theme){
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('mithril-theme', theme);
+        document.getElementById('themeLabel').textContent = `Theme: ${theme}`;
+      }
+
+      function initTheme(){
+        const saved = localStorage.getItem('mithril-theme') || 'dark';
+        setTheme(saved);
+        document.getElementById('themeToggle').addEventListener('click', () => {
+          const current = document.documentElement.getAttribute('data-theme') || 'dark';
+          setTheme(current === 'dark' ? 'light' : 'dark');
+        });
+      }
 
       function showView(name){
         views.forEach(v => {
@@ -167,26 +214,10 @@
           tbody.innerHTML = `<tr><td colspan="6" class="muted">No watchers configured</td></tr>`;
           return;
         }
-
         tbody.innerHTML = rows.map(w => {
           const running = w.running ? `<span class='pill ok'>running</span>` : `<span class='pill bad'>stopped</span>`;
-          const systemd = w.systemdActive === 'active'
-            ? `<span class='pill ok'>active</span>`
-            : `<span class='pill bad'>${w.systemdActive || 'unknown'}</span>`;
-          return `
-            <tr>
-              <td>${w.name || w.id}</td>
-              <td>${running}</td>
-              <td>${systemd}</td>
-              <td>${w.effectiveIntervalSeconds ?? ''}s</td>
-              <td>${w.lastUpdatedAt || ''}</td>
-              <td>
-                <button data-watch='${w.id}' data-op='start'>Start</button>
-                <button data-watch='${w.id}' data-op='stop'>Stop</button>
-                <button data-watch='${w.id}' data-op='restart'>Restart</button>
-              </td>
-            </tr>
-          `;
+          const systemd = w.systemdActive === 'active' ? `<span class='pill ok'>active</span>` : `<span class='pill bad'>${w.systemdActive || 'unknown'}</span>`;
+          return `<tr><td>${w.name || w.id}</td><td>${running}</td><td>${systemd}</td><td>${w.effectiveIntervalSeconds ?? ''}s</td><td>${w.lastUpdatedAt || ''}</td><td><button data-watch='${w.id}' data-op='start'>Start</button> <button data-watch='${w.id}' data-op='stop'>Stop</button> <button data-watch='${w.id}' data-op='restart'>Restart</button></td></tr>`;
         }).join('');
 
         tbody.querySelectorAll('button[data-watch]').forEach(btn => {
@@ -203,13 +234,7 @@
 
       function renderServicesTable(rows){
         const tbody = document.querySelector('#servicesTable tbody');
-        tbody.innerHTML = rows.map(r => `
-          <tr>
-            <td>${r.service}</td>
-            <td>${r.status === 'healthy' ? `<span class='pill ok'>healthy</span>` : `<span class='pill bad'>${r.status}</span>`}</td>
-            <td>${r.detail || ''}</td>
-          </tr>
-        `).join('');
+        tbody.innerHTML = rows.map(r => `<tr><td>${r.service}</td><td>${r.status === 'healthy' ? `<span class='pill ok'>healthy</span>` : `<span class='pill bad'>${r.status}</span>`}</td><td>${r.detail || ''}</td></tr>`).join('');
       }
 
       async function loadLogs(){
@@ -227,35 +252,19 @@
 
         try {
           const [status, oc, agents, models, watchers, services, configDiag, audit, docker] = await Promise.all([
-            jget('/api/status'),
-            jget('/api/openclaw/overview'),
-            jget('/api/agents'),
-            jget('/api/openclaw/models'),
-            jget('/api/watchers'),
-            jget('/api/services/health'),
-            jget('/api/config/diagnostics'),
-            jget('/api/audit/trail'),
-            jget('/api/system/docker')
+            jget('/api/status'), jget('/api/openclaw/overview'), jget('/api/agents'), jget('/api/openclaw/models'), jget('/api/watchers'), jget('/api/services/health'), jget('/api/config/diagnostics'), jget('/api/audit/trail'), jget('/api/system/docker')
           ]);
 
           cache = { status, oc, agents, models, watchers, services, configDiag, audit, docker };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
-          const gw = status.openclaw.gatewayTcp18789;
-          document.getElementById('openclawBlock').innerHTML = `
-            <div class='row'><span>Config readable</span><strong class='${status.openclaw.configReadable?'ok':'bad'}'>${status.openclaw.configReadable}</strong></div>
-            <div class='row'><span>Gateway TCP 18789</span><strong class='${gw.ok?'ok':'bad'}'>${gw.ok?'OK':'DOWN'}</strong></div>
-            <div class='row'><span>Primary model</span><strong>${status.openclaw.model || 'n/a'}</strong></div>
-            <div class='row'><span>Channels</span><strong>${status.openclaw.channels.join(', ') || 'none'}</strong></div>
-            <div class='row'><span>Exec security</span><strong>${status.openclaw.execSecurity || 'n/a'}</strong></div>
-            <div class='row'><span>Exec ask</span><strong>${status.openclaw.execAsk || 'n/a'}</strong></div>
-          `;
+          document.getElementById('currentAgentName').textContent = 'OddEye';
+          document.getElementById('currentAgentModel').textContent = `Model: ${status.openclaw.model || models.primaryModel || 'n/a'}`;
 
-          document.getElementById('haBlock').innerHTML = `
-            <div class='row'><span>URL</span><strong>${status.homeAssistant.url}</strong></div>
-            <div class='row'><span>Token configured</span><strong class='${status.homeAssistant.tokenConfigured?'ok':'bad'}'>${status.homeAssistant.tokenConfigured}</strong></div>
-            <div class='row'><span>API status</span><strong class='${status.homeAssistant.api.ok?'ok':'bad'}'>${status.homeAssistant.api.ok ? 'OK' : (status.homeAssistant.api.error || 'DOWN')}</strong></div>
-          `;
+          const gw = status.openclaw.gatewayTcp18789;
+          document.getElementById('openclawBlock').innerHTML = `<div class='row'><span>Config readable</span><strong class='${status.openclaw.configReadable?'ok':'bad'}'>${status.openclaw.configReadable}</strong></div><div class='row'><span>Gateway TCP 18789</span><strong class='${gw.ok?'ok':'bad'}'>${gw.ok?'OK':'DOWN'}</strong></div><div class='row'><span>Primary model</span><strong>${status.openclaw.model || 'n/a'}</strong></div><div class='row'><span>Channels</span><strong>${status.openclaw.channels.join(', ') || 'none'}</strong></div><div class='row'><span>Exec security</span><strong>${status.openclaw.execSecurity || 'n/a'}</strong></div><div class='row'><span>Exec ask</span><strong>${status.openclaw.execAsk || 'n/a'}</strong></div>`;
+
+          document.getElementById('haBlock').innerHTML = `<div class='row'><span>URL</span><strong>${status.homeAssistant.url}</strong></div><div class='row'><span>Token configured</span><strong class='${status.homeAssistant.tokenConfigured?'ok':'bad'}'>${status.homeAssistant.tokenConfigured}</strong></div><div class='row'><span>API status</span><strong class='${status.homeAssistant.api.ok?'ok':'bad'}'>${status.homeAssistant.api.ok ? 'OK' : (status.homeAssistant.api.error || 'DOWN')}</strong></div>`;
 
           if (docker.ok) {
             document.getElementById('dockerBlock').innerHTML = docker.rows.map(r => `<div class='row'><span>${r.name}</span><strong>${r.status}</strong></div>`).join('');
@@ -281,19 +290,13 @@
       }
 
       function initNav(){
-        function route(){
-          const h = (location.hash || '#dashboard').replace('#','');
-          showView(views.includes(h) ? h : 'dashboard');
-        }
-        window.addEventListener('hashchange', route);
-        route();
+        function route(){ const h = (location.hash || '#dashboard').replace('#',''); showView(views.includes(h) ? h : 'dashboard'); }
+        window.addEventListener('hashchange', route); route();
       }
 
       document.getElementById('refreshBtn').addEventListener('click', loadAll);
       document.getElementById('loadLogsBtn').addEventListener('click', loadLogs);
-      document.getElementById('copyLogsBtn').addEventListener('click', async () => {
-        await navigator.clipboard.writeText(document.getElementById('logsRaw').textContent || '');
-      });
+      document.getElementById('copyLogsBtn').addEventListener('click', async () => { await navigator.clipboard.writeText(document.getElementById('logsRaw').textContent || ''); });
 
       document.querySelectorAll('button[data-action]').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -306,14 +309,11 @@
       });
 
       document.getElementById('autoRefresh').addEventListener('change', (e) => {
-        if (e.target.checked) {
-          autoTimer = setInterval(loadAll, 10000);
-        } else if (autoTimer) {
-          clearInterval(autoTimer);
-          autoTimer = null;
-        }
+        if (e.target.checked) autoTimer = setInterval(loadAll, 10000);
+        else if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
       });
 
+      initTheme();
       initNav();
       loadAll();
     </script>

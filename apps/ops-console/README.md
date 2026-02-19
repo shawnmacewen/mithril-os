@@ -1,12 +1,13 @@
 # Mithril-OS Ops Console (Phase 1)
 
-Phase 1.3 delivers:
-- Watchers page with per-row controls (start/stop/restart)
-- Service Health table
-- Logs UX: level filter, text filter, auto-refresh, copy
-- Config diagnostics panel
-- Quick Actions panel
-- Audit trail widget (branch/remote/last commit)
+Phase 1.4 delivers:
+- Agents nav moved near top for faster access
+- Agents page includes Current Agent tile (OddEye + active model)
+- Raw agents JSON is now collapsible
+- Full light/dark theme support (dark default)
+- Theme toggle in left nav (bottom), applies app-wide
+- Nav menu icons added
+- Golden highlight accents across panels
 
 ## Run
 
@@ -25,14 +26,3 @@ Open:
 
 - `OPENCLAW_CONFIG` should point to your host OpenClaw config path.
 - `HA_TOKEN` is required for Home Assistant API checks.
-
-## Host service (systemd)
-
-To keep the Ops Console available on LAN after reboot:
-
-```bash
-/mithril-os/scripts/install-ops-console-service.sh
-```
-
-Service unit source:
-- `/mithril-os/systemd/mithril-ops-console.service`
