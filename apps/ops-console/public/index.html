@@ -165,6 +165,7 @@
           <a data-view="models" href="#models"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="12" cy="17" r="2"/><path d="M8 8.5l2.8 6"/><path d="M16 8.5l-2.8 6"/><path d="M8 7h8"/></svg>Models</a>
           <a data-view="logs" href="#logs"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M16 3v4h4"/><path d="M8 11h8"/><path d="M8 15h8"/></svg>Logs</a>
           <a data-view="backups" href="#backups"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 20h16"/></svg>Backups</a>
+          <a data-view="jobs" href="#jobs"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/></svg>Scheduled Jobs</a>
           <a data-view="config" href="#config"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z"/></svg>Diagnostics</a>
         </div>
 
@@ -308,6 +309,16 @@
           <div class="card" style="margin-top:12px;"><h3>Service status</h3><pre id="backupStatusRaw">Loading…</pre></div>
         </section>
 
+        <section id="view-jobs" class="hidden">
+          <h2>Scheduled Jobs</h2>
+          <div class="card">
+            <table id="jobsTable">
+              <thead><tr><th>Kind</th><th>Name</th><th>Schedule</th><th>Status</th><th>Detail</th></tr></thead>
+              <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+
         <section id="view-config" class="hidden">
           <h2>Diagnostics</h2>
           <div class="toolbar">
@@ -340,7 +351,7 @@
     </div>
 
     <script>
-      const views = ["dashboard","agents","watchers","openclaw","models","homeassistant","logs","backups","config"];
+      const views = ["dashboard","agents","watchers","openclaw","models","homeassistant","logs","backups","jobs","config"];
       let autoTimer = null;
       let cache = {};
       let currentAgentFilesIndex = [];
@@ -557,6 +568,15 @@
         });
       }
 
+      function renderScheduledJobs(data){
+        const tbody = document.querySelector('#jobsTable tbody');
+        if (!data?.ok) {
+          tbody.innerHTML = `<tr><td colspan="5" class="bad">${data?.error || 'Failed to load jobs'}</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = (data.rows || []).map(r => `<tr><td>${r.kind}</td><td>${r.name}</td><td>${r.schedule}</td><td>${r.status}</td><td class='muted'>${(r.detail || '').replaceAll('\n','<br/>')}</td></tr>`).join('');
+      }
+
       function renderConfigValidator(data){
         const summary = document.getElementById('configSummary');
         const tbody = document.querySelector('#configTable tbody');
@@ -672,7 +692,7 @@
         stamp.textContent = 'Refreshing…';
 
         try {
-          const [status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups] = await Promise.all([
+          const [status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs] = await Promise.all([
             jget('/api/status'),
             jget('/api/openclaw/overview'),
             jget('/api/agents'),
@@ -685,10 +705,11 @@
             jget('/api/git/commits?limit=25'),
             jget('/api/system/docker'),
             jget('/api/ha/areas'),
-            jget('/api/backups/status')
+            jget('/api/backups/status'),
+            jget('/api/scheduled-jobs')
           ]);
 
-          cache = { status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups };
+          cache = { status, oc, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
           document.getElementById('currentAgentName').textContent = 'OddEye';
@@ -732,6 +753,7 @@
           document.getElementById('backupTimer').textContent = backups.timerLine || '-';
           document.getElementById('backupStatusRaw').textContent = backups.serviceStatusText || 'No status';
 
+          renderScheduledJobs(jobs);
           renderConfigValidator(configDiag);
           renderCommitTimeline(commits);
           document.getElementById('auditRaw').textContent = JSON.stringify(audit, null, 2);

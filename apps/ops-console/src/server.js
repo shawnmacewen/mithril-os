@@ -896,6 +896,45 @@ app.post("/api/backups/run", async (_req, res) => {
   return res.json({ ok: true, run, status: status.stdout });
 });
 
+app.get("/api/scheduled-jobs", async (_req, res) => {
+  const watchers = await getWatchersStatus();
+  const timer = await shell("systemctl list-timers --all --no-pager | grep -E 'mithril-backup|NEXT|LEFT' || true", 3000);
+  const backupService = await shell("systemctl is-active mithril-backup.service || true", 1500);
+
+  let cronRows = [];
+  const cronOut = await shell("openclaw cron list 2>/dev/null || true", 3000);
+  if (cronOut.ok && cronOut.stdout.trim()) {
+    cronRows = cronOut.stdout.trim().split("\n").slice(0, 20);
+  }
+
+  const watcherRows = (watchers.rows || []).map((w) => ({
+    kind: "watcher",
+    name: w.name || w.id,
+    schedule: `interval ${w.effectiveIntervalSeconds || w.defaultIntervalSeconds || "?"}s`,
+    status: w.running ? "running" : "stopped",
+    detail: w.systemdService ? `service: ${w.systemdService} (${w.systemdActive})` : (w.processInfo || "process"),
+  }));
+
+  const jobRows = [
+    {
+      kind: "backup",
+      name: "mithril-backup",
+      schedule: "daily (systemd timer)",
+      status: (backupService.stdout || "unknown").trim() || "unknown",
+      detail: (timer.stdout || "timer info unavailable").trim() || "timer info unavailable",
+    },
+    ...watcherRows,
+  ];
+
+  if (cronRows.length) {
+    for (const line of cronRows) {
+      jobRows.push({ kind: "openclaw-cron", name: "cron", schedule: "cron", status: "configured", detail: line });
+    }
+  }
+
+  res.json({ ok: true, rows: jobRows });
+});
+
 app.post("/api/actions/:action", async (req, res) => {
   const action = req.params.action;
   const confirm = String(req.body?.confirm || "").toLowerCase() === "yes";
