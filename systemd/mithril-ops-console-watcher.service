@@ -1,0 +1,16 @@
+[Unit]
+Description=Mithril-OS Ops Console Watcher
+After=network.target
+
+[Service]
+Type=simple
+User=mini-home-lab
+WorkingDirectory=/mithril-os
+ExecStart=/mithril-os/scripts/watch-ops-console.sh 2
+Restart=always
+RestartSec=3
+StandardOutput=append:/tmp/mithril-os-watcher.log
+StandardError=append:/tmp/mithril-os-watcher.log
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,9 @@
+[
+  {
+    "id": "ops-console-watcher",
+    "name": "Ops Console Watcher",
+    "script": "/mithril-os/scripts/watch-ops-console.sh",
+    "defaultIntervalSeconds": 2,
+    "systemdService": "mithril-ops-console-watcher.service"
+  }
+]

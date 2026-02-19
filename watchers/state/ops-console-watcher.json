@@ -1,0 +1,9 @@
+{
+  "name": "ops-console-watcher",
+  "status": "running",
+  "intervalSeconds": 2,
+  "source": "/home/node/.openclaw/workspace/mithril-os/apps/ops-console",
+  "pid": 115,
+  "updatedAt": "2026-02-19T01:18:55Z",
+  "note": "tick"
+}
