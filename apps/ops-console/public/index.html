@@ -234,6 +234,11 @@
 
       async function jget(url){ const r = await fetch(url); return await r.json(); }
       async function jpost(url, body){ const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await r.json(); }
+      function toneForName(name){
+        let h = 0;
+        for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+        return `tone-${h % 8}`;
+      }
 
       function renderWatchersTable(rows){
         const tbody = document.querySelector('#watchersTable tbody');
@@ -305,7 +310,7 @@
           const files = [...new Set([...(main.workspaceFiles || []), ...(main.files || [])])];
           const selected = selectedFileByAgent.main || files[0] || null;
           mainButtons.innerHTML = files.length
-            ? files.map((f, i) => `<button data-agent-id="main" data-file="${f}" class="tone-${i%8} ${selected===f?'active':''}">${f}</button>`).join('')
+            ? files.map((f) => `<button data-agent-id="main" data-file="${f}" class="${toneForName(f)} ${selected===f?'active':''}">${f}</button>`).join('')
             : '<span class="muted">No markdown files</span>';
 
           mainButtons.querySelectorAll('button[data-agent-id][data-file]').forEach(btn => {
@@ -319,7 +324,7 @@
             const files = [...new Set([...(r.workspaceFiles || []), ...(r.files || [])])];
             const selected = selectedFileByAgent[r.agentId] || files[0] || null;
             const fileButtons = files.length
-              ? files.map((f, i) => `<button data-agent-id="${r.agentId}" data-file="${f}" class="tone-${i%8} ${selected===f?'active':''}">${f}</button>`).join('')
+              ? files.map((f) => `<button data-agent-id="${r.agentId}" data-file="${f}" class="${toneForName(f)} ${selected===f?'active':''}">${f}</button>`).join('')
               : `<span class="muted">No markdown files</span>`;
 
             return `
