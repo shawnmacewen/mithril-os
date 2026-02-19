@@ -130,6 +130,7 @@
                 <div class="muted" id="currentAgentModel">Model: loading…</div>
               </div>
             </div>
+            <div id="mainAgentFileButtons" class="agent-file-buttons" style="margin-top:10px;"></div>
           </div>
 
           <div class="card" style="margin-bottom:12px;">
@@ -269,9 +270,11 @@
       function renderAgentMdUI(indexRows){
         currentAgentFilesIndex = indexRows || [];
         const tiles = document.getElementById('agentTiles');
+        const mainButtons = document.getElementById('mainAgentFileButtons');
 
         if (!currentAgentFilesIndex.length) {
           tiles.innerHTML = '';
+          mainButtons.innerHTML = '';
           document.getElementById('agentMdContent').textContent = 'No agent markdown files found.';
           return;
         }
@@ -284,10 +287,29 @@
           selectedFileByAgent[agentId] = fileName;
           await loadAgentMdFile(agentId, fileName);
           drawTiles();
+          drawMainButtons();
+        };
+
+        const drawMainButtons = () => {
+          const main = currentAgentFilesIndex.find(r => r.agentId === 'main');
+          if (!main) {
+            mainButtons.innerHTML = '';
+            return;
+          }
+          const files = [...new Set([...(main.workspaceFiles || []), ...(main.files || [])])];
+          const selected = selectedFileByAgent.main || files[0] || null;
+          mainButtons.innerHTML = files.length
+            ? files.map((f) => `<button data-agent-id="main" data-file="${f}" class="${selected===f?'active':''}">${f}</button>`).join('')
+            : '<span class="muted">No markdown files</span>';
+
+          mainButtons.querySelectorAll('button[data-agent-id][data-file]').forEach(btn => {
+            btn.addEventListener('click', () => openFile(btn.dataset.agentId, btn.dataset.file));
+          });
         };
 
         const drawTiles = () => {
-          tiles.innerHTML = currentAgentFilesIndex.map((r) => {
+          const nonMain = currentAgentFilesIndex.filter(r => r.agentId !== 'main');
+          tiles.innerHTML = nonMain.map((r) => {
             const files = [...new Set([...(r.workspaceFiles || []), ...(r.files || [])])];
             const selected = selectedFileByAgent[r.agentId] || files[0] || null;
             const fileButtons = files.length
@@ -311,6 +333,7 @@
         };
 
         drawTiles();
+        drawMainButtons();
 
         const firstRow = currentAgentFilesIndex.find(r => r.agentId === activeAgentId) || currentAgentFilesIndex[0];
         const firstFiles = [...new Set([...(firstRow?.workspaceFiles || []), ...(firstRow?.files || [])])];
