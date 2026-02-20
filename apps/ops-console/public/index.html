@@ -218,6 +218,17 @@
           </div>
 
           <div class="card" style="margin-bottom:12px;">
+            <h3>Agent Hierarchy & Delegation</h3>
+            <div class="row"><span>COO</span><strong id="cooAgentId">-</strong></div>
+            <div class="row"><span>Direct user override</span><strong id="directOverrideState">-</strong></div>
+            <div class="row"><span>Delegations (running / blocked)</span><strong id="delegationCounts">-</strong></div>
+            <table id="delegationsTable" style="margin-top:8px;">
+              <thead><tr><th>ID</th><th>Assignee</th><th>Status</th><th>Objective</th><th>Updated</th></tr></thead>
+              <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="card" style="margin-bottom:12px;">
             <div id="agentTiles" class="agent-tiles-grid"></div>
             <pre id="agentMdContent">Select an agent file to view markdown content.</pre>
           </div>
@@ -838,6 +849,31 @@
         tbody.innerHTML = pageRows.map(r => `<tr><td><code>${r.short}</code></td><td>${r.date}</td><td>${r.author}</td><td>${r.subject}</td><td>${r.type || 'LOCAL'}</td><td>${r.pushed ? `<span class='pill ok'>yes</span>` : `<span class='pill bad'>no</span>`}</td></tr>`).join('');
       }
 
+      function renderAgentControlOverview(data){
+        const routing = data?.routing || {};
+        const override = routing?.policy?.directUserOverride;
+        const counts = data?.counts || {};
+        document.getElementById('cooAgentId').textContent = routing?.cooAgentId || 'main';
+        document.getElementById('directOverrideState').textContent = override?.enabled ? 'allowed' : 'disabled';
+        document.getElementById('delegationCounts').textContent = `${counts.running || 0} running / ${counts.blocked || 0} blocked`;
+
+        const rows = data?.delegations || [];
+        const tbody = document.querySelector('#delegationsTable tbody');
+        if (!rows.length) {
+          tbody.innerHTML = `<tr><td colspan="5" class="muted">No delegations logged yet</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = rows.slice(0, 10).map((r) => `
+          <tr>
+            <td>${r.id || '-'}</td>
+            <td>${r.assigneeAgentId || r.actorAgentId || '-'}</td>
+            <td>${r.status || '-'}</td>
+            <td>${(r.objective || r.note || '').slice(0, 90)}</td>
+            <td>${r.ts ? new Date(r.ts).toLocaleString() : '-'}</td>
+          </tr>
+        `).join('');
+      }
+
       function renderModelsTiles(models){
         const grid = document.getElementById('modelsGrid');
         const rows = models?.rows || [];
@@ -922,13 +958,14 @@
         stamp.textContent = 'Refreshing…';
 
         try {
-          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs] = await Promise.all([
+          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs] = await Promise.all([
             jget('/api/status'),
             jget('/api/openclaw/overview'),
             jget('/api/openclaw/deep'),
             jget('/api/openclaw/usage'),
             jget('/api/agents'),
             jget('/api/agents/files'),
+            jget('/api/agent-control/overview'),
             jget('/api/openclaw/models'),
             jget('/api/watchers'),
             jget('/api/services/health'),
@@ -941,7 +978,7 @@
             jget('/api/scheduled-jobs')
           ]);
 
-          cache = { status, oc, ocDeep, ocUsage, agents, agentsFiles, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs };
+          cache = { status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
           document.getElementById('currentAgentName').textContent = 'OddEye';
@@ -971,6 +1008,7 @@
           document.getElementById('openclawRaw').textContent = JSON.stringify(ocDeep, null, 2);
           document.getElementById('agentsRaw').textContent = JSON.stringify(agents, null, 2);
           renderAgentMdUI(agentsFiles.rows || []);
+          renderAgentControlOverview(agentControl || {});
           renderModelsTiles(models);
           document.getElementById('modelsRaw').textContent = JSON.stringify(models, null, 2);
           renderHaArea('haOffice', haAreas.grouped?.office || []);

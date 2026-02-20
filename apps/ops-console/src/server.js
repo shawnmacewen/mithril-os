@@ -967,6 +967,34 @@ app.get("/api/delegations", async (req, res) => {
   res.json({ ok: true, rows: data.rows });
 });
 
+app.get("/api/agent-control/overview", async (_req, res) => {
+  const agents = await getAgentMdIndex();
+  const routing = await readRoutingConfig();
+  const delegations = await readDelegations(200);
+
+  const latestById = new Map();
+  for (const row of delegations.rows || []) {
+    if (!row?.id) continue;
+    if (!latestById.has(row.id)) latestById.set(row.id, row);
+  }
+  const latest = [...latestById.values()];
+  const counts = {
+    queued: latest.filter((r) => r.status === "queued").length,
+    running: latest.filter((r) => r.status === "running").length,
+    blocked: latest.filter((r) => r.status === "blocked").length,
+    needsReview: latest.filter((r) => r.status === "needs-review").length,
+    done: latest.filter((r) => r.status === "done").length,
+  };
+
+  res.json({
+    ok: true,
+    routing: routing.parsed,
+    agentIds: (agents.rows || []).map((r) => r.agentId),
+    delegations: latest.slice(0, 25),
+    counts,
+  });
+});
+
 app.post("/api/delegations", async (req, res) => {
   const body = req.body || {};
   const id = `dlg_${Date.now()}`;
