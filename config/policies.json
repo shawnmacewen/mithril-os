@@ -1,0 +1,13 @@
+{
+  "policies": [
+    {
+      "id": "privacy-local-notes",
+      "title": "Privacy & Data Boundary Policy",
+      "path": "/home/mini-home-lab/.openclaw/workspace/PRIVACY_POLICY.md",
+      "owner": "OddEye",
+      "scope": "Obsidian vaults and personal notes",
+      "status": "active",
+      "tags": ["privacy", "local-only", "vault"]
+    }
+  ]
+}

@@ -55,6 +55,7 @@
       .nav a[data-view='models'] .nav-icon { color:#ec4899; }
       .nav a[data-view='logs'] .nav-icon { color:#ef4444; }
       .nav a[data-view='projects'] .nav-icon { color:#10b981; }
+      .nav a[data-view='policies'] .nav-icon { color:#f97316; }
       .nav a[data-view='changelog'] .nav-icon { color:#a78bfa; }
       .nav a[data-view='config'] .nav-icon { color:#14b8a6; }
       .layout.nav-collapsed .brand .brand-text,
@@ -173,6 +174,7 @@
           <a data-view="models" href="#models"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="12" cy="17" r="2"/><path d="M8 8.5l2.8 6"/><path d="M16 8.5l-2.8 6"/><path d="M8 7h8"/></svg>Models</a>
           <a data-view="logs" href="#logs"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M16 3v4h4"/><path d="M8 11h8"/><path d="M8 15h8"/></svg>Logs</a>
           <a data-view="projects" href="#projects"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h18"/></svg>Projects</a>
+          <a data-view="policies" href="#policies"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>Policies</a>
           <a data-view="changelog" href="#changelog"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M6 4h12"/><path d="M6 12h12"/><path d="M6 20h12"/><circle cx="4" cy="4" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="20" r="1"/></svg>Changelog</a>
           <a data-view="config" href="#config"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z"/></svg>Diagnostics</a>
         </div>
@@ -440,6 +442,20 @@
           <div class="card" style="margin-top:12px;"><details><summary>Projects Raw JSON</summary><pre id="projectsRaw">Loading…</pre></details></div>
         </section>
 
+        <section id="view-policies" class="hidden">
+          <h2>Policies</h2>
+          <div class="card" style="margin-bottom:12px;">
+            <div class="row"><span>Total policies</span><strong id="policiesTotal">-</strong></div>
+            <div class="row"><span>Active</span><strong id="policiesActive">-</strong></div>
+            <div class="row"><span>Readable files</span><strong id="policiesReadable">-</strong></div>
+            <div class="muted" id="policiesSource">-</div>
+          </div>
+          <div class="card">
+            <table id="policiesTable"><thead><tr><th>Policy</th><th>Status</th><th>Owner</th><th>Scope</th><th>File meta</th></tr></thead><tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody></table>
+          </div>
+          <div class="card" style="margin-top:12px;"><details><summary>Policies Raw JSON</summary><pre id="policiesRaw">Loading…</pre></details></div>
+        </section>
+
         <section id="view-changelog" class="hidden">
           <h2>Public Changelog</h2>
           <div class="card" style="margin-bottom:12px;">
@@ -551,7 +567,7 @@
     </div>
 
     <script>
-      const views = ["dashboard","agents","watchers","openclaw","models","homeassistant","logs","projects","changelog","backups","jobs","config"];
+      const views = ["dashboard","agents","watchers","openclaw","models","homeassistant","logs","projects","policies","changelog","backups","jobs","config"];
       let autoTimer = null;
       let cache = {};
       let currentAgentFilesIndex = [];
@@ -1029,6 +1045,38 @@
         }).join('');
       }
 
+      function renderPoliciesOverview(data){
+        document.getElementById('policiesRaw').textContent = JSON.stringify(data || {}, null, 2);
+        if (!data?.ok) {
+          document.getElementById('policiesTotal').textContent = '-';
+          document.getElementById('policiesActive').textContent = '-';
+          document.getElementById('policiesReadable').textContent = '-';
+          document.getElementById('policiesSource').textContent = data?.error || 'Policies unavailable';
+          document.querySelector('#policiesTable tbody').innerHTML = `<tr><td colspan="5" class="bad">${data?.error || 'Unavailable'}</td></tr>`;
+          return;
+        }
+        document.getElementById('policiesTotal').textContent = String(data?.summary?.total ?? 0);
+        document.getElementById('policiesActive').textContent = String(data?.summary?.active ?? 0);
+        document.getElementById('policiesReadable').textContent = String(data?.summary?.readable ?? 0);
+        document.getElementById('policiesSource').textContent = `Source: ${data.source || 'default'}`;
+
+        const rows = data.rows || [];
+        const tbody = document.querySelector('#policiesTable tbody');
+        if (!rows.length) {
+          tbody.innerHTML = `<tr><td colspan="5" class="muted">No policies configured yet.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = rows.map((r) => {
+          const st = String(r.status || 'active').toLowerCase();
+          const badge = st === 'active' ? '<span class="status-pill ok">active</span>' : `<span class="status-pill warn">${st}</span>`;
+          const meta = r.ok
+            ? `<div class="muted">${r.path}<br/>${r.sizeBytes || 0} bytes · ${r.words || 0} words · sha ${r.sha || '-'}<br/>${r.modifiedAt || '-'}</div>`
+            : `<div class="muted bad">${r.path || ''}<br/>${r.error || 'unreadable'}</div>`;
+          return `<tr><td><strong>${r.title || r.id || '-'}</strong><div class="muted">${(r.tags || []).join(' · ')}</div></td><td>${badge}</td><td>${r.owner || '-'}</td><td>${r.scope || '-'}</td><td>${meta}</td></tr>`;
+        }).join('');
+      }
+
       function renderPublicChangelog(data){
         const header = document.getElementById('changelogHeader');
         const cards = document.getElementById('changelogCards');
@@ -1212,7 +1260,7 @@
         stamp.textContent = 'Refreshing…';
 
         try {
-          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, jobsLedger] = await Promise.all([
+          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, jobsLedger] = await Promise.all([
             jget('/api/status'),
             jget('/api/openclaw/overview'),
             jget('/api/openclaw/deep'),
@@ -1222,6 +1270,7 @@
             jget('/api/agent-control/overview'),
             jget('/api/openclaw/models'),
             jget('/api/project-monitor/overview'),
+            jget('/api/policies/overview'),
             jget('/api/changelog/public'),
             jget('/api/watchers'),
             jget('/api/services/health'),
@@ -1235,7 +1284,7 @@
             jget('/api/jobs?limit=300')
           ]);
 
-          cache = { status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, jobsLedger };
+          cache = { status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, jobsLedger };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
           document.getElementById('currentAgentName').textContent = 'OddEye';
@@ -1268,6 +1317,7 @@
           renderAgentControlOverview(agentControl || {});
           renderModelsTiles(models);
           renderProjectsOverview(projects || {});
+          renderPoliciesOverview(policies || {});
           renderPublicChangelog(changelog || {});
           document.getElementById('modelsRaw').textContent = JSON.stringify(models, null, 2);
           renderHaArea('haOffice', haAreas.grouped?.office || []);

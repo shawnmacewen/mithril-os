@@ -6,6 +6,7 @@ import net from "net";
 import { exec as execCb } from "child_process";
 import { promisify } from "util";
 import { fileURLToPath } from "url";
+import { createHash } from "crypto";
 
 const exec = promisify(execCb);
 const __filename = fileURLToPath(import.meta.url);
@@ -35,6 +36,7 @@ const COORDINATION_LOG_FILE = process.env.COORDINATION_LOG_FILE || "/mithril-os/
 const REVIEW_LOG_FILE = process.env.REVIEW_LOG_FILE || "/mithril-os/ops-artifacts/review-log.jsonl";
 const ROUTING_INSIGHTS_FILE = process.env.ROUTING_INSIGHTS_FILE || "/mithril-os/ops-artifacts/routing-insights.json";
 const PROJECTS_CONFIG_FILE = process.env.PROJECTS_CONFIG_FILE || "/mithril-os/config/projects-monitor.json";
+const POLICIES_CONFIG_FILE = process.env.POLICIES_CONFIG_FILE || "/mithril-os/config/policies.json";
 
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(express.json());
@@ -227,6 +229,50 @@ async function readProjectsConfig() {
     return { ok: true, source: PROJECTS_CONFIG_FILE, projects: rows };
   } catch {
     return { ok: true, source: "default", projects: [] };
+  }
+}
+
+async function readPoliciesConfig() {
+  try {
+    const raw = await fs.readFile(POLICIES_CONFIG_FILE, "utf8");
+    const parsed = JSON.parse(raw);
+    const rows = Array.isArray(parsed.policies) ? parsed.policies : [];
+    return { ok: true, source: POLICIES_CONFIG_FILE, policies: rows };
+  } catch {
+    return { ok: true, source: "default", policies: [] };
+  }
+}
+
+async function getPolicyRowStatus(policy) {
+  const row = {
+    id: String(policy?.id || ""),
+    title: String(policy?.title || "Untitled Policy"),
+    path: String(policy?.path || ""),
+    owner: String(policy?.owner || ""),
+    scope: String(policy?.scope || ""),
+    status: String(policy?.status || "active"),
+    tags: Array.isArray(policy?.tags) ? policy.tags.map(String) : [],
+    ok: false,
+  };
+
+  if (!row.path) return { ...row, error: "missing path" };
+
+  try {
+    const text = await fs.readFile(row.path, "utf8");
+    const st = await fs.stat(row.path);
+    const hash = createHash("sha256").update(text).digest("hex").slice(0, 12);
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    return {
+      ...row,
+      ok: true,
+      sizeBytes: st.size,
+      modifiedAt: st.mtime.toISOString(),
+      sha: hash,
+      words,
+      preview: text.slice(0, 420),
+    };
+  } catch (error) {
+    return { ...row, ok: false, error: String(error.message || error) };
   }
 }
 
@@ -1753,6 +1799,26 @@ app.get("/api/project-monitor/overview", async (_req, res) => {
       total: rows.length,
       healthy,
       dirty,
+    },
+    rows,
+  });
+});
+
+app.get("/api/policies/overview", async (_req, res) => {
+  const cfg = await readPoliciesConfig();
+  const rows = [];
+  for (const p of cfg.policies || []) {
+    rows.push(await getPolicyRowStatus(p));
+  }
+  const active = rows.filter((r) => String(r.status || "").toLowerCase() === "active").length;
+  const readable = rows.filter((r) => r.ok).length;
+  res.json({
+    ok: true,
+    source: cfg.source,
+    summary: {
+      total: rows.length,
+      active,
+      readable,
     },
     rows,
   });
