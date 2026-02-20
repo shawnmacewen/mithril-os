@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "cooAgentId": "main",
+  "policy": {
+    "defaultMode": "coo-routes",
+    "directUserOverride": {
+      "enabled": true,
+      "behavior": "allow-direct-routing",
+      "note": "User can address any agent directly; COO keeps visibility but does not block."
+    }
+  },
+  "taskRouting": [
+    { "category": "architecture", "preferredAgentId": "koda", "fallbackAgentId": "main" },
+    { "category": "ops", "preferredAgentId": "main", "fallbackAgentId": "main" },
+    { "category": "coding", "preferredAgentId": "main", "fallbackAgentId": "koda" },
+    { "category": "research", "preferredAgentId": "main", "fallbackAgentId": "main" }
+  ]
+}

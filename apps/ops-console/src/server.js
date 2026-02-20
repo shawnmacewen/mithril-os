@@ -26,6 +26,9 @@ const AGENTS_ROOT = process.env.AGENTS_ROOT || "/home/mini-home-lab/.openclaw/ag
 const AGENTS_ROOT_FALLBACK = "/home/node/.openclaw/agents";
 const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT || "/home/node/.openclaw/workspace";
 const WORKSPACE_ROOT_FALLBACK = "/home/mini-home-lab/.openclaw/workspace";
+const AGENT_ROUTING_CONFIG = process.env.AGENT_ROUTING_CONFIG || "/mithril-os/config/agent-routing.json";
+const AGENT_ARTIFACTS_DIR = process.env.AGENT_ARTIFACTS_DIR || "/mithril-os/ops-artifacts";
+const DELEGATIONS_FILE = process.env.DELEGATIONS_FILE || "/mithril-os/ops-artifacts/delegations.jsonl";
 
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(express.json());
@@ -76,6 +79,40 @@ async function readConfig() {
   } catch (error) {
     return { ok: false, error: String(error.message || error) };
   }
+}
+
+const defaultRoutingConfig = {
+  version: 1,
+  cooAgentId: "main",
+  policy: {
+    defaultMode: "coo-routes",
+    directUserOverride: {
+      enabled: true,
+      behavior: "allow-direct-routing",
+      note: "User can address any agent directly; COO keeps visibility but does not block.",
+    },
+  },
+  taskRouting: [
+    { category: "architecture", preferredAgentId: "koda", fallbackAgentId: "main" },
+    { category: "ops", preferredAgentId: "main", fallbackAgentId: "main" },
+    { category: "coding", preferredAgentId: "main", fallbackAgentId: "koda" },
+    { category: "research", preferredAgentId: "main", fallbackAgentId: "main" },
+  ],
+};
+
+async function readRoutingConfig() {
+  try {
+    const raw = await fs.readFile(AGENT_ROUTING_CONFIG, "utf8");
+    return { ok: true, parsed: JSON.parse(raw), source: AGENT_ROUTING_CONFIG };
+  } catch {
+    return { ok: true, parsed: defaultRoutingConfig, source: "default" };
+  }
+}
+
+async function writeRoutingConfig(nextConfig) {
+  await fs.mkdir(path.dirname(AGENT_ROUTING_CONFIG), { recursive: true });
+  await fs.writeFile(AGENT_ROUTING_CONFIG, `${JSON.stringify(nextConfig, null, 2)}\n`, "utf8");
+  return { ok: true, path: AGENT_ROUTING_CONFIG };
 }
 
 async function dockerPs() {
@@ -875,6 +912,31 @@ app.get("/api/agents", async (_req, res) => {
   const uniqueAgentIds = [...new Set(bindings.map((b) => b.agentId).filter(Boolean))];
 
   res.json({ ok: true, agentIds: uniqueAgentIds, bindings });
+});
+
+app.get("/api/agent-routing", async (_req, res) => {
+  const routing = await readRoutingConfig();
+  res.json({ ok: true, ...routing });
+});
+
+app.post("/api/agent-routing", async (req, res) => {
+  const incoming = req.body || {};
+  const merged = {
+    ...defaultRoutingConfig,
+    ...incoming,
+    policy: {
+      ...defaultRoutingConfig.policy,
+      ...(incoming.policy || {}),
+      directUserOverride: {
+        ...defaultRoutingConfig.policy.directUserOverride,
+        ...(incoming.policy?.directUserOverride || {}),
+      },
+    },
+    taskRouting: Array.isArray(incoming.taskRouting) ? incoming.taskRouting : defaultRoutingConfig.taskRouting,
+  };
+
+  await writeRoutingConfig(merged);
+  res.json({ ok: true, saved: true, path: AGENT_ROUTING_CONFIG, config: merged });
 });
 
 app.get("/api/agents/files", async (_req, res) => {
