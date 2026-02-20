@@ -3,6 +3,11 @@
   "cooAgentId": "main",
   "policy": {
     "defaultMode": "coo-routes",
+    "confidenceThreshold": 0.7,
+    "escalation": {
+      "onLowConfidence": "fallback",
+      "onMissingCategory": "coo"
+    },
     "directUserOverride": {
       "enabled": true,
       "behavior": "allow-direct-routing",

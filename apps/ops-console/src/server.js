@@ -86,6 +86,11 @@ const defaultRoutingConfig = {
   cooAgentId: "main",
   policy: {
     defaultMode: "coo-routes",
+    confidenceThreshold: 0.7,
+    escalation: {
+      onLowConfidence: "fallback",
+      onMissingCategory: "coo",
+    },
     directUserOverride: {
       enabled: true,
       behavior: "allow-direct-routing",
@@ -949,6 +954,10 @@ app.post("/api/agent-routing", async (req, res) => {
     policy: {
       ...defaultRoutingConfig.policy,
       ...(incoming.policy || {}),
+      escalation: {
+        ...defaultRoutingConfig.policy.escalation,
+        ...(incoming.policy?.escalation || {}),
+      },
       directUserOverride: {
         ...defaultRoutingConfig.policy.directUserOverride,
         ...(incoming.policy?.directUserOverride || {}),
@@ -959,6 +968,66 @@ app.post("/api/agent-routing", async (req, res) => {
 
   await writeRoutingConfig(merged);
   res.json({ ok: true, saved: true, path: AGENT_ROUTING_CONFIG, config: merged });
+});
+
+app.post("/api/agent-routing/recommend", async (req, res) => {
+  const routing = await readRoutingConfig();
+  const cfg = routing.parsed || defaultRoutingConfig;
+  const body = req.body || {};
+
+  const category = String(body.category || "").trim().toLowerCase();
+  const confidence = Number(body.confidence);
+  const urgent = Boolean(body.urgent);
+  const directUserAgentId = body.directUserAgentId ? String(body.directUserAgentId) : null;
+
+  if (cfg.policy?.directUserOverride?.enabled && directUserAgentId) {
+    return res.json({
+      ok: true,
+      recommendedAgentId: directUserAgentId,
+      reason: "direct-user-override",
+      fallbackAgentId: cfg.cooAgentId || "main",
+    });
+  }
+
+  if (urgent) {
+    return res.json({
+      ok: true,
+      recommendedAgentId: cfg.cooAgentId || "main",
+      reason: "urgent-default-coo",
+      fallbackAgentId: cfg.cooAgentId || "main",
+    });
+  }
+
+  const row = (cfg.taskRouting || []).find((r) => String(r.category || "").toLowerCase() === category);
+  if (!row) {
+    return res.json({
+      ok: true,
+      recommendedAgentId: cfg.cooAgentId || "main",
+      reason: "missing-category",
+      fallbackAgentId: cfg.cooAgentId || "main",
+    });
+  }
+
+  const threshold = Number(cfg.policy?.confidenceThreshold ?? 0.7);
+  if (Number.isFinite(confidence) && confidence < threshold) {
+    return res.json({
+      ok: true,
+      recommendedAgentId: row.fallbackAgentId || cfg.cooAgentId || "main",
+      reason: "low-confidence-fallback",
+      fallbackAgentId: row.fallbackAgentId || cfg.cooAgentId || "main",
+      threshold,
+      confidence,
+    });
+  }
+
+  return res.json({
+    ok: true,
+    recommendedAgentId: row.preferredAgentId || cfg.cooAgentId || "main",
+    reason: "category-match",
+    fallbackAgentId: row.fallbackAgentId || cfg.cooAgentId || "main",
+    threshold,
+    confidence: Number.isFinite(confidence) ? confidence : null,
+  });
 });
 
 app.get("/api/delegations", async (req, res) => {
@@ -1038,7 +1107,9 @@ app.post("/api/delegations", async (req, res) => {
     assigneeAgentId: body.assigneeAgentId || "main",
     objective: body.objective || "",
     context: body.context || "",
+    constraints: body.constraints || "",
     deliverable: body.deliverable || "",
+    deliverableFormat: body.deliverableFormat || "",
     priority: body.priority || "normal",
     deadline: body.deadline || null,
     definitionOfDone: body.definitionOfDone || "",
@@ -1076,7 +1147,9 @@ app.get("/api/delegation-template", async (_req, res) => {
       assigneeAgentId: "koda",
       objective: "",
       context: "",
+      constraints: "",
       deliverable: "",
+      deliverableFormat: "markdown-summary",
       priority: "normal",
       deadline: null,
       definitionOfDone: "",
