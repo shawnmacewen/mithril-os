@@ -1,9 +1,19 @@
 {
   "projects": [
     {
-      "name": "Mithril-OS",
+      "name": "Mithril-OS Ops Console",
       "path": "/mithril-os",
       "owner": "OddEye"
+    },
+    {
+      "name": "Railfin",
+      "path": "/home/node/.openclaw/workspace/labs/railfin",
+      "owner": "koda"
+    },
+    {
+      "name": "BW Shell",
+      "path": "/home/node/.openclaw/workspace/work/bw-shell",
+      "owner": "koda"
     }
   ]
 }

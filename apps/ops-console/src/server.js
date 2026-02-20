@@ -1738,7 +1738,7 @@ app.get("/api/changelog/public", async (_req, res) => {
   return res.status(404).json({ ok: false, error: "Public changelog not found" });
 });
 
-app.get("/api/projects/overview", async (_req, res) => {
+app.get("/api/project-monitor/overview", async (_req, res) => {
   const cfg = await readProjectsConfig();
   const rows = [];
   for (const p of cfg.projects || []) {
