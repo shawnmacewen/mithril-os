@@ -142,6 +142,21 @@ async function appendDelegation(row) {
   await fs.appendFile(DELEGATIONS_FILE, `${JSON.stringify(row)}\n`, "utf8");
 }
 
+function latestDelegationStates(rows = []) {
+  const byId = new Map();
+  for (const row of rows) {
+    if (!row?.id) continue;
+    if (!byId.has(row.id)) byId.set(row.id, row);
+  }
+  return [...byId.values()];
+}
+
+async function activeDelegations() {
+  const data = await readDelegations(500);
+  const latest = latestDelegationStates(data.rows || []);
+  return latest.filter((r) => ["queued", "running", "needs-review"].includes(String(r.status || "")));
+}
+
 async function dockerPs() {
   const result = await shell("docker ps --format '{{.Names}}|{{.Image}}|{{.Status}}|{{.Ports}}'", 3000);
   if (!result.ok) return { ok: false, error: result.stderr, rows: [] };
@@ -1098,14 +1113,43 @@ app.get("/api/delegations/health", async (_req, res) => {
 
 app.post("/api/delegations", async (req, res) => {
   const body = req.body || {};
+  const objective = String(body.objective || "").trim();
+  const assigneeAgentId = String(body.assigneeAgentId || "main");
+  const allowParallel = Boolean(body.allowParallel);
+
+  // Guardrails: prevent duplicate loops + enforce single active owner unless parallel is explicit.
+  const active = await activeDelegations();
+  const sameObjective = active.filter((r) => String(r.objective || "").trim() && String(r.objective || "").trim() === objective);
+
+  if (!allowParallel) {
+    const duplicate = sameObjective.find((r) => String(r.assigneeAgentId || "") === assigneeAgentId);
+    if (duplicate) {
+      return res.status(409).json({
+        ok: false,
+        error: "Duplicate active delegation detected for same objective/assignee.",
+        duplicate,
+      });
+    }
+
+    const differentOwner = sameObjective.find((r) => String(r.assigneeAgentId || "") !== assigneeAgentId);
+    if (differentOwner) {
+      return res.status(409).json({
+        ok: false,
+        error: "Single-owner guardrail: objective already assigned to a different active agent.",
+        activeOwner: differentOwner.assigneeAgentId,
+        conflicting: differentOwner,
+      });
+    }
+  }
+
   const id = `dlg_${Date.now()}`;
   const row = {
     id,
     ts: new Date().toISOString(),
     status: "queued",
     ownerAgentId: body.ownerAgentId || "main",
-    assigneeAgentId: body.assigneeAgentId || "main",
-    objective: body.objective || "",
+    assigneeAgentId,
+    objective,
     context: body.context || "",
     constraints: body.constraints || "",
     deliverable: body.deliverable || "",
@@ -1115,6 +1159,7 @@ app.post("/api/delegations", async (req, res) => {
     definitionOfDone: body.definitionOfDone || "",
     escalationRule: body.escalationRule || "",
     source: body.source || "coo-delegation",
+    allowParallel,
   };
 
   await appendDelegation(row);
@@ -1155,8 +1200,56 @@ app.get("/api/delegation-template", async (_req, res) => {
       definitionOfDone: "",
       escalationRule: "If blocked >30 minutes, return to COO with blocker + options.",
       source: "coo-delegation",
+      allowParallel: false,
     },
   });
+});
+
+app.post("/api/delegations/control/spawn", async (req, res) => {
+  const task = String(req.body?.task || "").trim();
+  const agentId = String(req.body?.agentId || "").trim() || undefined;
+  const label = String(req.body?.label || "").trim() || undefined;
+  const runTimeoutSeconds = Number(req.body?.runTimeoutSeconds || 1800);
+  if (!task) return res.status(400).json({ ok: false, error: "task is required" });
+
+  const cmd = [
+    "openclaw", "sessions", "spawn",
+    "--task", JSON.stringify(task),
+    ...(agentId ? ["--agent", JSON.stringify(agentId)] : []),
+    ...(label ? ["--label", JSON.stringify(label)] : []),
+    "--run-timeout-seconds", String(runTimeoutSeconds),
+  ].join(" ");
+
+  const out = await shell(`${cmd} 2>/dev/null || true`, 12000);
+  if (!out.stdout.trim()) {
+    return res.status(500).json({ ok: false, error: "sessions_spawn unavailable from this runtime context", stderr: out.stderr || null });
+  }
+  return res.json({ ok: true, stdout: out.stdout.trim() });
+});
+
+app.get("/api/delegations/control/subagents", async (_req, res) => {
+  const out = await shell("openclaw subagents list 2>/dev/null || true", 8000);
+  if (!out.stdout.trim()) return res.status(500).json({ ok: false, error: "subagents list unavailable from this runtime context" });
+  res.json({ ok: true, output: out.stdout.trim() });
+});
+
+app.post("/api/delegations/control/steer", async (req, res) => {
+  const target = String(req.body?.target || "").trim();
+  const message = String(req.body?.message || "").trim();
+  if (!target || !message) return res.status(400).json({ ok: false, error: "target and message are required" });
+
+  const out = await shell(`openclaw subagents steer --target ${JSON.stringify(target)} --message ${JSON.stringify(message)} 2>/dev/null || true`, 8000);
+  if (!out.stdout.trim()) return res.status(500).json({ ok: false, error: "subagents steer unavailable from this runtime context" });
+  res.json({ ok: true, output: out.stdout.trim() });
+});
+
+app.post("/api/delegations/control/kill", async (req, res) => {
+  const target = String(req.body?.target || "").trim();
+  if (!target) return res.status(400).json({ ok: false, error: "target is required" });
+
+  const out = await shell(`openclaw subagents kill --target ${JSON.stringify(target)} 2>/dev/null || true`, 8000);
+  if (!out.stdout.trim()) return res.status(500).json({ ok: false, error: "subagents kill unavailable from this runtime context" });
+  res.json({ ok: true, output: out.stdout.trim() });
 });
 
 app.get("/api/agents/files", async (_req, res) => {

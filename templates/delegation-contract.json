@@ -10,5 +10,6 @@
   "deadline": null,
   "definitionOfDone": "",
   "escalationRule": "If blocked >30 minutes, return to COO with blocker + options.",
-  "source": "coo-delegation"
+  "source": "coo-delegation",
+  "allowParallel": false
 }
