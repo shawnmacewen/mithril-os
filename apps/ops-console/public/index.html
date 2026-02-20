@@ -225,15 +225,18 @@
           </div>
 
           <div class="card" style="margin-bottom:12px;">
-            <h3>Agent Hierarchy & Delegation</h3>
+            <h3>Agent Operations Summary</h3>
             <div class="row"><span>COO</span><strong id="cooAgentId">-</strong></div>
             <div class="row"><span>Direct user override</span><strong id="directOverrideState">-</strong></div>
             <div class="row"><span>Delegations (running / blocked)</span><strong id="delegationCounts">-</strong></div>
             <div class="muted" id="delegationCadence">-</div>
-            <table id="delegationsTable" style="margin-top:8px;">
-              <thead><tr><th>ID</th><th>Assignee</th><th>Status</th><th>Objective</th><th>Updated</th></tr></thead>
-              <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
-            </table>
+            <details style="margin-top:8px;">
+              <summary>Advanced delegation table</summary>
+              <table id="delegationsTable" style="margin-top:8px;">
+                <thead><tr><th>ID</th><th>Assignee</th><th>Status</th><th>Objective</th><th>Updated</th></tr></thead>
+                <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+              </table>
+            </details>
           </div>
 
           <div class="card" style="margin-bottom:12px;">
@@ -245,11 +248,13 @@
           </div>
 
           <div class="card" style="margin-bottom:12px;">
-            <h3>Delegation Timeline</h3>
-            <table id="delegationTimelineTable">
-              <thead><tr><th>ID</th><th>Assignee</th><th>Latest</th><th>Events</th><th>Objective</th></tr></thead>
-              <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
-            </table>
+            <details>
+              <summary>Advanced delegation timeline</summary>
+              <table id="delegationTimelineTable" style="margin-top:8px;">
+                <thead><tr><th>ID</th><th>Assignee</th><th>Latest</th><th>Events</th><th>Objective</th></tr></thead>
+                <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+              </table>
+            </details>
           </div>
 
           <div class="card" style="margin-bottom:12px;">
@@ -528,11 +533,19 @@
           </div>
           <h3>Scheduled Jobs</h3>
           <div class="muted" style="margin-bottom:8px;">Tip: For unified tracking (scheduled + jobs + delegations), use <strong>Logs → Jobs & Scheduled Tasks</strong>.</div>
+          <div class="card" style="margin-bottom:12px;">
+            <div class="row"><span>Total scheduled sources</span><strong id="scheduledJobsCount">-</strong></div>
+            <div class="row"><span>Healthy/running</span><strong id="scheduledJobsHealthy">-</strong></div>
+            <div class="row"><span>Needs attention</span><strong id="scheduledJobsAttention">-</strong></div>
+          </div>
           <div class="card">
-            <table id="jobsTable">
-              <thead><tr><th>Kind</th><th>Name</th><th>Schedule</th><th>Status</th><th>Detail</th></tr></thead>
-              <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
-            </table>
+            <details>
+              <summary>Advanced scheduled jobs detail</summary>
+              <table id="scheduledJobsTable" style="margin-top:8px;">
+                <thead><tr><th>Kind</th><th>Name</th><th>Schedule</th><th>Status</th><th>Detail</th></tr></thead>
+                <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+              </table>
+            </details>
           </div>
         </section>
 
@@ -835,7 +848,7 @@
       }
 
       function renderScheduledJobs(data){
-        const tbody = document.querySelector('#jobsTable tbody');
+        const tbody = document.querySelector('#scheduledJobsTable tbody');
         if (!data?.ok) {
           tbody.innerHTML = `<tr><td colspan="5" class="bad">${data?.error || 'Failed to load jobs'}</td></tr>`;
           return;
@@ -844,9 +857,15 @@
         const statusClass = (s='') => {
           const x = s.toLowerCase();
           if (x.includes('active') || x.includes('running') || x.includes('configured')) return 'ok';
-          if (x.includes('unknown') || x.includes('inactive')) return 'warn';
+          if (x.includes('unknown') || x.includes('inactive') || x.includes('stopped')) return 'warn';
           return 'bad';
         };
+
+        const rows = data.rows || [];
+        const healthy = rows.filter((r) => ['running','active','configured'].some((k) => String(r.status||'').toLowerCase().includes(k))).length;
+        document.getElementById('scheduledJobsCount').textContent = String(rows.length);
+        document.getElementById('scheduledJobsHealthy').textContent = String(healthy);
+        document.getElementById('scheduledJobsAttention').textContent = String(Math.max(rows.length - healthy, 0));
 
         const relative = (text='') => {
           const m = text.match(/(\d{4}-\d{2}-\d{2}_\d{6})/);
@@ -862,7 +881,7 @@
           return `${Math.floor(hrs/24)}d ago`;
         };
 
-        tbody.innerHTML = (data.rows || []).map(r => {
+        tbody.innerHTML = rows.map(r => {
           const cls = statusClass(r.status || '');
           const age = relative(r.detail || '');
           return `<tr><td>${r.kind}</td><td>${r.name}</td><td>${r.schedule}</td><td><span class='status-pill ${cls}'>${r.status}</span></td><td class='muted'>${(r.detail || '').replaceAll('\n','<br/>')}<br/><span>last run age: ${age}</span></td></tr>`;
