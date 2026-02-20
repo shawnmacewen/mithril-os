@@ -986,12 +986,44 @@ app.get("/api/agent-control/overview", async (_req, res) => {
     done: latest.filter((r) => r.status === "done").length,
   };
 
+  const now = Date.now();
+  const staleRunning = latest.filter((r) => r.status === "running" && r.ts && (now - Date.parse(r.ts)) > (60 * 60 * 1000)).length;
+
   res.json({
     ok: true,
     routing: routing.parsed,
     agentIds: (agents.rows || []).map((r) => r.agentId),
     delegations: latest.slice(0, 25),
     counts,
+    cadence: {
+      staleRunning,
+      reviewHint: staleRunning > 0 ? "Review running delegations older than 60 minutes." : "No stale running delegations.",
+    },
+  });
+});
+
+app.get("/api/delegations/health", async (_req, res) => {
+  const delegations = await readDelegations(300);
+  const latestById = new Map();
+  for (const row of delegations.rows || []) {
+    if (!row?.id) continue;
+    if (!latestById.has(row.id)) latestById.set(row.id, row);
+  }
+  const latest = [...latestById.values()];
+  const now = Date.now();
+
+  const blocked = latest.filter((r) => r.status === "blocked");
+  const staleRunning = latest.filter((r) => r.status === "running" && r.ts && (now - Date.parse(r.ts)) > (60 * 60 * 1000));
+
+  res.json({
+    ok: true,
+    blockedCount: blocked.length,
+    staleRunningCount: staleRunning.length,
+    blocked: blocked.slice(0, 20),
+    staleRunning: staleRunning.slice(0, 20),
+    recommendation: blocked.length || staleRunning.length
+      ? "COO review recommended: resolve blockers or re-scope tasks."
+      : "Delegation queue healthy.",
   });
 });
 

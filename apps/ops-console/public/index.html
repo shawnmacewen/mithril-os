@@ -222,6 +222,7 @@
             <div class="row"><span>COO</span><strong id="cooAgentId">-</strong></div>
             <div class="row"><span>Direct user override</span><strong id="directOverrideState">-</strong></div>
             <div class="row"><span>Delegations (running / blocked)</span><strong id="delegationCounts">-</strong></div>
+            <div class="muted" id="delegationCadence">-</div>
             <table id="delegationsTable" style="margin-top:8px;">
               <thead><tr><th>ID</th><th>Assignee</th><th>Status</th><th>Objective</th><th>Updated</th></tr></thead>
               <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
@@ -856,6 +857,7 @@
         document.getElementById('cooAgentId').textContent = routing?.cooAgentId || 'main';
         document.getElementById('directOverrideState').textContent = override?.enabled ? 'allowed' : 'disabled';
         document.getElementById('delegationCounts').textContent = `${counts.running || 0} running / ${counts.blocked || 0} blocked`;
+        document.getElementById('delegationCadence').textContent = data?.cadence?.reviewHint || 'Cadence check unavailable';
 
         const rows = data?.delegations || [];
         const tbody = document.querySelector('#delegationsTable tbody');
