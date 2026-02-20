@@ -1541,6 +1541,23 @@ app.get("/api/system/docker", async (_req, res) => {
   res.json(await dockerPs());
 });
 
+app.get("/api/changelog/public", async (_req, res) => {
+  const candidates = [
+    "/mithril-os/docs/CHANGELOG_PUBLIC.json",
+    path.join(OPS_REPO_DIR, "docs/CHANGELOG_PUBLIC.json"),
+  ];
+  for (const p of candidates) {
+    try {
+      const raw = await fs.readFile(p, "utf8");
+      const parsed = JSON.parse(raw);
+      return res.json({ ok: true, source: p, ...parsed });
+    } catch {
+      // try next
+    }
+  }
+  return res.status(404).json({ ok: false, error: "Public changelog not found" });
+});
+
 async function haRequest(pathname, opts = {}) {
   if (!HA_TOKEN) return { ok: false, error: "HA token missing" };
   try {

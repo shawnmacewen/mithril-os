@@ -1,0 +1,84 @@
+{
+  "title": "Mithril-OS Public Changelog",
+  "subtitle": "Feature highlights and user-facing improvements",
+  "releases": [
+    {
+      "version": "v1.9.2+",
+      "date": "2026-02-20",
+      "highlights": [
+        "Agent hierarchy and delegation operations launched (COO + specialist model).",
+        "Delegation queue now has guardrails to prevent duplicate or conflicting assignments.",
+        "Review automation added with cadence checks and routing insights.",
+        "Shared coordination logs introduced for cleaner cross-agent visibility."
+      ],
+      "whyItMatters": "Mithril-OS can now scale work across multiple agents while keeping operator control, visibility, and reliability.",
+      "tags": ["Multi-Agent", "Automation", "Ops Visibility"]
+    },
+    {
+      "version": "v1.9.1",
+      "date": "2026-02-19",
+      "highlights": [
+        "OpenClaw queue badges and sparkline trend visuals added.",
+        "Token/cost panel shell introduced with telemetry source metadata.",
+        "Improved operator diagnostics on gateway health and session behavior."
+      ],
+      "whyItMatters": "Operators can understand workload state and runtime health faster, reducing blind spots during live operations.",
+      "tags": ["OpenClaw", "Telemetry", "Dashboard"]
+    },
+    {
+      "version": "v1.9",
+      "date": "2026-02-19",
+      "highlights": [
+        "OpenClaw page overhauled with gateway health and bindings matrix.",
+        "Tool inspector and model runtime snapshot added.",
+        "Config explorer included for rapid read-only inspection."
+      ],
+      "whyItMatters": "Troubleshooting and runtime verification now happen in one place instead of scattered terminal checks.",
+      "tags": ["OpenClaw", "Diagnostics", "Runtime"]
+    },
+    {
+      "version": "v1.8",
+      "date": "2026-02-19",
+      "highlights": [
+        "Backups and Scheduled Jobs integrated under Diagnostics.",
+        "Backup health card, retention, snapshots table, and source breakdown added.",
+        "Run Backup Now workflow improved and host permission path clarified."
+      ],
+      "whyItMatters": "Backup posture is now visible and actionable from the console, improving resilience and operator confidence.",
+      "tags": ["Backups", "Scheduling", "Diagnostics"]
+    },
+    {
+      "version": "v1.7",
+      "date": "2026-02-19",
+      "highlights": [
+        "Home Assistant controls added with grouped areas and dimmer support.",
+        "Entity action endpoint introduced for direct device control.",
+        "Area override mapping improved reliability for room grouping."
+      ],
+      "whyItMatters": "Smart-home operations became practical and reliable directly inside Mithril-OS.",
+      "tags": ["Home Assistant", "Controls", "Automation"]
+    },
+    {
+      "version": "v1.6",
+      "date": "2026-02-19",
+      "highlights": [
+        "Logs 2.0 with structured fields and table workflow released.",
+        "Config validator and commit timeline introduced.",
+        "Model status tiles and top-level dashboard metrics expanded."
+      ],
+      "whyItMatters": "Faster root-cause analysis and better day-to-day visibility for operators.",
+      "tags": ["Logs", "Config", "Audit"]
+    },
+    {
+      "version": "v1.4",
+      "date": "2026-02-19",
+      "highlights": [
+        "Core UI redesign delivered with improved navigation and readability.",
+        "Agents experience upgraded with markdown file explorer and cleaner tiles.",
+        "Theme polish and visual consistency upgrades completed."
+      ],
+      "whyItMatters": "Mithril-OS became easier to navigate, easier to operate, and more client-ready.",
+      "tags": ["UX", "Agents", "UI"]
+    }
+  ]
+}
