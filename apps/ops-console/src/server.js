@@ -115,6 +115,28 @@ async function writeRoutingConfig(nextConfig) {
   return { ok: true, path: AGENT_ROUTING_CONFIG };
 }
 
+async function readDelegations(limit = 200) {
+  try {
+    const raw = await fs.readFile(DELEGATIONS_FILE, "utf8");
+    const rows = raw
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => {
+        try { return JSON.parse(l); } catch { return null; }
+      })
+      .filter(Boolean);
+    return { ok: true, rows: rows.slice(-limit).reverse() };
+  } catch {
+    return { ok: true, rows: [] };
+  }
+}
+
+async function appendDelegation(row) {
+  await fs.mkdir(AGENT_ARTIFACTS_DIR, { recursive: true });
+  await fs.appendFile(DELEGATIONS_FILE, `${JSON.stringify(row)}\n`, "utf8");
+}
+
 async function dockerPs() {
   const result = await shell("docker ps --format '{{.Names}}|{{.Image}}|{{.Status}}|{{.Ports}}'", 3000);
   if (!result.ok) return { ok: false, error: result.stderr, rows: [] };
@@ -937,6 +959,53 @@ app.post("/api/agent-routing", async (req, res) => {
 
   await writeRoutingConfig(merged);
   res.json({ ok: true, saved: true, path: AGENT_ROUTING_CONFIG, config: merged });
+});
+
+app.get("/api/delegations", async (req, res) => {
+  const limit = Number(req.query.limit || 100);
+  const data = await readDelegations(limit);
+  res.json({ ok: true, rows: data.rows });
+});
+
+app.post("/api/delegations", async (req, res) => {
+  const body = req.body || {};
+  const id = `dlg_${Date.now()}`;
+  const row = {
+    id,
+    ts: new Date().toISOString(),
+    status: "queued",
+    ownerAgentId: body.ownerAgentId || "main",
+    assigneeAgentId: body.assigneeAgentId || "main",
+    objective: body.objective || "",
+    context: body.context || "",
+    deliverable: body.deliverable || "",
+    priority: body.priority || "normal",
+    deadline: body.deadline || null,
+    definitionOfDone: body.definitionOfDone || "",
+    escalationRule: body.escalationRule || "",
+    source: body.source || "coo-delegation",
+  };
+
+  await appendDelegation(row);
+  res.json({ ok: true, row });
+});
+
+app.post("/api/delegations/:id/status", async (req, res) => {
+  const id = String(req.params.id || "");
+  const nextStatus = String(req.body?.status || "").toLowerCase();
+  if (!id || !["queued", "running", "done", "blocked", "needs-review"].includes(nextStatus)) {
+    return res.status(400).json({ ok: false, error: "Invalid id/status" });
+  }
+  const row = {
+    id,
+    ts: new Date().toISOString(),
+    event: "status-update",
+    status: nextStatus,
+    note: String(req.body?.note || ""),
+    actorAgentId: String(req.body?.actorAgentId || "main"),
+  };
+  await appendDelegation(row);
+  res.json({ ok: true, row });
 });
 
 app.get("/api/agents/files", async (_req, res) => {
