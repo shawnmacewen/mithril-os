@@ -29,6 +29,7 @@ const WORKSPACE_ROOT_FALLBACK = "/home/mini-home-lab/.openclaw/workspace";
 const AGENT_ROUTING_CONFIG = process.env.AGENT_ROUTING_CONFIG || "/mithril-os/config/agent-routing.json";
 const AGENT_ARTIFACTS_DIR = process.env.AGENT_ARTIFACTS_DIR || "/mithril-os/ops-artifacts";
 const DELEGATIONS_FILE = process.env.DELEGATIONS_FILE || "/mithril-os/ops-artifacts/delegations.jsonl";
+const COORDINATION_LOG_FILE = process.env.COORDINATION_LOG_FILE || "/mithril-os/ops-artifacts/coordination-log.jsonl";
 
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(express.json());
@@ -140,6 +141,28 @@ async function readDelegations(limit = 200) {
 async function appendDelegation(row) {
   await fs.mkdir(AGENT_ARTIFACTS_DIR, { recursive: true });
   await fs.appendFile(DELEGATIONS_FILE, `${JSON.stringify(row)}\n`, "utf8");
+}
+
+async function appendCoordinationLog(row) {
+  await fs.mkdir(AGENT_ARTIFACTS_DIR, { recursive: true });
+  await fs.appendFile(COORDINATION_LOG_FILE, `${JSON.stringify(row)}\n`, "utf8");
+}
+
+async function readJsonl(filePath, limit = 200) {
+  try {
+    const raw = await fs.readFile(filePath, "utf8");
+    const rows = raw
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => {
+        try { return JSON.parse(l); } catch { return null; }
+      })
+      .filter(Boolean);
+    return rows.slice(-limit).reverse();
+  } catch {
+    return [];
+  }
 }
 
 function latestDelegationStates(rows = []) {
@@ -1051,6 +1074,29 @@ app.get("/api/delegations", async (req, res) => {
   res.json({ ok: true, rows: data.rows });
 });
 
+app.get("/api/coordination/overview", async (_req, res) => {
+  const agents = await getAgentMdIndex();
+  const coordinationRows = await readJsonl(COORDINATION_LOG_FILE, 120);
+
+  const memoryMap = (agents.rows || []).map((r) => ({
+    agentId: r.agentId,
+    agentMemoryPath: r.agentDir ? path.join(r.agentDir, "MEMORY.md") : null,
+    dailyMemoryDir: r.agentDir ? path.join(r.agentDir, "memory") : null,
+    sharedCoordinationLog: COORDINATION_LOG_FILE,
+  }));
+
+  res.json({
+    ok: true,
+    sharedWorkspace: AGENT_ARTIFACTS_DIR,
+    sharedLogs: {
+      delegations: DELEGATIONS_FILE,
+      coordination: COORDINATION_LOG_FILE,
+    },
+    memoryMap,
+    recentCoordination: coordinationRows,
+  });
+});
+
 app.get("/api/agent-control/overview", async (_req, res) => {
   const agents = await getAgentMdIndex();
   const routing = await readRoutingConfig();
@@ -1207,6 +1253,20 @@ app.post("/api/delegations/:id/status", async (req, res) => {
   if (!id || !["queued", "running", "done", "blocked", "needs-review"].includes(nextStatus)) {
     return res.status(400).json({ ok: false, error: "Invalid id/status" });
   }
+
+  // Standard output envelope for delegated results.
+  const envelope = {
+    summary: String(req.body?.summary || ""),
+    evidence: Array.isArray(req.body?.evidence) ? req.body.evidence.map(String) : [],
+    nextActions: Array.isArray(req.body?.nextActions) ? req.body.nextActions.map(String) : [],
+  };
+
+  if (["done", "blocked", "needs-review"].includes(nextStatus)) {
+    if (!envelope.summary.trim()) {
+      return res.status(400).json({ ok: false, error: "summary is required for done|blocked|needs-review" });
+    }
+  }
+
   const row = {
     id,
     ts: new Date().toISOString(),
@@ -1214,8 +1274,20 @@ app.post("/api/delegations/:id/status", async (req, res) => {
     status: nextStatus,
     note: String(req.body?.note || ""),
     actorAgentId: String(req.body?.actorAgentId || "main"),
+    output: envelope,
   };
   await appendDelegation(row);
+
+  await appendCoordinationLog({
+    ts: row.ts,
+    delegationId: id,
+    agentId: row.actorAgentId,
+    status: nextStatus,
+    summary: envelope.summary,
+    evidence: envelope.evidence,
+    nextActions: envelope.nextActions,
+  });
+
   res.json({ ok: true, row });
 });
 
