@@ -2246,7 +2246,7 @@ app.post("/api/backups/run", async (_req, res) => {
   return res.json({ ok: true, run, status: status.stdout });
 });
 
-app.get("/api/scheduled-jobs", async (_req, res) => {
+async function getScheduledJobsRows() {
   const watchers = await getWatchersStatus();
   const timer = await shell("systemctl list-timers --all --no-pager | grep -E 'mithril-backup|mithril-delegation-review|NEXT|LEFT' || true", 3000);
   const backupService = await shell("systemctl is-active mithril-backup.service || true", 1500);
@@ -2290,7 +2290,68 @@ app.get("/api/scheduled-jobs", async (_req, res) => {
     }
   }
 
-  res.json({ ok: true, rows: jobRows });
+  return jobRows;
+}
+
+app.get("/api/scheduled-jobs", async (_req, res) => {
+  const rows = await getScheduledJobsRows();
+  res.json({ ok: true, rows });
+});
+
+app.get("/api/work/overview", async (req, res) => {
+  const type = String(req.query.type || "").toLowerCase();
+  const statusFilter = String(req.query.status || "").toLowerCase();
+  const limit = Math.max(1, Math.min(Number(req.query.limit || 300), 2000));
+
+  const scheduledRows = await getScheduledJobsRows();
+  const jobRows = foldJobs(await readJobLedger());
+
+  const normalizedScheduled = scheduledRows
+    .filter((r) => r.kind !== "watcher")
+    .map((r) => ({
+      id: `sched:${r.kind}:${r.name}`,
+      type: "scheduled",
+      source: r.kind,
+      owner: "system",
+      assignee: r.name,
+      status: r.status || "unknown",
+      task: r.name,
+      whenText: r.schedule || "scheduled",
+      summary: r.detail || "",
+      updatedAt: null,
+      details: r,
+    }));
+
+  const normalizedJobs = jobRows.map((r) => ({
+    id: r.jobId,
+    type: r.kind === "delegation" ? "delegation" : "job",
+    source: r.kind || "job",
+    owner: r.sourceAgent || "unknown",
+    assignee: r.targetAgent || r.sourceAgent || "unknown",
+    status: r.status === "started" ? "running" : (r.status || "queued"),
+    task: r.summary || r.jobId,
+    whenText: r.createdAt || r.updatedAt || "-",
+    summary: r.result || r.error || r.summary || "",
+    updatedAt: r.updatedAt || null,
+    details: r,
+  }));
+
+  let rows = [...normalizedScheduled, ...normalizedJobs]
+    .sort((a, b) => String(b.updatedAt || b.whenText || "").localeCompare(String(a.updatedAt || a.whenText || "")));
+
+  if (type) rows = rows.filter((r) => r.type === type);
+  if (statusFilter) rows = rows.filter((r) => String(r.status || "").toLowerCase() === statusFilter);
+
+  const summary = {
+    total: rows.length,
+    scheduled: rows.filter((r) => r.type === "scheduled").length,
+    running: rows.filter((r) => r.status === "running").length,
+    queued: rows.filter((r) => r.status === "queued").length,
+    blocked: rows.filter((r) => r.status === "blocked").length,
+    failed: rows.filter((r) => r.status === "failed").length,
+  };
+
+  res.json({ ok: true, summary, rows: rows.slice(0, limit) });
 });
 
 app.post("/api/actions/:action", async (req, res) => {
