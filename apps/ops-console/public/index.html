@@ -636,8 +636,24 @@
         jobsBtn.classList.toggle('active', logsTab === 'jobs');
       }
 
-      async function jget(url){ const r = await fetch(url); return await r.json(); }
-      async function jpost(url, body){ const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await r.json(); }
+      async function jget(url){
+        try {
+          const r = await fetch(url);
+          const t = await r.text();
+          try { return JSON.parse(t); } catch { return { ok:false, error:`Non-JSON response from ${url}`, raw:t.slice(0,300) }; }
+        } catch (e) {
+          return { ok:false, error:String(e?.message || e) };
+        }
+      }
+      async function jpost(url, body){
+        try {
+          const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+          const t = await r.text();
+          try { return JSON.parse(t); } catch { return { ok:false, error:`Non-JSON response from ${url}`, raw:t.slice(0,300) }; }
+        } catch (e) {
+          return { ok:false, error:String(e?.message || e) };
+        }
+      }
       function chipStyleForName(name){
         let h = 0;
         for (let i = 0; i < name.length; i++) h = (h * 33 + name.charCodeAt(i)) >>> 0;

@@ -1784,7 +1784,7 @@ app.get("/api/changelog/public", async (_req, res) => {
   return res.status(404).json({ ok: false, error: "Public changelog not found" });
 });
 
-app.get("/api/project-monitor/overview", async (_req, res) => {
+async function sendProjectsOverview(res) {
   const cfg = await readProjectsConfig();
   const rows = [];
   for (const p of cfg.projects || []) {
@@ -1802,6 +1802,15 @@ app.get("/api/project-monitor/overview", async (_req, res) => {
     },
     rows,
   });
+}
+
+app.get("/api/project-monitor/overview", async (_req, res) => {
+  await sendProjectsOverview(res);
+});
+
+// Backward compatibility for previously shipped frontend path
+app.get("/api/projects/overview", async (_req, res) => {
+  await sendProjectsOverview(res);
 });
 
 app.get("/api/policies/overview", async (_req, res) => {
