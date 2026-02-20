@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Mithril delegation cadence review every 30 minutes
+
+[Timer]
+OnBootSec=3m
+OnUnitActiveSec=30m
+Persistent=true
+Unit=mithril-delegation-review.service
+
+[Install]
+WantedBy=timers.target

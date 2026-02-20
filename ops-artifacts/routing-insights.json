@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "generatedAt": "2026-02-20T01:56:54.515Z",
+  "totals": {
+    "tasks": 6,
+    "done": 5,
+    "blocked": 0
+  },
+  "suggestions": [
+    {
+      "agentId": "koda",
+      "total": 4,
+      "done": 3,
+      "blocked": 0,
+      "running": 0,
+      "queued": 1,
+      "needsReview": 0,
+      "doneRate": 0.75,
+      "blockedRate": 0,
+      "recommendation": "keep"
+    },
+    {
+      "agentId": "main",
+      "total": 2,
+      "done": 2,
+      "blocked": 0,
+      "running": 0,
+      "queued": 0,
+      "needsReview": 0,
+      "doneRate": 1,
+      "blockedRate": 0,
+      "recommendation": "keep"
+    }
+  ],
+  "note": "Urgent tasks should remain COO-routed unless explicitly overridden."
+}

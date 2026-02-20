@@ -1,0 +1,8 @@
+[Unit]
+Description=Run Mithril delegation cadence review
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/mithril-os
+ExecStart=/usr/bin/env bash /mithril-os/scripts/run-delegation-review.sh

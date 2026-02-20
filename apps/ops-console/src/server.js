@@ -30,6 +30,8 @@ const AGENT_ROUTING_CONFIG = process.env.AGENT_ROUTING_CONFIG || "/mithril-os/co
 const AGENT_ARTIFACTS_DIR = process.env.AGENT_ARTIFACTS_DIR || "/mithril-os/ops-artifacts";
 const DELEGATIONS_FILE = process.env.DELEGATIONS_FILE || "/mithril-os/ops-artifacts/delegations.jsonl";
 const COORDINATION_LOG_FILE = process.env.COORDINATION_LOG_FILE || "/mithril-os/ops-artifacts/coordination-log.jsonl";
+const REVIEW_LOG_FILE = process.env.REVIEW_LOG_FILE || "/mithril-os/ops-artifacts/review-log.jsonl";
+const ROUTING_INSIGHTS_FILE = process.env.ROUTING_INSIGHTS_FILE || "/mithril-os/ops-artifacts/routing-insights.json";
 
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(express.json());
@@ -163,6 +165,16 @@ async function readJsonl(filePath, limit = 200) {
   } catch {
     return [];
   }
+}
+
+async function appendReviewLog(row) {
+  await fs.mkdir(AGENT_ARTIFACTS_DIR, { recursive: true });
+  await fs.appendFile(REVIEW_LOG_FILE, `${JSON.stringify(row)}\n`, "utf8");
+}
+
+async function writeRoutingInsights(payload) {
+  await fs.mkdir(AGENT_ARTIFACTS_DIR, { recursive: true });
+  await fs.writeFile(ROUTING_INSIGHTS_FILE, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
 }
 
 function latestDelegationStates(rows = []) {
@@ -1169,12 +1181,7 @@ app.get("/api/agent-control/overview", async (_req, res) => {
 
 app.get("/api/delegations/health", async (_req, res) => {
   const delegations = await readDelegations(300);
-  const latestById = new Map();
-  for (const row of delegations.rows || []) {
-    if (!row?.id) continue;
-    if (!latestById.has(row.id)) latestById.set(row.id, row);
-  }
-  const latest = [...latestById.values()];
+  const latest = latestDelegationStates(delegations.rows || []);
   const now = Date.now();
 
   const blocked = latest.filter((r) => r.status === "blocked");
@@ -1190,6 +1197,83 @@ app.get("/api/delegations/health", async (_req, res) => {
       ? "COO review recommended: resolve blockers or re-scope tasks."
       : "Delegation queue healthy.",
   });
+});
+
+app.get("/api/agent-routing/insights", async (_req, res) => {
+  const delegations = await readDelegations(1200);
+  const latest = latestDelegationStates(delegations.rows || []);
+  const done = latest.filter((r) => r.status === "done");
+  const blocked = latest.filter((r) => r.status === "blocked");
+
+  const byAssignee = {};
+  for (const row of latest) {
+    const k = row.assigneeAgentId || row.actorAgentId || "unknown";
+    byAssignee[k] = byAssignee[k] || { total: 0, done: 0, blocked: 0, running: 0, queued: 0, needsReview: 0 };
+    byAssignee[k].total += 1;
+    const s = String(row.status || "");
+    if (s === "done") byAssignee[k].done += 1;
+    else if (s === "blocked") byAssignee[k].blocked += 1;
+    else if (s === "running") byAssignee[k].running += 1;
+    else if (s === "queued") byAssignee[k].queued += 1;
+    else if (s === "needs-review") byAssignee[k].needsReview += 1;
+  }
+
+  const suggestions = Object.entries(byAssignee).map(([agentId, m]) => {
+    const doneRate = m.total ? m.done / m.total : 0;
+    const blockedRate = m.total ? m.blocked / m.total : 0;
+    let recommendation = "keep";
+    if (blockedRate >= 0.4 && m.total >= 3) recommendation = "decrease-routing";
+    else if (doneRate >= 0.8 && m.total >= 3) recommendation = "increase-routing";
+    return { agentId, ...m, doneRate, blockedRate, recommendation };
+  });
+
+  const payload = {
+    ok: true,
+    generatedAt: new Date().toISOString(),
+    totals: { tasks: latest.length, done: done.length, blocked: blocked.length },
+    suggestions,
+    note: "Urgent tasks should remain COO-routed unless explicitly overridden.",
+  };
+
+  await writeRoutingInsights(payload);
+  res.json(payload);
+});
+
+app.get("/api/delegations/reviews", async (req, res) => {
+  const limit = Number(req.query.limit || 50);
+  const rows = await readJsonl(REVIEW_LOG_FILE, limit);
+  res.json({ ok: true, rows });
+});
+
+app.post("/api/delegations/review/run", async (_req, res) => {
+  const delegations = await readDelegations(600);
+  const latest = latestDelegationStates(delegations.rows || []);
+  const now = Date.now();
+
+  const blocked = latest.filter((r) => r.status === "blocked");
+  const staleRunning = latest.filter((r) => r.status === "running" && r.ts && (now - Date.parse(r.ts)) > (60 * 60 * 1000));
+  const urgentAssignedAwayFromCoo = latest.filter((r) => {
+    const p = String(r.priority || "").toLowerCase();
+    return (p === "urgent" || p === "high") && String(r.assigneeAgentId || "") !== "main" && ["queued", "running", "needs-review"].includes(String(r.status || ""));
+  });
+
+  const review = {
+    ts: new Date().toISOString(),
+    blockedCount: blocked.length,
+    staleRunningCount: staleRunning.length,
+    urgentAssignedAwayFromCooCount: urgentAssignedAwayFromCoo.length,
+    recommendation: (blocked.length || staleRunning.length)
+      ? "COO follow-up required"
+      : "Queue healthy",
+    notes: [
+      urgentAssignedAwayFromCoo.length
+        ? "Urgent tasks currently assigned away from COO; verify specialist justification."
+        : "Urgent-task SLA intact (COO-first).",
+    ],
+  };
+
+  await appendReviewLog(review);
+  res.json({ ok: true, review });
 });
 
 app.post("/api/delegations", async (req, res) => {
@@ -1645,8 +1729,9 @@ app.post("/api/backups/run", async (_req, res) => {
 
 app.get("/api/scheduled-jobs", async (_req, res) => {
   const watchers = await getWatchersStatus();
-  const timer = await shell("systemctl list-timers --all --no-pager | grep -E 'mithril-backup|NEXT|LEFT' || true", 3000);
+  const timer = await shell("systemctl list-timers --all --no-pager | grep -E 'mithril-backup|mithril-delegation-review|NEXT|LEFT' || true", 3000);
   const backupService = await shell("systemctl is-active mithril-backup.service || true", 1500);
+  const reviewService = await shell("systemctl is-active mithril-delegation-review.service || true", 1500);
 
   let cronRows = [];
   const cronOut = await shell("openclaw cron list 2>/dev/null || true", 3000);
@@ -1668,6 +1753,13 @@ app.get("/api/scheduled-jobs", async (_req, res) => {
       name: "mithril-backup",
       schedule: "daily (systemd timer)",
       status: (backupService.stdout || "unknown").trim() || "unknown",
+      detail: (timer.stdout || "timer info unavailable").trim() || "timer info unavailable",
+    },
+    {
+      kind: "delegation-review",
+      name: "mithril-delegation-review",
+      schedule: "every 30m (systemd timer)",
+      status: (reviewService.stdout || "unknown").trim() || "unknown",
       detail: (timer.stdout || "timer info unavailable").trim() || "timer info unavailable",
     },
     ...watcherRows,
