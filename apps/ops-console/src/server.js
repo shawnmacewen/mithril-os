@@ -1257,11 +1257,50 @@ app.post("/api/delegations/review/run", async (_req, res) => {
     return (p === "urgent" || p === "high") && String(r.assigneeAgentId || "") !== "main" && ["queued", "running", "needs-review"].includes(String(r.status || ""));
   });
 
+  // Auto-close stale test/smoke delegations to keep queue clean.
+  const staleQueuedTests = latest.filter((r) => {
+    if (String(r.status || "") !== "queued") return false;
+    const ageMs = r.ts ? (now - Date.parse(r.ts)) : 0;
+    if (ageMs < (45 * 60 * 1000)) return false;
+    const pr = String(r.priority || "normal").toLowerCase();
+    if (!(["low", "normal", ""].includes(pr))) return false;
+    const text = `${r.objective || ""} ${r.context || ""}`.toLowerCase();
+    return /smoke|guardrail test|phase\d+.*test/.test(text);
+  });
+
+  for (const r of staleQueuedTests) {
+    const ts = new Date().toISOString();
+    const statusRow = {
+      id: r.id,
+      ts,
+      event: "status-update",
+      status: "done",
+      note: "auto-closed stale test delegation by cadence review",
+      actorAgentId: "main",
+      output: {
+        summary: "Auto-closed stale test delegation during cadence review.",
+        evidence: ["Queued >45 minutes and matched test/smoke pattern"],
+        nextActions: ["No action required"],
+      },
+    };
+    await appendDelegation(statusRow);
+    await appendCoordinationLog({
+      ts,
+      delegationId: r.id,
+      agentId: "main",
+      status: "done",
+      summary: statusRow.output.summary,
+      evidence: statusRow.output.evidence,
+      nextActions: statusRow.output.nextActions,
+    });
+  }
+
   const review = {
     ts: new Date().toISOString(),
     blockedCount: blocked.length,
     staleRunningCount: staleRunning.length,
     urgentAssignedAwayFromCooCount: urgentAssignedAwayFromCoo.length,
+    autoClosedStaleTestCount: staleQueuedTests.length,
     recommendation: (blocked.length || staleRunning.length)
       ? "COO follow-up required"
       : "Queue healthy",
@@ -1269,6 +1308,9 @@ app.post("/api/delegations/review/run", async (_req, res) => {
       urgentAssignedAwayFromCoo.length
         ? "Urgent tasks currently assigned away from COO; verify specialist justification."
         : "Urgent-task SLA intact (COO-first).",
+      staleQueuedTests.length
+        ? `Auto-closed ${staleQueuedTests.length} stale test/smoke delegation(s).`
+        : "No stale test/smoke delegations auto-closed.",
     ],
   };
 

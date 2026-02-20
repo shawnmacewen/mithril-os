@@ -10,6 +10,7 @@ Completed review-loop automation, routing learnings, and SLA guard behavior.
 
 ## What this adds
 - Periodic COO review record (blocked, stale-running, urgent-off-COO counts).
+- Auto-close of stale low-risk test/smoke queued delegations (cleanup hygiene).
 - Durable review history in `ops-artifacts/review-log.jsonl`.
 - Routing insights generated from outcomes and written to `ops-artifacts/routing-insights.json`.
 - SLA-style behavior check: urgent/high active tasks assigned away from COO are flagged for review.
