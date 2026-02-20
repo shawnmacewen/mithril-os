@@ -192,6 +192,7 @@
       </aside>
 
       <main class="main">
+        <div id="uiBootError" class="card hidden" style="border-left-color:#ef4444;margin-bottom:12px;"></div>
 
         <section id="view-dashboard">
           <h2>Dashboard</h2>
@@ -570,6 +571,21 @@
       const views = ["dashboard","agents","watchers","openclaw","models","homeassistant","logs","projects","policies","changelog","backups","jobs","config"];
       let autoTimer = null;
       let cache = {};
+
+      function showUiBootError(msg){
+        const el = document.getElementById('uiBootError');
+        if (!el) return;
+        el.classList.remove('hidden');
+        el.innerHTML = `<strong>UI diagnostics:</strong> <span class='bad'>${msg}</span>`;
+      }
+
+      window.addEventListener('error', (e) => {
+        showUiBootError(`${e.message || 'unknown error'} @ ${e.filename || ''}:${e.lineno || ''}`);
+      });
+      window.addEventListener('unhandledrejection', (e) => {
+        const m = e?.reason?.message || String(e?.reason || 'unhandled promise rejection');
+        showUiBootError(m);
+      });
       let currentAgentFilesIndex = [];
       let commitsPage = 1;
       const commitsPageSize = 8;
@@ -1352,7 +1368,9 @@
 
           await loadLogs();
         } catch (e) {
-          stamp.textContent = `Error: ${e.message}`;
+          const msg = `Error: ${e.message || e}`;
+          stamp.textContent = msg;
+          showUiBootError(msg);
         }
       }
 
