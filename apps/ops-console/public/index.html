@@ -230,6 +230,22 @@
           </div>
 
           <div class="card" style="margin-bottom:12px;">
+            <h3>What each agent is doing now</h3>
+            <table id="agentNowTable">
+              <thead><tr><th>Agent</th><th>Role</th><th>Status</th><th>Current task</th><th>Last update</th><th>Blockers</th></tr></thead>
+              <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="card" style="margin-bottom:12px;">
+            <h3>Delegation Timeline</h3>
+            <table id="delegationTimelineTable">
+              <thead><tr><th>ID</th><th>Assignee</th><th>Latest</th><th>Events</th><th>Objective</th></tr></thead>
+              <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="card" style="margin-bottom:12px;">
             <div id="agentTiles" class="agent-tiles-grid"></div>
             <pre id="agentMdContent">Select an agent file to view markdown content.</pre>
           </div>
@@ -630,10 +646,16 @@
               ? files.map((f) => `<button data-agent-id="${r.agentId}" data-file="${f}" style="${chipStyleForName(f)}" class="${selected===f?'active':''}">${f}</button>`).join('')
               : `<span class="muted">No markdown files</span>`;
 
+            const coo = cache?.agentControl?.routing?.cooAgentId || 'main';
+            const role = r.agentId === coo ? 'COO' : 'specialist';
+            const roleBadge = role === 'COO'
+              ? `<span class="status-pill ok">COO</span>`
+              : `<span class="status-pill warn">specialist</span>`;
+
             return `
               <div class="agent-tile-card ${r.agentId===activeAgentId?'active':''}">
                 <div class="agent-tile-top">
-                  <strong>${r.agentId}</strong>
+                  <strong>${r.agentId} ${roleBadge}</strong>
                   <span class="muted">${files.length} file${files.length===1?'':'s'}</span>
                 </div>
                 <div class="agent-file-row">${fileButtons}</div>
@@ -863,17 +885,50 @@
         const tbody = document.querySelector('#delegationsTable tbody');
         if (!rows.length) {
           tbody.innerHTML = `<tr><td colspan="5" class="muted">No delegations logged yet</td></tr>`;
-          return;
+        } else {
+          tbody.innerHTML = rows.slice(0, 10).map((r) => `
+            <tr>
+              <td>${r.id || '-'}</td>
+              <td>${r.assigneeAgentId || r.actorAgentId || '-'}</td>
+              <td>${r.status || '-'}</td>
+              <td>${(r.objective || r.note || '').slice(0, 90)}</td>
+              <td>${r.ts ? new Date(r.ts).toLocaleString() : '-'}</td>
+            </tr>
+          `).join('');
         }
-        tbody.innerHTML = rows.slice(0, 10).map((r) => `
-          <tr>
-            <td>${r.id || '-'}</td>
-            <td>${r.assigneeAgentId || r.actorAgentId || '-'}</td>
-            <td>${r.status || '-'}</td>
-            <td>${(r.objective || r.note || '').slice(0, 90)}</td>
-            <td>${r.ts ? new Date(r.ts).toLocaleString() : '-'}</td>
-          </tr>
-        `).join('');
+
+        const nowRows = data?.perAgent || [];
+        const nowBody = document.querySelector('#agentNowTable tbody');
+        if (!nowRows.length) {
+          nowBody.innerHTML = `<tr><td colspan="6" class="muted">No agent activity yet</td></tr>`;
+        } else {
+          nowBody.innerHTML = nowRows.map((r) => `
+            <tr>
+              <td>${r.agentId}</td>
+              <td>${r.role === 'COO' ? '<span class="status-pill ok">COO</span>' : '<span class="status-pill warn">specialist</span>'}</td>
+              <td>${r.currentStatus || 'idle'}</td>
+              <td>${(r.currentTask || 'idle').slice(0, 80)}</td>
+              <td>${r.lastUpdateAt ? new Date(r.lastUpdateAt).toLocaleString() : '-'}</td>
+              <td>${r.blockerCount || 0}</td>
+            </tr>
+          `).join('');
+        }
+
+        const timeline = data?.timeline || [];
+        const timeBody = document.querySelector('#delegationTimelineTable tbody');
+        if (!timeline.length) {
+          timeBody.innerHTML = `<tr><td colspan="5" class="muted">No delegation timeline yet</td></tr>`;
+        } else {
+          timeBody.innerHTML = timeline.slice(0, 12).map((t) => `
+            <tr>
+              <td>${t.id}</td>
+              <td>${t.assigneeAgentId || '-'}</td>
+              <td>${t.latestStatus || '-'}</td>
+              <td>${(t.events || []).map((e) => e.status).filter(Boolean).join(' → ')}</td>
+              <td>${(t.objective || '').slice(0, 80)}</td>
+            </tr>
+          `).join('');
+        }
       }
 
       function renderModelsTiles(models){

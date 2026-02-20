@@ -1054,14 +1054,9 @@ app.get("/api/delegations", async (req, res) => {
 app.get("/api/agent-control/overview", async (_req, res) => {
   const agents = await getAgentMdIndex();
   const routing = await readRoutingConfig();
-  const delegations = await readDelegations(200);
+  const delegations = await readDelegations(400);
 
-  const latestById = new Map();
-  for (const row of delegations.rows || []) {
-    if (!row?.id) continue;
-    if (!latestById.has(row.id)) latestById.set(row.id, row);
-  }
-  const latest = [...latestById.values()];
+  const latest = latestDelegationStates(delegations.rows || []);
   const counts = {
     queued: latest.filter((r) => r.status === "queued").length,
     running: latest.filter((r) => r.status === "running").length,
@@ -1071,18 +1066,58 @@ app.get("/api/agent-control/overview", async (_req, res) => {
   };
 
   const now = Date.now();
-  const staleRunning = latest.filter((r) => r.status === "running" && r.ts && (now - Date.parse(r.ts)) > (60 * 60 * 1000)).length;
+  const staleRunningRows = latest.filter((r) => r.status === "running" && r.ts && (now - Date.parse(r.ts)) > (60 * 60 * 1000));
+  const blockedRows = latest.filter((r) => r.status === "blocked");
+
+  const ids = new Set([...(agents.rows || []).map((r) => r.agentId), ...latest.map((r) => r.assigneeAgentId).filter(Boolean)]);
+  const coo = routing.parsed?.cooAgentId || "main";
+
+  const perAgent = [...ids].sort().map((agentId) => {
+    const mine = latest.filter((r) => r.assigneeAgentId === agentId);
+    const active = mine.filter((r) => ["queued", "running", "needs-review"].includes(String(r.status || "")));
+    const blockers = mine.filter((r) => r.status === "blocked");
+    const mostRecent = mine.sort((a, b) => Date.parse(b.ts || 0) - Date.parse(a.ts || 0))[0] || null;
+    const current = active.sort((a, b) => Date.parse(b.ts || 0) - Date.parse(a.ts || 0))[0] || null;
+
+    return {
+      agentId,
+      role: agentId === coo ? "COO" : "specialist",
+      activeCount: active.length,
+      blockerCount: blockers.length,
+      lastUpdateAt: mostRecent?.ts || null,
+      currentTask: current ? (current.objective || current.note || "") : "idle",
+      currentStatus: current?.status || "idle",
+    };
+  });
+
+  // timeline grouped by delegation id
+  const timelineMap = new Map();
+  for (const row of (delegations.rows || []).slice().reverse()) {
+    if (!row?.id) continue;
+    if (!timelineMap.has(row.id)) timelineMap.set(row.id, []);
+    timelineMap.get(row.id).push(row);
+  }
+  const timeline = [...timelineMap.entries()].slice(-25).reverse().map(([id, events]) => ({
+    id,
+    latestStatus: events[events.length - 1]?.status || "unknown",
+    assigneeAgentId: events.find((e) => e.assigneeAgentId)?.assigneeAgentId || null,
+    objective: events.find((e) => e.objective)?.objective || "",
+    events,
+  }));
 
   res.json({
     ok: true,
     routing: routing.parsed,
     agentIds: (agents.rows || []).map((r) => r.agentId),
     delegations: latest.slice(0, 25),
+    timeline,
+    perAgent,
     counts,
     cadence: {
-      staleRunning,
-      reviewHint: staleRunning > 0 ? "Review running delegations older than 60 minutes." : "No stale running delegations.",
+      staleRunning: staleRunningRows.length,
+      reviewHint: staleRunningRows.length > 0 ? "Review running delegations older than 60 minutes." : "No stale running delegations.",
     },
+    blockers: blockedRows.slice(0, 20),
   });
 });
 
