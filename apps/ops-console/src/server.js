@@ -38,6 +38,11 @@ const ROUTING_INSIGHTS_FILE = process.env.ROUTING_INSIGHTS_FILE || "/mithril-os/
 const PROJECTS_CONFIG_FILE = process.env.PROJECTS_CONFIG_FILE || "/mithril-os/config/projects-monitor.json";
 const POLICIES_CONFIG_FILE = process.env.POLICIES_CONFIG_FILE || "/mithril-os/config/policies.json";
 
+app.use((req, res, next) => {
+  // Internal ops UI: prefer freshness over asset caching to avoid stale frontend state.
+  res.setHeader("Cache-Control", "no-store");
+  next();
+});
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(express.json());
 
