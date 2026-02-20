@@ -22,6 +22,8 @@ const WATCHERS_STATE_DIR = process.env.WATCHERS_STATE_DIR || "/mithril-os/watche
 const OPS_REPO_DIR = process.env.OPS_REPO_DIR || "/mithril-os";
 const OPS_APP_DIR = process.env.OPS_APP_DIR || "/mithril-os/apps/ops-console";
 const OPS_ENV_FILE = process.env.OPS_ENV_FILE || "/mithril-os/apps/ops-console/.env";
+const OPS_DATA_DIR = process.env.OPS_DATA_DIR || "/mithril-os/apps/ops-console/data";
+const JOBS_LEDGER_FILE = process.env.JOBS_LEDGER_FILE || path.join(OPS_DATA_DIR, "jobs.jsonl");
 const AGENTS_ROOT = process.env.AGENTS_ROOT || "/home/mini-home-lab/.openclaw/agents";
 const AGENTS_ROOT_FALLBACK = "/home/node/.openclaw/agents";
 const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT || "/home/node/.openclaw/workspace";
@@ -32,6 +34,7 @@ const DELEGATIONS_FILE = process.env.DELEGATIONS_FILE || "/mithril-os/ops-artifa
 const COORDINATION_LOG_FILE = process.env.COORDINATION_LOG_FILE || "/mithril-os/ops-artifacts/coordination-log.jsonl";
 const REVIEW_LOG_FILE = process.env.REVIEW_LOG_FILE || "/mithril-os/ops-artifacts/review-log.jsonl";
 const ROUTING_INSIGHTS_FILE = process.env.ROUTING_INSIGHTS_FILE || "/mithril-os/ops-artifacts/routing-insights.json";
+const PROJECTS_CONFIG_FILE = process.env.PROJECTS_CONFIG_FILE || "/mithril-os/config/projects-monitor.json";
 
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(express.json());
@@ -72,6 +75,99 @@ async function readJsonIfExists(filePath) {
   } catch {
     return null;
   }
+}
+
+async function ensureDir(dirPath) {
+  await fs.mkdir(dirPath, { recursive: true });
+}
+
+function isoNow() {
+  return new Date().toISOString();
+}
+
+async function appendJobEvent(event) {
+  await ensureDir(path.dirname(JOBS_LEDGER_FILE));
+  const line = JSON.stringify({ ...event, at: event.at || isoNow() });
+  await fs.appendFile(JOBS_LEDGER_FILE, `${line}\n`, "utf8");
+}
+
+async function readJobLedger() {
+  try {
+    const raw = await fs.readFile(JOBS_LEDGER_FILE, "utf8");
+    return raw
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => {
+        try {
+          return JSON.parse(l);
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function foldJobs(events = []) {
+  const byId = new Map();
+  const sorted = [...events].sort((a, b) => String(a.at || "").localeCompare(String(b.at || "")));
+
+  for (const e of sorted) {
+    const jobId = String(e.jobId || "").trim();
+    if (!jobId) continue;
+    const prev = byId.get(jobId) || {
+      jobId,
+      kind: e.kind || "job",
+      sourceAgent: e.sourceAgent || "unknown",
+      targetAgent: e.targetAgent || null,
+      status: "queued",
+      summary: e.summary || "",
+      result: "",
+      error: "",
+      channelContext: e.channelContext || null,
+      createdAt: e.at || null,
+      startedAt: null,
+      completedAt: null,
+      updatedAt: e.at || null,
+      events: [],
+    };
+
+    const type = String(e.event || "update").toLowerCase();
+    if (type === "created") {
+      prev.status = "queued";
+      prev.createdAt = prev.createdAt || e.at || null;
+    }
+    if (type === "started") {
+      prev.status = "started";
+      prev.startedAt = prev.startedAt || e.at || null;
+    }
+    if (type === "blocked") prev.status = "blocked";
+    if (type === "done") {
+      prev.status = "done";
+      prev.completedAt = e.at || prev.completedAt;
+    }
+    if (type === "failed") {
+      prev.status = "failed";
+      prev.completedAt = e.at || prev.completedAt;
+    }
+
+    if (e.kind) prev.kind = e.kind;
+    if (e.sourceAgent) prev.sourceAgent = e.sourceAgent;
+    if (e.targetAgent !== undefined) prev.targetAgent = e.targetAgent;
+    if (e.summary) prev.summary = e.summary;
+    if (e.result) prev.result = e.result;
+    if (e.error) prev.error = e.error;
+    if (e.channelContext) prev.channelContext = e.channelContext;
+    prev.updatedAt = e.at || prev.updatedAt;
+    prev.events.push({ at: e.at || null, event: type, note: e.note || "" });
+
+    byId.set(jobId, prev);
+  }
+
+  return [...byId.values()].sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
 }
 
 async function readConfig() {
@@ -121,6 +217,63 @@ async function writeRoutingConfig(nextConfig) {
   await fs.mkdir(path.dirname(AGENT_ROUTING_CONFIG), { recursive: true });
   await fs.writeFile(AGENT_ROUTING_CONFIG, `${JSON.stringify(nextConfig, null, 2)}\n`, "utf8");
   return { ok: true, path: AGENT_ROUTING_CONFIG };
+}
+
+async function readProjectsConfig() {
+  try {
+    const raw = await fs.readFile(PROJECTS_CONFIG_FILE, "utf8");
+    const parsed = JSON.parse(raw);
+    const rows = Array.isArray(parsed.projects) ? parsed.projects : [];
+    return { ok: true, source: PROJECTS_CONFIG_FILE, projects: rows };
+  } catch {
+    return { ok: true, source: "default", projects: [] };
+  }
+}
+
+async function getProjectRowStatus(project) {
+  const name = String(project?.name || "Unnamed Project");
+  const repoPath = String(project?.path || "").trim();
+  if (!repoPath) return { name, path: "", ok: false, error: "missing path" };
+
+  const status = await shell(`git -C ${JSON.stringify(repoPath)} status -sb 2>/dev/null || true`, 3000);
+  const remotes = await shell(`git -C ${JSON.stringify(repoPath)} remote -v 2>/dev/null | head -n 2 || true`, 3000);
+  const last = await shell(`git -C ${JSON.stringify(repoPath)} log -n 3 --pretty=format:'%h|%cI|%s' 2>/dev/null || true`, 3000);
+
+  const statusText = (status.stdout || "").trim();
+  const first = statusText.split("\n")[0] || "";
+  const dirty = statusText.split("\n").length > 1;
+
+  let branch = "unknown";
+  let tracking = "";
+  if (first.startsWith("##")) {
+    const s = first.replace(/^##\s*/, "");
+    const idx = s.indexOf("...");
+    if (idx >= 0) {
+      branch = s.slice(0, idx).trim();
+      tracking = s.slice(idx + 3).trim();
+    } else {
+      branch = s.trim();
+    }
+  }
+
+  const commits = (last.stdout || "").trim()
+    ? (last.stdout || "").trim().split("\n").map((l) => {
+        const [hash, date, subject] = l.split("|");
+        return { hash, date, subject };
+      })
+    : [];
+
+  return {
+    name,
+    path: repoPath,
+    ok: Boolean(statusText),
+    branch,
+    tracking,
+    dirty,
+    statusLine: first || "unavailable",
+    remotes: (remotes.stdout || "").trim() || "none",
+    commits,
+  };
 }
 
 async function readDelegations(limit = 200) {
@@ -344,6 +497,33 @@ async function getGatewayLogRows({ limit = 200, level = "", q = "" }) {
     .filter((r) => (q ? r.text.toLowerCase().includes(q.toLowerCase()) : true));
 
   return { ok: true, source, rows };
+}
+
+async function sendDiscordChannelMessage(channelId, content) {
+  const cfg = await readConfig();
+  if (!cfg.ok) return { ok: false, error: cfg.error || "config unreadable" };
+  const token = cfg.parsed?.channels?.discord?.token;
+  if (!token) return { ok: false, error: "Discord token missing in config" };
+  const cid = String(channelId || "").trim();
+  if (!cid) return { ok: false, error: "channelId is required" };
+
+  try {
+    const r = await fetch(`https://discord.com/api/v10/channels/${encodeURIComponent(cid)}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bot ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ content: String(content || "") }),
+    });
+    const text = await r.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+    if (!r.ok) return { ok: false, status: r.status, error: `Discord API HTTP ${r.status}`, data };
+    return { ok: true, status: r.status, data };
+  } catch (error) {
+    return { ok: false, error: String(error.message || error) };
+  }
 }
 
 async function getStatusPayload() {
@@ -1558,6 +1738,26 @@ app.get("/api/changelog/public", async (_req, res) => {
   return res.status(404).json({ ok: false, error: "Public changelog not found" });
 });
 
+app.get("/api/projects/overview", async (_req, res) => {
+  const cfg = await readProjectsConfig();
+  const rows = [];
+  for (const p of cfg.projects || []) {
+    rows.push(await getProjectRowStatus(p));
+  }
+  const healthy = rows.filter((r) => r.ok).length;
+  const dirty = rows.filter((r) => r.dirty).length;
+  res.json({
+    ok: true,
+    source: cfg.source,
+    summary: {
+      total: rows.length,
+      healthy,
+      dirty,
+    },
+    rows,
+  });
+});
+
 async function haRequest(pathname, opts = {}) {
   if (!HA_TOKEN) return { ok: false, error: "HA token missing" };
   try {
@@ -1685,6 +1885,180 @@ app.get("/api/audit/trail", async (_req, res) => {
 
 app.get("/api/git/commits", async (req, res) => {
   res.json(await getCommitTimeline(Number(req.query.limit || 20)));
+});
+
+app.get("/api/jobs", async (req, res) => {
+  const limit = Math.max(1, Math.min(Number(req.query.limit || 200), 2000));
+  const kind = String(req.query.kind || "").toLowerCase();
+  const status = String(req.query.status || "").toLowerCase();
+
+  const events = await readJobLedger();
+  let rows = foldJobs(events);
+  if (kind) rows = rows.filter((r) => String(r.kind || "").toLowerCase() === kind);
+  if (status) rows = rows.filter((r) => String(r.status || "").toLowerCase() === status);
+
+  res.json({ ok: true, ledger: JOBS_LEDGER_FILE, count: rows.length, rows: rows.slice(0, limit) });
+});
+
+app.get("/api/jobs/summary", async (_req, res) => {
+  const rows = foldJobs(await readJobLedger());
+  const summary = {
+    total: rows.length,
+    queued: rows.filter((r) => r.status === "queued").length,
+    started: rows.filter((r) => r.status === "started").length,
+    blocked: rows.filter((r) => r.status === "blocked").length,
+    done: rows.filter((r) => r.status === "done").length,
+    failed: rows.filter((r) => r.status === "failed").length,
+    delegation: rows.filter((r) => r.kind === "delegation").length,
+    job: rows.filter((r) => r.kind !== "delegation").length,
+  };
+  res.json({ ok: true, summary, ledger: JOBS_LEDGER_FILE });
+});
+
+app.post("/api/jobs", async (req, res) => {
+  const jobId = String(req.body?.jobId || "").trim();
+  if (!jobId) return res.status(400).json({ ok: false, error: "jobId is required" });
+
+  const event = {
+    jobId,
+    event: "created",
+    kind: String(req.body?.kind || "job").toLowerCase(),
+    sourceAgent: String(req.body?.sourceAgent || "unknown"),
+    targetAgent: req.body?.targetAgent ? String(req.body.targetAgent) : null,
+    summary: String(req.body?.summary || ""),
+    note: String(req.body?.note || ""),
+    channelContext: req.body?.channelContext || null,
+    at: req.body?.at || isoNow(),
+  };
+
+  await appendJobEvent(event);
+  res.json({ ok: true, event, ledger: JOBS_LEDGER_FILE });
+});
+
+app.post("/api/jobs/:jobId/event", async (req, res) => {
+  const jobId = String(req.params.jobId || "").trim();
+  if (!jobId) return res.status(400).json({ ok: false, error: "jobId is required" });
+
+  const allowed = new Set(["created", "started", "blocked", "done", "failed", "updated"]);
+  const ev = String(req.body?.event || "updated").toLowerCase();
+  if (!allowed.has(ev)) return res.status(400).json({ ok: false, error: `Invalid event: ${ev}` });
+
+  const event = {
+    jobId,
+    event: ev,
+    kind: req.body?.kind ? String(req.body.kind).toLowerCase() : undefined,
+    sourceAgent: req.body?.sourceAgent ? String(req.body.sourceAgent) : undefined,
+    targetAgent: req.body?.targetAgent !== undefined ? String(req.body.targetAgent || "") : undefined,
+    summary: req.body?.summary ? String(req.body.summary) : undefined,
+    result: req.body?.result ? String(req.body.result) : undefined,
+    error: req.body?.error ? String(req.body.error) : undefined,
+    note: req.body?.note ? String(req.body.note) : undefined,
+    channelContext: req.body?.channelContext || undefined,
+    at: req.body?.at || isoNow(),
+  };
+
+  await appendJobEvent(event);
+  res.json({ ok: true, event, ledger: JOBS_LEDGER_FILE });
+});
+
+app.post("/api/delegations/handoff/start", async (req, res) => {
+  const targetAgent = String(req.body?.targetAgent || "").trim();
+  const summary = String(req.body?.summary || "").trim();
+  if (!targetAgent) return res.status(400).json({ ok: false, error: "targetAgent is required" });
+  if (!summary) return res.status(400).json({ ok: false, error: "summary is required" });
+
+  const requestedJobId = String(req.body?.jobId || "").trim();
+  const stamp = new Date();
+  const ymd = stamp.toISOString().slice(0, 10).replace(/-/g, "");
+  const autoId = `DEL-${targetAgent.toUpperCase()}-${ymd}-${String(stamp.getTime()).slice(-6)}`;
+  const jobId = requestedJobId || autoId;
+
+  const sourceAgent = String(req.body?.sourceAgent || "oddeye").trim() || "oddeye";
+  const channelContext = req.body?.channelContext || null;
+
+  const created = {
+    jobId,
+    event: "created",
+    kind: "delegation",
+    sourceAgent,
+    targetAgent,
+    summary,
+    note: String(req.body?.note || "").trim(),
+    channelContext,
+    at: req.body?.at || isoNow(),
+  };
+  const started = {
+    jobId,
+    event: "started",
+    kind: "delegation",
+    sourceAgent,
+    targetAgent,
+    summary,
+    channelContext,
+    at: req.body?.at || isoNow(),
+  };
+
+  await appendJobEvent(created);
+  await appendJobEvent(started);
+
+  const notify = req.body?.notify !== false;
+  const notifyChannelId = String(req.body?.notifyChannelId || "1474209566437671096").trim();
+  let notifyResult = null;
+  if (notify && notifyChannelId) {
+    const msg = [
+      `👁️ #${sourceAgent}`,
+      `Delegated to ${targetAgent}`,
+      `Job ID: ${jobId}`,
+      `Started: ${started.at}`,
+      `Task: ${summary}`,
+    ].join("\n");
+    notifyResult = await sendDiscordChannelMessage(notifyChannelId, msg);
+  }
+
+  res.json({ ok: true, jobId, created, started, notifyResult, ledger: JOBS_LEDGER_FILE });
+});
+
+app.post("/api/delegations/handoff/complete", async (req, res) => {
+  const jobId = String(req.body?.jobId || "").trim();
+  if (!jobId) return res.status(400).json({ ok: false, error: "jobId is required" });
+
+  const status = String(req.body?.status || "done").toLowerCase();
+  const eventName = status === "failed" ? "failed" : "done";
+  const event = {
+    jobId,
+    event: eventName,
+    kind: "delegation",
+    sourceAgent: req.body?.sourceAgent ? String(req.body.sourceAgent) : undefined,
+    targetAgent: req.body?.targetAgent ? String(req.body.targetAgent) : undefined,
+    summary: req.body?.summary ? String(req.body.summary) : undefined,
+    result: req.body?.result ? String(req.body.result) : undefined,
+    error: req.body?.error ? String(req.body.error) : undefined,
+    note: req.body?.note ? String(req.body.note) : undefined,
+    channelContext: req.body?.channelContext || undefined,
+    at: req.body?.at || isoNow(),
+  };
+
+  await appendJobEvent(event);
+
+  const sourceAgent = String(req.body?.sourceAgent || "oddeye");
+  const targetAgent = String(req.body?.targetAgent || "koda");
+  const notify = req.body?.notify !== false;
+  const notifyChannelId = String(req.body?.notifyChannelId || "1474209566437671096").trim();
+  let notifyResult = null;
+  if (notify && notifyChannelId) {
+    const statusWord = eventName === "done" ? "Completed" : "Failed";
+    const details = eventName === "done" ? (event.result || event.summary || "No result summary provided") : (event.error || event.summary || "No failure detail provided");
+    const msg = [
+      `👁️ #${sourceAgent}`,
+      `${statusWord} delegation for ${targetAgent}`,
+      `Job ID: ${jobId}`,
+      `${statusWord}: ${event.at}`,
+      `Details: ${details}`,
+    ].join("\n");
+    notifyResult = await sendDiscordChannelMessage(notifyChannelId, msg);
+  }
+
+  res.json({ ok: true, jobId, event, notifyResult, ledger: JOBS_LEDGER_FILE });
 });
 
 app.get("/api/backups/status", async (_req, res) => {
