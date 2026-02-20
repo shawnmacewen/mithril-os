@@ -21,6 +21,8 @@ SRC_OPENCLAW="/home/mini-home-lab/.openclaw"
 SRC_HA_CONFIG="/home/mini-home-lab/homelab/homeassistant/config"
 SRC_MITHRIL="/mithril-os"
 SRC_SYSTEMD_DIR="/etc/systemd/system"
+SRC_OBSIDIAN_VAULT_PRIMARY="/home/node/.openclaw/workspace/productivity/Personal Assistant"
+SRC_OBSIDIAN_VAULT_FALLBACK="/home/mini-home-lab/.openclaw/workspace/productivity/Personal Assistant"
 
 log() {
   echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"
@@ -48,7 +50,7 @@ require_cmd find
 
 log "backup start: snapshot=$SNAP"
 
-mkdir -p "$SNAP/openclaw" "$SNAP/homeassistant" "$SNAP/mithril-os" "$SNAP/meta"
+mkdir -p "$SNAP/openclaw" "$SNAP/homeassistant" "$SNAP/mithril-os" "$SNAP/obsidian" "$SNAP/meta"
 
 if copy_tree "$SRC_OPENCLAW" "$SNAP/openclaw/.openclaw"; then
   log "ok: copied $SRC_OPENCLAW"
@@ -66,6 +68,14 @@ if copy_tree "$SRC_MITHRIL" "$SNAP/mithril-os/repo"; then
   log "ok: copied $SRC_MITHRIL"
 else
   log "warn: missing $SRC_MITHRIL"
+fi
+
+if copy_tree "$SRC_OBSIDIAN_VAULT_PRIMARY" "$SNAP/obsidian/personal-assistant"; then
+  log "ok: copied obsidian vault ($SRC_OBSIDIAN_VAULT_PRIMARY)"
+elif copy_tree "$SRC_OBSIDIAN_VAULT_FALLBACK" "$SNAP/obsidian/personal-assistant"; then
+  log "ok: copied obsidian vault ($SRC_OBSIDIAN_VAULT_FALLBACK)"
+else
+  log "warn: missing obsidian vault ($SRC_OBSIDIAN_VAULT_PRIMARY | $SRC_OBSIDIAN_VAULT_FALLBACK)"
 fi
 
 # Save selected systemd units (best-effort)

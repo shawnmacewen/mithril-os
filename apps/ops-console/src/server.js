@@ -2213,6 +2213,12 @@ app.get("/api/backups/status", async (_req, res) => {
       ok: logText.includes("ok: copied /mithril-os"),
       detail: logText.includes("ok: copied /mithril-os") ? "copied" : "not confirmed",
     },
+    {
+      key: "obsidian",
+      name: "Obsidian Vault",
+      ok: /ok:\s+copied\s+obsidian\s+vault/i.test(logText),
+      detail: /ok:\s+copied\s+obsidian\s+vault/i.test(logText) ? "copied" : "not confirmed",
+    },
   ];
 
   res.json({
