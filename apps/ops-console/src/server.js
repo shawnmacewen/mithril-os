@@ -1036,6 +1036,24 @@ app.post("/api/delegations/:id/status", async (req, res) => {
   res.json({ ok: true, row });
 });
 
+app.get("/api/delegation-template", async (_req, res) => {
+  res.json({
+    ok: true,
+    template: {
+      ownerAgentId: "main",
+      assigneeAgentId: "koda",
+      objective: "",
+      context: "",
+      deliverable: "",
+      priority: "normal",
+      deadline: null,
+      definitionOfDone: "",
+      escalationRule: "If blocked >30 minutes, return to COO with blocker + options.",
+      source: "coo-delegation",
+    },
+  });
+});
+
 app.get("/api/agents/files", async (_req, res) => {
   res.json(await getAgentMdIndex());
 });
