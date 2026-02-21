@@ -1,0 +1,51 @@
+:root {
+  /* Color tokens */
+  --color-bg: #0b1020;
+  --color-surface: #121a2f;
+  --color-surface-2: #0f1730;
+  --color-border: #223052;
+  --color-text: #e7eeff;
+  --color-muted: #8fa1c7;
+  --color-primary: #f3c64b;
+  --color-success: #43d17f;
+  --color-warning: #f59e0b;
+  --color-danger: #ff6b6b;
+
+  /* Spacing tokens */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* Radius tokens */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Shadow */
+  --shadow-1: 0 4px 12px rgba(0, 0, 0, 0.18);
+  --shadow-2: 0 10px 28px rgba(0, 0, 0, 0.22);
+
+  /* Typography */
+  --font-family-base: Inter, system-ui, Segoe UI, Arial, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 18px;
+  --font-size-xl: 22px;
+}
+
+:root[data-theme="light"] {
+  --color-bg: #ffffff;
+  --color-surface: #f9fafc;
+  --color-surface-2: #ffffff;
+  --color-border: #d7dce7;
+  --color-text: #1f2a3d;
+  --color-muted: #5f6f8f;
+  --color-primary: #d4a514;
+  --color-success: #228a4d;
+  --color-danger: #c53939;
+}

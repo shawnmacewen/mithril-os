@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mithril-OS · Design System</title>
+  <link rel="stylesheet" href="/styles/design-tokens.css" />
+  <link rel="stylesheet" href="/styles/components.css" />
+</head>
+<body class="ds-page">
+  <main class="ds-layout">
+    <section class="ds-card">
+      <h1 style="margin:0 0 8px;">Mithril-OS Design System</h1>
+      <div class="ds-muted">Reusable tokens + components (Tailwind-free baseline).</div>
+    </section>
+
+    <section class="ds-card">
+      <h2 style="margin-top:0;">Buttons</h2>
+      <div class="ds-row">
+        <button class="ds-btn">Default</button>
+        <button class="ds-btn ds-btn-primary">Primary</button>
+        <button class="ds-btn ds-btn-danger">Danger</button>
+      </div>
+    </section>
+
+    <section class="ds-card">
+      <h2 style="margin-top:0;">Status Pills</h2>
+      <div class="ds-row">
+        <span class="ds-pill ds-pill-ok">healthy</span>
+        <span class="ds-pill ds-pill-warn">queued</span>
+        <span class="ds-pill ds-pill-bad">failed</span>
+      </div>
+    </section>
+
+    <section class="ds-card">
+      <h2 style="margin-top:0;">Form Inputs</h2>
+      <div class="ds-row">
+        <input class="ds-input" placeholder="Filter text" />
+        <select class="ds-select">
+          <option>All statuses</option>
+          <option>running</option>
+          <option>done</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="ds-card">
+      <h2 style="margin-top:0;">Table</h2>
+      <table class="ds-table">
+        <thead><tr><th>Task</th><th>Status</th><th>Owner</th></tr></thead>
+        <tbody>
+          <tr><td>Deploy ops-console</td><td><span class="ds-pill ds-pill-ok">done</span></td><td>oddeye</td></tr>
+          <tr><td>Refactor agents UX</td><td><span class="ds-pill ds-pill-warn">queued</span></td><td>koda</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="ds-grid-2">
+      <div class="ds-card"><h3 style="margin-top:0;">Card A</h3><div class="ds-muted">Use for metric/summary blocks.</div></div>
+      <div class="ds-card"><h3 style="margin-top:0;">Card B</h3><div class="ds-muted">Use for detailed tables and controls.</div></div>
+    </section>
+  </main>
+</body>
+</html>
