@@ -10,8 +10,17 @@
 <body class="ds-page">
   <main class="ds-layout">
     <section class="ds-card">
-      <h1 style="margin:0 0 8px;">Mithril-OS Design System</h1>
-      <div class="ds-muted">Reusable tokens + components (Tailwind-free baseline).</div>
+      <div class="ds-row" style="justify-content:space-between;">
+        <div>
+          <h1 style="margin:0 0 8px;">Mithril-OS Design System</h1>
+          <div class="ds-muted">Reusable tokens + components (Tailwind-free baseline).</div>
+        </div>
+        <div class="ds-row">
+          <span id="themeLabel" class="ds-pill">Theme: dark</span>
+          <button id="themeDark" class="ds-btn">Dark</button>
+          <button id="themeLight" class="ds-btn">Light</button>
+        </div>
+      </div>
     </section>
 
     <section class="ds-card">
@@ -60,5 +69,21 @@
       <div class="ds-card"><h3 style="margin-top:0;">Card B</h3><div class="ds-muted">Use for detailed tables and controls.</div></div>
     </section>
   </main>
+
+  <script>
+    const KEY = 'mithril-theme';
+    function setTheme(next){
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem(KEY, next);
+      const label = document.getElementById('themeLabel');
+      if (label) label.textContent = `Theme: ${next}`;
+      document.getElementById('themeDark')?.classList.toggle('ds-btn-primary', next === 'dark');
+      document.getElementById('themeLight')?.classList.toggle('ds-btn-primary', next === 'light');
+    }
+    const saved = localStorage.getItem(KEY) || 'dark';
+    setTheme(saved);
+    document.getElementById('themeDark')?.addEventListener('click', () => setTheme('dark'));
+    document.getElementById('themeLight')?.addEventListener('click', () => setTheme('light'));
+  </script>
 </body>
 </html>
