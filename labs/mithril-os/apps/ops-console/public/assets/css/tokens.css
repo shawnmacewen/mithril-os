@@ -1,0 +1,25 @@
+/* Mithril-OS design tokens (seed extraction) */
+:root {
+  --bg:#0b1020;
+  --panel:#121a2f;
+  --panel-2:#0f1730;
+  --border:#223052;
+  --muted:#8fa1c7;
+  --text:#e7eeff;
+  --ok:#43d17f;
+  --bad:#ff6b6b;
+  --highlight:#f3c64b;
+  --nav-text:#e7eeff;
+}
+:root[data-theme="light"] {
+  --bg:#ffffff;
+  --panel:#f9fafc;
+  --panel-2:#ffffff;
+  --border:#d7dce7;
+  --muted:#5f6f8f;
+  --text:#1f2a3d;
+  --ok:#228a4d;
+  --bad:#c53939;
+  --highlight:#d4a514;
+  --nav-text:#3c4558;
+}
