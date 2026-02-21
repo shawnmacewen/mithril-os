@@ -9,10 +9,11 @@
   "priority": "normal",
   "deadline": null,
   "definitionOfDone": "",
-  "codingStandards": {
-    "respectExistingPatterns": true,
+  "workflowStandards": {
+    "followRepoOperationalWorkflow": true,
     "updateChangelogForMajorCommits": true,
-    "changelogFileHint": "/mithril-os/docs/CHANGELOG_PUBLIC.json"
+    "changelogFileHint": "/mithril-os/docs/CHANGELOG_PUBLIC.json",
+    "includeVerificationSummary": true
   },
   "escalationRule": "If blocked >30 minutes, return to COO with blocker + options.",
   "source": "coo-delegation",
