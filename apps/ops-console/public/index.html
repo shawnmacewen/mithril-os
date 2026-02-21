@@ -180,6 +180,7 @@
           <a data-view="projects" href="#projects"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h18"/></svg>Projects</a>
           <a data-view="policies" href="#policies"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>Policies</a>
           <a data-view="changelog" href="#changelog"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M6 4h12"/><path d="M6 12h12"/><path d="M6 20h12"/><circle cx="4" cy="4" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="20" r="1"/></svg>Changelog</a>
+          <a data-view="designsystem" href="#designsystem"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Design System</a>
           <a data-view="config" href="#config"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z"/></svg>Diagnostics</a>
         </div>
 
@@ -560,6 +561,17 @@
           </div>
         </section>
 
+        <section id="view-designsystem" class="hidden">
+          <h2>Design System</h2>
+          <div class="card" style="margin-bottom:12px;">
+            <div class="row"><span>Embedded UI Kit</span><a href="/design-system.html" target="_blank" rel="noreferrer">Open in new tab</a></div>
+            <div class="muted">Reusable tokens and component primitives for Mithril-OS.</div>
+          </div>
+          <div class="card" style="padding:0; overflow:hidden;">
+            <iframe src="/design-system.html" title="Mithril-OS Design System" style="width:100%; height:78vh; border:0;"></iframe>
+          </div>
+        </section>
+
         <section id="view-config" class="hidden">
           <h2>Diagnostics</h2>
           <div class="toolbar" style="margin:0 0 10px;">
@@ -597,7 +609,7 @@
     </div>
 
     <script>
-      const views = ["dashboard","agents","watchers","openclaw","models","homeassistant","logs","projects","policies","changelog","backups","jobs","config"];
+      const views = ["dashboard","agents","watchers","openclaw","models","homeassistant","logs","projects","policies","changelog","designsystem","backups","jobs","config"];
       let autoTimer = null;
       let cache = {};
 
