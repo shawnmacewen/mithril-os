@@ -360,10 +360,10 @@
 
         <section id="view-logs" class="hidden">
           <h2>Logs</h2>
-          <div class="toolbar" style="margin:0 0 8px;">
-            <button id="logsTabGateway">Gateway Logs</button>
-            <button id="logsTabAudit">Audit Trail</button>
-            <button id="logsTabJobs">Jobs & Scheduled Tasks</button>
+          <div class="toolbar ds-tabs" style="margin:0 0 8px;">
+            <button id="logsTabGateway" class="ds-tab is-active">Gateway Logs</button>
+            <button id="logsTabAudit" class="ds-tab">Audit Trail</button>
+            <button id="logsTabJobs" class="ds-tab">Jobs & Scheduled Tasks</button>
           </div>
 
           <div id="logsGatewayPane" class="card">
@@ -563,8 +563,8 @@
 
         <section id="view-designsystem" class="hidden">
           <h2>Design System</h2>
-          <div class="card" style="margin-bottom:12px;">
-            <div class="row"><span>Embedded UI Kit</span><a href="/design-system.html" target="_blank" rel="noreferrer">Open in new tab</a></div>
+          <div class="card ds-state ds-state-empty" style="margin-bottom:12px; border-style:solid;">
+            <div class="row"><span>Embedded UI Kit (v2.0 foundation)</span><a href="/design-system.html" target="_blank" rel="noreferrer">Open in new tab</a></div>
             <div class="muted">Reusable tokens and component primitives for Mithril-OS.</div>
           </div>
           <div class="card" style="padding:0; overflow:hidden;">
@@ -691,6 +691,9 @@
         gatewayBtn.classList.toggle('active', logsTab === 'gateway');
         auditBtn.classList.toggle('active', logsTab === 'audit');
         jobsBtn.classList.toggle('active', logsTab === 'jobs');
+        gatewayBtn.classList.toggle('is-active', logsTab === 'gateway');
+        auditBtn.classList.toggle('is-active', logsTab === 'audit');
+        jobsBtn.classList.toggle('is-active', logsTab === 'jobs');
       }
 
       async function jget(url){

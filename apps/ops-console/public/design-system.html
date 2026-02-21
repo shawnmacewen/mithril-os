@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mithril-OS · Design System</title>
+  <title>Mithril-OS · Design System v2.0</title>
   <link rel="stylesheet" href="/styles/design-tokens.css" />
   <link rel="stylesheet" href="/styles/components.css" />
 </head>
 <body class="ds-page">
   <main class="ds-layout">
     <section class="ds-card">
-      <div class="ds-row" style="justify-content:space-between;">
+      <div class="ds-panel-header">
         <div>
-          <h1 style="margin:0 0 8px;">Mithril-OS Design System</h1>
-          <div class="ds-muted">Reusable tokens + components (Tailwind-free baseline).</div>
+          <h1 class="ds-panel-title" style="margin:0 0 8px;">Mithril-OS Design System v2.0</h1>
+          <div class="ds-muted">Token-driven, Tailwind-free primitives with ops-console realistic layouts.</div>
         </div>
         <div class="ds-row">
           <span id="themeLabel" class="ds-pill">Theme: dark</span>
@@ -24,49 +24,111 @@
     </section>
 
     <section class="ds-card">
-      <h2 style="margin-top:0;">Buttons</h2>
-      <div class="ds-row">
-        <button class="ds-btn">Default</button>
-        <button class="ds-btn ds-btn-primary">Primary</button>
-        <button class="ds-btn ds-btn-danger">Danger</button>
+      <h2 style="margin-top:0;">Tabs + Toolbar</h2>
+      <div class="ds-tabs">
+        <button class="ds-tab is-active">Gateway Logs</button>
+        <button class="ds-tab">Audit Trail</button>
+        <button class="ds-tab">Jobs Board</button>
+      </div>
+      <div class="ds-toolbar">
+        <input class="ds-input" placeholder="Search logs" />
+        <select class="ds-select"><option>All levels</option><option>ERROR</option><option>WARN</option></select>
+        <button class="ds-btn">Apply</button>
       </div>
     </section>
 
     <section class="ds-card">
-      <h2 style="margin-top:0;">Status Pills</h2>
-      <div class="ds-row">
-        <span class="ds-pill ds-pill-ok">healthy</span>
-        <span class="ds-pill ds-pill-warn">queued</span>
-        <span class="ds-pill ds-pill-bad">failed</span>
+      <h2 style="margin-top:0;">Jobs board split shell</h2>
+      <div class="ds-layout-split">
+        <div class="ds-panel">
+          <div class="ds-panel-header">
+            <h3 class="ds-panel-title" style="font-size:16px;">Delegated Jobs</h3>
+            <span class="ds-pill ds-pill-warn">queued: 3</span>
+          </div>
+          <table class="ds-table">
+            <thead><tr><th>Task</th><th>Status</th><th>Assignee</th></tr></thead>
+            <tbody>
+              <tr><td>Refactor diagnostics panel</td><td><span class="ds-pill ds-pill-warn">running</span></td><td>koda</td></tr>
+              <tr><td>Add audit timeline export</td><td><span class="ds-pill ds-pill-ok">done</span></td><td>oddeye</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="ds-panel">
+          <div class="ds-panel-header">
+            <h3 class="ds-panel-title" style="font-size:16px;">Scheduled Tasks</h3>
+            <span class="ds-pill">daily</span>
+          </div>
+          <div class="ds-state ds-state-empty">
+            <h4>No stuck jobs</h4>
+            <div class="ds-muted">All scheduled tasks completed within SLA in the latest cycle.</div>
+          </div>
+        </div>
       </div>
     </section>
 
     <section class="ds-card">
-      <h2 style="margin-top:0;">Form Inputs</h2>
-      <div class="ds-row">
-        <input class="ds-input" placeholder="Filter text" />
-        <select class="ds-select">
-          <option>All statuses</option>
-          <option>running</option>
-          <option>done</option>
-        </select>
+      <h2 style="margin-top:0;">Agent card + file viewer shell</h2>
+      <div class="ds-layout-split">
+        <div class="ds-panel">
+          <div class="ds-panel-header">
+            <h3 class="ds-panel-title" style="font-size:16px;">Agent roster</h3>
+            <span class="ds-pill ds-pill-ok">COO linked</span>
+          </div>
+          <div class="ds-row u-mb-2">
+            <button class="ds-btn ds-btn-primary">main</button>
+            <button class="ds-btn">koda</button>
+            <button class="ds-btn">aurora</button>
+          </div>
+          <div class="ds-muted">Select an agent to inspect active markdown context files.</div>
+        </div>
+        <div class="ds-panel">
+          <div class="ds-panel-header">
+            <h3 class="ds-panel-title" style="font-size:16px;">File viewer</h3>
+            <span class="ds-pill">README.md</span>
+          </div>
+          <pre style="margin:0; background:var(--color-surface-2); border:1px solid var(--color-border); border-radius:var(--radius-sm); padding:var(--space-3);"># Agent Notes
+- Current objective: watcher telemetry hardening
+- Last updated: 08:30 UTC</pre>
+        </div>
       </div>
     </section>
 
     <section class="ds-card">
-      <h2 style="margin-top:0;">Table</h2>
-      <table class="ds-table">
-        <thead><tr><th>Task</th><th>Status</th><th>Owner</th></tr></thead>
-        <tbody>
-          <tr><td>Deploy ops-console</td><td><span class="ds-pill ds-pill-ok">done</span></td><td>oddeye</td></tr>
-          <tr><td>Refactor agents UX</td><td><span class="ds-pill ds-pill-warn">queued</span></td><td>koda</td></tr>
-        </tbody>
-      </table>
+      <h2 style="margin-top:0;">Delegation tool modal shell</h2>
+      <div class="ds-modal">
+        <div class="ds-modal-header">
+          <strong>Start Delegation</strong>
+          <span class="ds-pill">DEL-KODA-XXXX</span>
+        </div>
+        <div class="ds-modal-body ds-section-stack">
+          <input class="ds-input" placeholder="Summary" />
+          <div class="ds-grid-2">
+            <input class="ds-input" value="koda" aria-label="Target agent" />
+            <input class="ds-input" value="1474209566437671096" aria-label="Notify channel" />
+          </div>
+        </div>
+        <div class="ds-modal-footer">
+          <span class="ds-muted">This action creates a tracked handoff job.</span>
+          <div class="ds-row">
+            <button class="ds-btn">Cancel</button>
+            <button class="ds-btn ds-btn-primary">Start handoff</button>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <section class="ds-grid-2">
-      <div class="ds-card"><h3 style="margin-top:0;">Card A</h3><div class="ds-muted">Use for metric/summary blocks.</div></div>
-      <div class="ds-card"><h3 style="margin-top:0;">Card B</h3><div class="ds-muted">Use for detailed tables and controls.</div></div>
+    <section class="ds-card">
+      <h2 style="margin-top:0;">Metric cards + status/alerts states</h2>
+      <div class="ds-metric-grid u-mb-3">
+        <div class="ds-metric-card"><div class="ds-metric-card-label">Agents</div><div class="ds-metric-card-value">6</div></div>
+        <div class="ds-metric-card is-success"><div class="ds-metric-card-label">Healthy services</div><div class="ds-metric-card-value">14</div></div>
+        <div class="ds-metric-card is-warning"><div class="ds-metric-card-label">Queued jobs</div><div class="ds-metric-card-value">3</div></div>
+        <div class="ds-metric-card is-danger"><div class="ds-metric-card-label">Failed jobs (24h)</div><div class="ds-metric-card-value">1</div></div>
+      </div>
+      <div class="ds-grid-2">
+        <div class="ds-state ds-state-loading"><h4>Loading state</h4><div class="ds-muted">Fetching latest diagnostics snapshot…</div></div>
+        <div class="ds-state ds-state-error"><h4>Error state</h4><div class="ds-muted">Gateway connection failed. Retry in 10s or inspect health logs.</div></div>
+      </div>
     </section>
   </main>
 

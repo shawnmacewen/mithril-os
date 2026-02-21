@@ -1,5 +1,7 @@
 # Mithril-OS Ops Console Design Infrastructure
 
+> Note: v2.0 foundation is documented in `DESIGN_SYSTEM_V2.md` and `docs/agent-ops/UI_ARCHITECTURE_V2.md`.
+
 This project uses a **Tailwind-free** design infrastructure built from reusable CSS tokens + component classes.
 
 ## Files
