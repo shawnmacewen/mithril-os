@@ -133,8 +133,14 @@
       .agent-file-buttons { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 12px; }
       .agent-file-buttons button { border-radius:999px; padding:6px 12px; border:1px solid var(--chip-border,#5b6a8f); background:#ffffff; color:#1f2a3d; }
       .agent-file-buttons button.active { border-color:var(--chip-active,#7aa2ff); background:color-mix(in srgb, var(--chip-active,#7aa2ff) 26%, white); box-shadow:0 0 0 1px color-mix(in srgb, var(--chip-active,#7aa2ff) 45%, transparent); color:var(--text); font-weight:600; }
-      .agent-tiles-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px; margin:8px 0 12px; }
-      .agent-tile-card { border:1px solid var(--border); background:var(--panel-2); border-radius:12px; padding:10px; }
+      .agent-tiles-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,220px)); gap:10px; margin:8px 0 12px; justify-content:center; }
+      .agent-tile-card { border:1px solid var(--border); background:var(--panel-2); border-radius:12px; padding:10px; max-width:220px; }
+      .agents-subnav { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
+      .agents-subnav button.active { border-color:var(--highlight); box-shadow:0 0 0 1px color-mix(in srgb, var(--highlight) 35%, transparent); }
+      .agent-viewer-header { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+      .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:40; }
+      .modal-backdrop.open { display:flex; }
+      .modal-card { width:min(920px,92vw); max-height:88vh; overflow:auto; background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:14px; }
       .agent-tile-card.active { border-color:var(--highlight); box-shadow:0 0 0 1px color-mix(in srgb, var(--highlight) 35%, transparent); }
       .agent-tile-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
       .agent-file-row { display:flex; gap:8px; flex-wrap:wrap; }
@@ -212,6 +218,13 @@
 
         <section id="view-agents" class="hidden">
           <h2>Agents</h2>
+          <div class="agents-subnav">
+            <button id="agentsTabHierarchy" class="active">Hierarchy</button>
+            <button id="agentsTabJobs">Jobs & Scheduled Tasks</button>
+            <button id="agentsTabTools">Tools</button>
+          </div>
+
+          <div id="agentsHierarchyPane">
           <div class="card" style="margin-bottom:12px;">
             <h3>Current Agent</h3>
             <div class="agent-tile">
@@ -248,18 +261,8 @@
           </div>
 
           <div class="card" style="margin-bottom:12px;">
-            <details>
-              <summary>Advanced delegation timeline</summary>
-              <table id="delegationTimelineTable" style="margin-top:8px;">
-                <thead><tr><th>ID</th><th>Assignee</th><th>Latest</th><th>Events</th><th>Objective</th></tr></thead>
-                <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
-              </table>
-            </details>
-          </div>
-
-          <div class="card" style="margin-bottom:12px;">
             <div id="agentTiles" class="agent-tiles-grid"></div>
-            <pre id="agentMdContent">Select an agent file to view markdown content.</pre>
+            <div class="agent-viewer-header"><span class="muted" id="agentViewerSelection">No file selected</span></div><pre id="agentMdContent">Select an agent file to view markdown content.</pre>
           </div>
 
           <div class="card">
@@ -267,6 +270,67 @@
               <summary>Show raw Agents + Bindings JSON</summary>
               <pre id="agentsRaw">Loading…</pre>
             </details>
+          </div>
+          </div>
+
+          <div id="agentsJobsPane" class="hidden">
+            <div class="muted" style="margin-bottom:8px;">Primary work board moved here from Logs.</div>
+            <div id="logsJobsPane">
+            <div class="card" style="margin-bottom:12px;">
+              <h3>Unified Work Board</h3>
+              <div class="muted">This is the primary view for scheduled tasks + jobs + delegations. Use details only when needed.</div>
+              
+            </div>
+            <div class="card">
+              <div class="toolbar" style="margin:0 0 8px;">
+                <select id="jobsKindFilter"><option value="">All types</option><option value="scheduled">Scheduled</option><option value="job">Jobs</option><option value="delegation">Delegations</option></select>
+                <select id="jobsStatusFilter"><option value="">All statuses</option><option value="queued">queued</option><option value="running">running</option><option value="blocked">blocked</option><option value="done">done</option><option value="failed">failed</option></select>
+                <button id="jobsRefreshBtn">Refresh</button>
+              </div>
+              <table id="jobsTable">
+                <thead><tr><th>Task</th><th>Owner → Assignee</th><th>Status</th><th>When</th><th>Summary</th><th>Details</th></tr></thead>
+                <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+              </table>
+            </div>
+            <div class="card" style="margin-top:12px;"><h3>Work Board Raw</h3><pre id="jobsRaw">Loading…</pre></div>
+          </div>
+          </div>
+
+          <div id="agentsToolsPane" class="hidden">
+            <div class="card">
+              <h3>Delegation Tools</h3>
+              <div class="muted">Open tools in modal to keep hierarchy page focused.</div>
+              <div class="toolbar" style="margin-top:8px;"><button id="openDelegationModalBtn">Open Delegation Tools</button></div>
+            </div>
+          </div>
+
+          <div id="delegationModal" class="modal-backdrop" role="dialog" aria-modal="true">
+            <div class="modal-card">
+              <div class="row" style="margin-top:0;"><h3 style="margin:0;">Delegation Tools</h3><button id="closeDelegationModalBtn">Close</button></div>
+              <details style="margin-top:10px;">
+                <summary>Advanced delegation controls</summary>
+                <div class="grid2" style="margin-top:10px;">
+                  <div>
+                    <div class="muted" style="margin-bottom:6px;">Start delegation</div>
+                    <input id="delegationSummaryInput" placeholder="Task summary for target agent" style="width:100%; margin-bottom:8px;" />
+                    <div class="toolbar" style="margin:0;">
+                      <input id="delegationTargetInput" value="koda" placeholder="target agent" />
+                      <input id="delegationNotifyChannelInput" value="1474209566437671096" placeholder="notify channel id" />
+                      <button id="delegationStartBtn">Start Handoff</button>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="muted" style="margin-bottom:6px;">Complete delegation</div>
+                    <input id="delegationJobIdInput" placeholder="Job ID (e.g. DEL-KODA-...)" style="width:100%; margin-bottom:8px;" />
+                    <div class="toolbar" style="margin:0;">
+                      <select id="delegationCompleteStatus"><option value="done">done</option><option value="failed">failed</option></select>
+                      <button id="delegationCompleteBtn">Complete Handoff</button>
+                    </div>
+                  </div>
+                </div>
+                <pre id="delegationOutput" style="margin-top:10px;">No delegation action run yet.</pre>
+              </details>
+            </div>
           </div>
         </section>
 
@@ -358,7 +422,6 @@
           <div class="toolbar" style="margin:0 0 8px;">
             <button id="logsTabGateway">Gateway Logs</button>
             <button id="logsTabAudit">Audit Trail</button>
-            <button id="logsTabJobs">Jobs & Scheduled Tasks</button>
           </div>
 
           <div id="logsGatewayPane" class="card">
@@ -395,47 +458,7 @@
             <div class="card" style="margin-top:12px;"><h3>Audit Raw</h3><pre id="auditRaw">Loading…</pre></div>
           </div>
 
-          <div id="logsJobsPane" class="hidden">
-            <div class="card" style="margin-bottom:12px;">
-              <h3>Unified Work Board</h3>
-              <div class="muted">This is the primary view for scheduled tasks + jobs + delegations. Use details only when needed.</div>
-              <details style="margin-top:10px;">
-                <summary>Advanced delegation controls</summary>
-                <div class="grid2" style="margin-top:10px;">
-                  <div>
-                    <div class="muted" style="margin-bottom:6px;">Start delegation</div>
-                    <input id="delegationSummaryInput" placeholder="Task summary for target agent" style="width:100%; margin-bottom:8px;" />
-                    <div class="toolbar" style="margin:0;">
-                      <input id="delegationTargetInput" value="koda" placeholder="target agent" />
-                      <input id="delegationNotifyChannelInput" value="1474209566437671096" placeholder="notify channel id" />
-                      <button id="delegationStartBtn">Start Handoff</button>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="muted" style="margin-bottom:6px;">Complete delegation</div>
-                    <input id="delegationJobIdInput" placeholder="Job ID (e.g. DEL-KODA-...)" style="width:100%; margin-bottom:8px;" />
-                    <div class="toolbar" style="margin:0;">
-                      <select id="delegationCompleteStatus"><option value="done">done</option><option value="failed">failed</option></select>
-                      <button id="delegationCompleteBtn">Complete Handoff</button>
-                    </div>
-                  </div>
-                </div>
-                <pre id="delegationOutput" style="margin-top:10px;">No delegation action run yet.</pre>
-              </details>
-            </div>
-            <div class="card">
-              <div class="toolbar" style="margin:0 0 8px;">
-                <select id="jobsKindFilter"><option value="">All types</option><option value="scheduled">Scheduled</option><option value="job">Jobs</option><option value="delegation">Delegations</option></select>
-                <select id="jobsStatusFilter"><option value="">All statuses</option><option value="queued">queued</option><option value="running">running</option><option value="blocked">blocked</option><option value="done">done</option><option value="failed">failed</option></select>
-                <button id="jobsRefreshBtn">Refresh</button>
-              </div>
-              <table id="jobsTable">
-                <thead><tr><th>Task</th><th>Owner → Assignee</th><th>Status</th><th>When</th><th>Summary</th><th>Details</th></tr></thead>
-                <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
-              </table>
-            </div>
-            <div class="card" style="margin-top:12px;"><h3>Work Board Raw</h3><pre id="jobsRaw">Loading…</pre></div>
-          </div>
+          
         </section>
 
         <section id="view-projects" class="hidden">
@@ -540,7 +563,7 @@
           </div>
           <div class="card">
             <div class="muted" style="margin-bottom:10px;">Detailed scheduling and assignment view now lives in Logs.</div>
-            <button onclick="location.hash='logs'; setTimeout(() => document.getElementById('logsTabJobs')?.click(), 0);">Open Jobs & Scheduled Tasks</button>
+            <button onclick="location.hash='agents'; setTimeout(() => document.getElementById('agentsTabJobs')?.click(), 0);">Open Jobs & Scheduled Tasks</button>
           </div>
         </section>
 
@@ -650,19 +673,15 @@
       }
 
       function setLogsTab(tab){
-        logsTab = (tab === 'audit' || tab === 'jobs') ? tab : 'gateway';
+        logsTab = (tab === 'audit') ? tab : 'gateway';
         const gatewayPane = document.getElementById('logsGatewayPane');
         const auditPane = document.getElementById('logsAuditPane');
-        const jobsPane = document.getElementById('logsJobsPane');
         const gatewayBtn = document.getElementById('logsTabGateway');
         const auditBtn = document.getElementById('logsTabAudit');
-        const jobsBtn = document.getElementById('logsTabJobs');
         gatewayPane.classList.toggle('hidden', logsTab !== 'gateway');
         auditPane.classList.toggle('hidden', logsTab !== 'audit');
-        jobsPane.classList.toggle('hidden', logsTab !== 'jobs');
         gatewayBtn.classList.toggle('active', logsTab === 'gateway');
         auditBtn.classList.toggle('active', logsTab === 'audit');
-        jobsBtn.classList.toggle('active', logsTab === 'jobs');
       }
 
       async function jget(url){
@@ -746,6 +765,7 @@
         const openFile = async (agentId, fileName) => {
           activeAgentId = agentId;
           selectedFileByAgent[agentId] = fileName;
+          document.getElementById('agentViewerSelection').textContent = `${agentId} · ${fileName}`;
           await loadAgentMdFile(agentId, fileName);
           drawTiles();
           drawMainButtons();
@@ -1028,22 +1048,6 @@
               <td>${(r.currentTask || 'idle').slice(0, 80)}</td>
               <td>${r.lastUpdateAt ? new Date(r.lastUpdateAt).toLocaleString() : '-'}</td>
               <td>${r.blockerCount || 0}</td>
-            </tr>
-          `).join('');
-        }
-
-        const timeline = data?.timeline || [];
-        const timeBody = document.querySelector('#delegationTimelineTable tbody');
-        if (!timeline.length) {
-          timeBody.innerHTML = `<tr><td colspan="5" class="muted">No delegation timeline yet</td></tr>`;
-        } else {
-          timeBody.innerHTML = timeline.slice(0, 12).map((t) => `
-            <tr>
-              <td>${t.id}</td>
-              <td>${t.assigneeAgentId || '-'}</td>
-              <td>${t.latestStatus || '-'}</td>
-              <td>${(t.events || []).map((e) => e.status).filter(Boolean).join(' → ')}</td>
-              <td>${(t.objective || '').slice(0, 80)}</td>
             </tr>
           `).join('');
         }
@@ -1396,6 +1400,20 @@
         }
       }
 
+
+      function setAgentsTab(tab){
+        document.getElementById('agentsHierarchyPane')?.classList.toggle('hidden', tab !== 'hierarchy');
+        document.getElementById('agentsJobsPane')?.classList.toggle('hidden', tab !== 'jobs');
+        document.getElementById('agentsToolsPane')?.classList.toggle('hidden', tab !== 'tools');
+        document.getElementById('agentsTabHierarchy')?.classList.toggle('active', tab === 'hierarchy');
+        document.getElementById('agentsTabJobs')?.classList.toggle('active', tab === 'jobs');
+        document.getElementById('agentsTabTools')?.classList.toggle('active', tab === 'tools');
+        if (tab === 'jobs') loadJobs();
+      }
+
+      function openDelegationModal(){ document.getElementById('delegationModal')?.classList.add('open'); }
+      function closeDelegationModal(){ document.getElementById('delegationModal')?.classList.remove('open'); }
+
       function initNav(){
         function route(){
           let h = (location.hash || '#dashboard').replace('#','');
@@ -1409,7 +1427,12 @@
       document.getElementById('refreshBtn').addEventListener('click', loadAll);
       document.getElementById('logsTabGateway').addEventListener('click', () => setLogsTab('gateway'));
       document.getElementById('logsTabAudit').addEventListener('click', () => setLogsTab('audit'));
-      document.getElementById('logsTabJobs').addEventListener('click', () => { setLogsTab('jobs'); loadJobs(); });
+      document.getElementById('agentsTabHierarchy').addEventListener('click', () => setAgentsTab('hierarchy'));
+      document.getElementById('agentsTabJobs').addEventListener('click', () => setAgentsTab('jobs'));
+      document.getElementById('agentsTabTools').addEventListener('click', () => setAgentsTab('tools'));
+      document.getElementById('openDelegationModalBtn').addEventListener('click', openDelegationModal);
+      document.getElementById('closeDelegationModalBtn').addEventListener('click', closeDelegationModal);
+      document.getElementById('delegationModal').addEventListener('click', (e) => { if (e.target.id === 'delegationModal') closeDelegationModal(); });
       document.getElementById('loadLogsBtn').addEventListener('click', () => { logsPage = 1; loadLogs(); });
       document.getElementById('jobsRefreshBtn').addEventListener('click', loadJobs);
       document.getElementById('jobsKindFilter').addEventListener('change', loadJobs);
@@ -1455,6 +1478,7 @@
       initNavCollapse();
       initNav();
       setLogsTab('gateway');
+      setAgentsTab('hierarchy');
       loadAll();
     </script>
   </body>
