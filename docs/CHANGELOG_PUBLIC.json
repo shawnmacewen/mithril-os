@@ -3,6 +3,18 @@
   "subtitle": "Feature highlights and user-facing improvements",
   "releases": [
     {
+      "version": "v2.0",
+      "date": "2026-02-21",
+      "highlights": [
+        "UI Architecture v2.0 foundation introduced with homegrown design tokens and reusable component primitives (no Tailwind).",
+        "New in-app Design System page added to nav with live examples and light/dark theme switcher.",
+        "Deployment safety guardrails added for ops-console (source integrity checks + deploy lock) to prevent partial sync breakage.",
+        "Missing branded assets restored and tracked in repo for Home Assistant background and nav crystal consistency."
+      ],
+      "whyItMatters": "Mithril-OS now has a stable front-end foundation for scaling feature development with consistent UX patterns and safer deploy behavior.",
+      "tags": ["v2.0", "Design System", "UX Foundation", "Reliability"]
+    },
+    {
       "version": "v1.9.2+",
       "date": "2026-02-20",
       "highlights": [
