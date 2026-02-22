@@ -151,6 +151,8 @@
       .ha-item-top { display:flex; justify-content:space-between; gap:8px; align-items:center; }
       .ha-actions { display:flex; gap:6px; margin-top:6px; align-items:center; flex-wrap:wrap; }
       .ha-set-row { display:flex; justify-content:flex-end; margin-top:6px; }
+      .ha-controls-grid { display:grid; grid-template-columns: 1fr 68px; gap:8px; align-items:stretch; margin-top:8px; }
+      .ha-btn.color-set.square { width:68px; height:100%; min-height:102px; border-radius:10px; display:flex; align-items:center; justify-content:center; }
 
       .ha-btn.color-set.is-active {
         border-color: color-mix(in srgb, var(--btn-color, var(--highlight)) 70%, var(--border));
@@ -1537,8 +1539,8 @@
                     <span class='ha-info'>i<span class='ha-tooltip'>${e.entity_id}</span></span>
                   </div>
                 </div>
-                ${e.supportsBrightness ? `<div class='ha-set-row'><button class='ha-btn color-set' data-ha-action='apply-lighting' data-entity='${e.entity_id}'>Set</button></div>` : ''}
-                <div class='ha-sliders-stack'>
+                <div class='ha-controls-grid'>
+                  <div class='ha-sliders-stack'>
                   ${e.supportsBrightness ? `<div class='ha-slider-row'>
                     <input type='range' min='1' max='100' value='${Math.round(haColorDrafts[e.entity_id]?.brightness ?? (e.brightnessPct ?? 100))}' data-entity='${e.entity_id}' data-kind='brightness'/>
                   </div>` : ''}
@@ -1548,6 +1550,8 @@
                   <div class='ha-slider-row'>
                     <input class='sat-slider' type='range' min='0' max='100' value='${Math.round(haColorDrafts[e.entity_id]?.sat ?? (Array.isArray(e.hsColor) ? e.hsColor[1] : 100))}' data-entity='${e.entity_id}' data-kind='sat'/>
                   </div>` : ''}
+                  </div>
+                  ${e.supportsBrightness ? `<button class='ha-btn color-set square' data-ha-action='apply-lighting' data-entity='${e.entity_id}'>Set</button>` : `<div></div>`}
                 </div>
               </div>
             </div>
