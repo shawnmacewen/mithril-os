@@ -23,3 +23,40 @@
   --highlight:#d4a514;
   --nav-text:#3c4558;
 }
+
+:root[data-theme="forest"] {
+  --bg:#0f1b16;
+  --panel:#152722;
+  --panel-2:#1a312a;
+  --border:#2f4c43;
+  --muted:#9fbfb2;
+  --text:#e8f3ee;
+  --ok:#58c784;
+  --bad:#e06b6b;
+  --highlight:#9fd37a;
+  --nav-text:#e8f3ee;
+}
+:root[data-theme="sunset"] {
+  --bg:#24141b;
+  --panel:#3a212e;
+  --panel-2:#4a2a39;
+  --border:#714357;
+  --muted:#e2b9c7;
+  --text:#fff0f4;
+  --ok:#7dd9a5;
+  --bad:#ff8b8b;
+  --highlight:#ffb86c;
+  --nav-text:#fff0f4;
+}
+:root[data-theme="midnight-blue"] {
+  --bg:#08111f;
+  --panel:#101f36;
+  --panel-2:#132843;
+  --border:#2a4367;
+  --muted:#9db6d8;
+  --text:#e7f0ff;
+  --ok:#64d39a;
+  --bad:#ff7d7d;
+  --highlight:#7fb2ff;
+  --nav-text:#e7f0ff;
+}

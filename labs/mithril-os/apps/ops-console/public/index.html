@@ -34,10 +34,13 @@
           <button id="navToggle"><span id="navToggleLabel">Minimize Nav</span></button>
           <div class="switch-row">
             <span class="label-text muted">Theme</span>
-            <label class="switch" title="Toggle light/dark theme">
-              <input id="themeToggleSwitch" type="checkbox" />
-              <span class="slider"></span>
-            </label>
+            <select id="themePicker" title="Select theme" style="min-width:140px;">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+              <option value="forest">Forest</option>
+              <option value="sunset">Sunset</option>
+              <option value="midnight-blue">Midnight Blue</option>
+            </select>
           </div>
         </div>
       </aside>
@@ -402,18 +405,19 @@
       const queueHistory = [];
 
       function setTheme(theme){
-        const next = theme === 'light' ? 'light' : 'dark';
+        const allowed = ['dark', 'light', 'forest', 'sunset', 'midnight-blue'];
+        const next = allowed.includes(theme) ? theme : 'dark';
         document.documentElement.setAttribute('data-theme', next);
         localStorage.setItem('mithril-theme', next);
-        const toggle = document.getElementById('themeToggleSwitch');
-        if (toggle) toggle.checked = next === 'light';
+        const picker = document.getElementById('themePicker');
+        if (picker) picker.value = next;
       }
 
       function initTheme(){
         const saved = localStorage.getItem('mithril-theme') || 'dark';
         setTheme(saved);
-        document.getElementById('themeToggleSwitch').addEventListener('change', (e) => {
-          setTheme(e.target.checked ? 'light' : 'dark');
+        document.getElementById('themePicker')?.addEventListener('change', (e) => {
+          setTheme(e.target.value);
         });
       }
 
