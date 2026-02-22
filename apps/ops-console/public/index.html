@@ -303,24 +303,25 @@
       .ha-actions input[type="range"],
       .ha-sliders-stack input[type="range"] {
         -webkit-appearance:none; appearance:none;
-        height:8px; border-radius:999px;
-        background: linear-gradient(90deg, color-mix(in srgb, var(--highlight) 45%, var(--panel-2)), var(--panel-2));
-        border:1px solid color-mix(in srgb, var(--highlight) 35%, var(--border));
+        height:10px; border-radius:999px;
+        background: linear-gradient(90deg, color-mix(in srgb, var(--highlight) 52%, var(--panel-2)), color-mix(in srgb, var(--panel-2) 86%, #000));
+        border:1px solid color-mix(in srgb, var(--highlight) 42%, var(--border));
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--highlight) 16%, transparent);
       }
       .ha-actions input[type="range"]::-webkit-slider-thumb,
       .ha-sliders-stack input[type="range"]::-webkit-slider-thumb {
         -webkit-appearance:none; appearance:none;
-        width:13px; height:13px; border-radius:50%;
-        background: color-mix(in srgb, var(--highlight) 34%, var(--panel-2));
-        border:1px solid color-mix(in srgb, var(--highlight) 55%, var(--border));
-        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--highlight) 28%, transparent);
+        width:17px; height:17px; border-radius:50%;
+        background: color-mix(in srgb, #ffffff 88%, var(--text));
+        border:2px solid color-mix(in srgb, var(--highlight) 70%, var(--border));
+        box-shadow: 0 1px 4px rgba(0,0,0,.35);
       }
       .ha-actions input[type="range"]::-moz-range-thumb,
       .ha-sliders-stack input[type="range"]::-moz-range-thumb {
-        width:13px; height:13px; border-radius:50%;
-        background: color-mix(in srgb, var(--highlight) 34%, var(--panel-2));
-        border:1px solid color-mix(in srgb, var(--highlight) 55%, var(--border));
-        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--highlight) 28%, transparent);
+        width:17px; height:17px; border-radius:50%;
+        background: color-mix(in srgb, #ffffff 88%, var(--text));
+        border:2px solid color-mix(in srgb, var(--highlight) 70%, var(--border));
+        box-shadow: 0 1px 4px rgba(0,0,0,.35);
       }
       .ha-actions .ha-btn {
         border-radius:999px;
