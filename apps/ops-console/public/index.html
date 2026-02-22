@@ -72,10 +72,19 @@
       * { box-sizing: border-box; }
       body { margin:0; font-family:Inter,system-ui,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text); overflow-x:hidden; }
       .bg-parallax { position:fixed; inset:0; z-index:-2; pointer-events:none; }
-      .bg-layer { position:absolute; inset:0; background-image:url('/assets/mithril-landscape.svg'); background-size:cover; background-position:center; }
-      .bg-layer.far { opacity:.18; transform:translateY(var(--parallax-far,0px)); }
-      .bg-layer.mid { opacity:.12; transform:translateY(var(--parallax-mid,0px)) scale(1.03); }
-      .bg-layer.near { opacity:.08; transform:translateY(var(--parallax-near,0px)) scale(1.06); }
+      .bg-layer { 
+        position:absolute; 
+        inset:0; 
+        background:
+          radial-gradient(1200px 700px at 10% 0%, color-mix(in srgb, var(--highlight) 18%, transparent), transparent 60%),
+          radial-gradient(900px 600px at 90% 10%, color-mix(in srgb, var(--ok) 14%, transparent), transparent 65%),
+          linear-gradient(160deg, color-mix(in srgb, var(--bg) 88%, #000 12%) 0%, color-mix(in srgb, var(--panel) 84%, var(--bg) 16%) 48%, color-mix(in srgb, var(--panel-2) 88%, #000 12%) 100%);
+        background-size:cover;
+        background-position:center;
+      }
+      .bg-layer.far { opacity:.55; transform:translateY(var(--parallax-far,0px)); }
+      .bg-layer.mid { opacity:.38; transform:translateY(var(--parallax-mid,0px)) scale(1.03); }
+      .bg-layer.near { opacity:.24; transform:translateY(var(--parallax-near,0px)) scale(1.06); }
       .layout { display:grid; grid-template-columns:280px 1fr; min-height:100vh; position:relative; z-index:1; transition:grid-template-columns .2s ease; }
       .layout.nav-collapsed { grid-template-columns:84px 1fr; }
       .nav { background:var(--panel); border-right:1px solid var(--border); padding:16px; display:flex; flex-direction:column; overflow:hidden; position:sticky; top:0; height:100vh; }
