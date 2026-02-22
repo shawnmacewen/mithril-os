@@ -221,7 +221,7 @@
 .ds-ha-device { border:1px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--space-2); background: var(--color-surface-2); }
 .ds-ha-row { display:grid; grid-template-columns: 44px 1fr; gap: var(--space-2); align-items:start; }
 .ds-ha-icon { width:44px; height:44px; display:flex; align-items:center; justify-content:center; }
-.ds-ha-icon svg { width:30px; height:30px; fill:none; stroke:currentColor; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
+.ds-ha-icon svg { width:42px; height:42px; fill:none; stroke:currentColor; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
 .ds-ha-icon.light { color:#f6c445; }
 .ds-ha-icon.plug { color:#7fb2ff; }
 .ds-ha-icon.fan { color:#6fd3c9; }
