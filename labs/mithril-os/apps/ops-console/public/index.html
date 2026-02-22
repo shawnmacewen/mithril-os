@@ -403,6 +403,10 @@
       let logsRows = [];
       let logsTab = 'gateway';
       const queueHistory = [];
+      let navPinnedCollapsed = false;
+      let navHoverExpanded = false;
+      let navExpandAtMs = 0;
+      let navHoverCloseTimer = null;
 
       function setTheme(theme){
         const allowed = ['dark', 'light', 'forest', 'sunset', 'midnight-blue'];
@@ -421,17 +425,55 @@
         });
       }
 
-      function setNavCollapsed(collapsed){
+      function setNavCollapsed(collapsed, opts = {}){
         const layout = document.getElementById('layoutRoot');
-        layout.classList.toggle('nav-collapsed', Boolean(collapsed));
-        localStorage.setItem('mithril-nav-collapsed', collapsed ? '1' : '0');
-        document.getElementById('navToggleLabel').textContent = collapsed ? 'Expand Nav' : 'Minimize Nav';
+        const next = Boolean(collapsed);
+        layout.classList.toggle('nav-collapsed', next);
+        document.getElementById('navToggleLabel').textContent = next ? 'Expand Nav' : 'Minimize Nav';
+        if (!opts.temporary) {
+          navPinnedCollapsed = next;
+          localStorage.setItem('mithril-nav-collapsed', next ? '1' : '0');
+        }
       }
 
       function initNavCollapse(){
         const collapsed = localStorage.getItem('mithril-nav-collapsed') === '1';
+        navPinnedCollapsed = collapsed;
         setNavCollapsed(collapsed);
+
+        const navEl = document.querySelector('.layout > .nav');
+        const MIN_OPEN_MS = 3000;
+
+        const scheduleHoverClose = () => {
+          if (!navPinnedCollapsed || !navHoverExpanded) return;
+          const elapsed = Date.now() - navExpandAtMs;
+          const waitMs = Math.max(0, MIN_OPEN_MS - elapsed);
+          if (navHoverCloseTimer) clearTimeout(navHoverCloseTimer);
+          navHoverCloseTimer = setTimeout(() => {
+            navHoverCloseTimer = null;
+            if (!navPinnedCollapsed) return;
+            navHoverExpanded = false;
+            setNavCollapsed(true, { temporary: true });
+          }, waitMs);
+        };
+
+        navEl?.addEventListener('mouseenter', () => {
+          if (!navPinnedCollapsed) return;
+          if (navHoverCloseTimer) { clearTimeout(navHoverCloseTimer); navHoverCloseTimer = null; }
+          if (!navHoverExpanded) {
+            navHoverExpanded = true;
+            navExpandAtMs = Date.now();
+            setNavCollapsed(false, { temporary: true });
+          }
+        });
+
+        navEl?.addEventListener('mouseleave', () => {
+          scheduleHoverClose();
+        });
+
         document.getElementById('navToggle').addEventListener('click', () => {
+          if (navHoverCloseTimer) { clearTimeout(navHoverCloseTimer); navHoverCloseTimer = null; }
+          navHoverExpanded = false;
           const isCollapsed = document.getElementById('layoutRoot').classList.contains('nav-collapsed');
           setNavCollapsed(!isCollapsed);
         });
