@@ -2435,6 +2435,8 @@ app.post("/api/actions/:action", async (req, res) => {
     result = await shell("cd /home/mini-home-lab/openclaw && docker compose pull openclaw-gateway && docker compose up -d openclaw-gateway", 120000);
   } else if (action === "logs-openclaw-gateway") {
     result = await shell("docker logs --tail=120 openclaw-gateway", 15000);
+  } else if (action === "postupdate-openclaw-check") {
+    result = await shell("set -e; echo '== Compose working dir =='; docker inspect openclaw-gateway --format '{{ index .Config.Labels \"com.docker.compose.project.working_dir\" }}' || true; echo; echo '== Image =='; docker inspect openclaw-gateway --format '{{.Config.Image}}' || true; echo; echo '== Container status =='; docker ps --filter name=openclaw-gateway --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'; echo; echo '== API status =='; curl -sS http://127.0.0.1:3001/api/status || true", 30000);
   } else {
     return res.status(404).json({ ok: false, error: `Unknown action: ${action}` });
   }
