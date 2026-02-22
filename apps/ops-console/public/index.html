@@ -1590,7 +1590,12 @@
           haColorDrafts[entityId] = { brightness, hue, sat };
           if (s) s.style.setProperty('--hue', String(hue));
           if (setBtn) {
-            setBtn.style.setProperty('--btn-color', `hsl(${hue} ${sat}% 50%)`);
+            if (h && s) {
+              const lightness = Math.max(30, Math.min(68, Math.round(brightness * 0.55)));
+              setBtn.style.setProperty('--btn-color', `hsl(${hue} ${sat}% ${lightness}%)`);
+            } else {
+              setBtn.style.setProperty('--btn-color', `color-mix(in srgb, var(--highlight) ${Math.max(20, Math.min(60, Math.round(brightness * 0.5)))}%, var(--panel-2))`);
+            }
           }
           // value labels removed by design
         };
