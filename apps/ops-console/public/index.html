@@ -151,9 +151,16 @@
       .ha-item-top { display:flex; justify-content:space-between; gap:8px; align-items:center; }
       .ha-actions { display:flex; gap:6px; margin-top:6px; align-items:center; flex-wrap:wrap; }
       .ha-set-row { display:flex; justify-content:flex-end; margin-top:6px; }
+
+      .ha-btn.color-set.is-active {
+        border-color: color-mix(in srgb, var(--btn-color, var(--highlight)) 70%, var(--border));
+        background: color-mix(in srgb, var(--btn-color, var(--highlight)) 30%, var(--panel-2));
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--btn-color, var(--highlight)) 45%, transparent);
+      }
+
       .ha-actions input[type="range"] { width:130px; }
       .ha-sliders-stack { display:flex; flex-direction:column; gap:6px; margin-top:8px; flex:1; min-width:260px; }
-      .ha-slider-row { display:grid; grid-template-columns:76px 1fr; gap:8px; align-items:center; }
+      .ha-slider-row { display:grid; grid-template-columns:1fr; gap:8px; align-items:center; }
       .ha-slider-row input[type="range"] { width:100%; }
       .ha-slider-row input[type="range"].hue-slider {
         background: linear-gradient(90deg,
@@ -1533,15 +1540,12 @@
                 ${e.supportsBrightness ? `<div class='ha-set-row'><button class='ha-btn color-set' data-ha-action='apply-lighting' data-entity='${e.entity_id}'>Set</button></div>` : ''}
                 <div class='ha-sliders-stack'>
                   ${e.supportsBrightness ? `<div class='ha-slider-row'>
-                    <span class='muted'>Bright</span>
                     <input type='range' min='1' max='100' value='${Math.round(haColorDrafts[e.entity_id]?.brightness ?? (e.brightnessPct ?? 100))}' data-entity='${e.entity_id}' data-kind='brightness'/>
                   </div>` : ''}
                   ${e.supportsColor ? `<div class='ha-slider-row'>
-                    <span class='muted'>Hue</span>
                     <input class='hue-slider' type='range' min='0' max='360' value='${Math.round(haColorDrafts[e.entity_id]?.hue ?? (Array.isArray(e.hsColor) ? e.hsColor[0] : 0))}' data-entity='${e.entity_id}' data-kind='hue'/>
                   </div>
                   <div class='ha-slider-row'>
-                    <span class='muted'>Sat</span>
                     <input class='sat-slider' type='range' min='0' max='100' value='${Math.round(haColorDrafts[e.entity_id]?.sat ?? (Array.isArray(e.hsColor) ? e.hsColor[1] : 100))}' data-entity='${e.entity_id}' data-kind='sat'/>
                   </div>` : ''}
                 </div>
@@ -1586,7 +1590,7 @@
               const hue = Number(h?.value || 0);
               const saturation = Number(s?.value || 100);
               btn.disabled = true;
-              btn.textContent = 'Applying…';
+              btn.classList.add('is-active');
               await jpost('/api/ha/entity/action', { entity_id, action: 'turn_on', brightnessPct, hue, saturation });
             }
             const refreshAfterMs = action === 'apply-lighting' ? 900 : 0;
@@ -1598,6 +1602,11 @@
             renderHaArea('haDiningRoom', fresh.grouped?.dining_room || []);
             renderHaArea('haOther', fresh.grouped?.other || []);
             document.getElementById('haRaw').textContent = JSON.stringify(fresh, null, 2);
+            if (action !== 'toggle') {
+              const freshBtn = document.querySelector(`button[data-ha-action='apply-lighting'][data-entity='${entity_id}']`);
+              freshBtn?.classList.add('is-active');
+              setTimeout(() => freshBtn?.classList.remove('is-active'), 1200);
+            }
           });
         });
       }
