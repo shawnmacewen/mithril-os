@@ -144,8 +144,25 @@
       .ha-item { border:1px solid var(--border); border-radius:6px; padding:8px; margin-bottom:8px; }
 
       .ha-item-top { display:flex; justify-content:space-between; gap:8px; align-items:center; }
-      .ha-actions { display:flex; gap:6px; margin-top:6px; align-items:center; }
+      .ha-actions { display:flex; gap:6px; margin-top:6px; align-items:center; flex-wrap:wrap; }
       .ha-actions input[type="range"] { width:130px; }
+      .ha-actions .ha-btn {
+        border-radius:999px;
+        padding:6px 12px;
+        border:1px solid color-mix(in srgb, var(--chip-border,#5b6a8f) 55%, var(--border));
+        background:var(--panel-2);
+        color:var(--text);
+        font-weight:600;
+      }
+      .ha-actions .ha-btn:hover { filter:brightness(1.08); }
+      .ha-actions .ha-btn.toggle {
+        border-color: color-mix(in srgb, #6aa6ff 60%, var(--border));
+        background: color-mix(in srgb, #6aa6ff 18%, var(--panel-2));
+      }
+      .ha-actions .ha-btn.set {
+        border-color: color-mix(in srgb, #54c08a 60%, var(--border));
+        background: color-mix(in srgb, #54c08a 20%, var(--panel-2));
+      }
       th, td { border-bottom:1px solid var(--border); padding:8px; text-align:left; vertical-align:top; }
       th { color:var(--muted); font-weight:600; }
       .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border); }
@@ -1334,8 +1351,8 @@
             </div>
             <div class='muted'>${e.entity_id}</div>
             <div class='ha-actions'>
-              <button data-ha-action='toggle' data-entity='${e.entity_id}'>Toggle</button>
-              ${e.supportsBrightness ? `<input type='range' min='1' max='100' value='${e.brightnessPct ?? 100}' data-entity='${e.entity_id}'/><button data-ha-action='set-brightness' data-entity='${e.entity_id}'>Set</button>` : ''}
+              <button class='ha-btn toggle' data-ha-action='toggle' data-entity='${e.entity_id}'>Toggle</button>
+              ${e.supportsBrightness ? `<input type='range' min='1' max='100' value='${e.brightnessPct ?? 100}' data-entity='${e.entity_id}'/><button class='ha-btn set' data-ha-action='set-brightness' data-entity='${e.entity_id}'>Set</button>` : ''}
             </div>
           </div>
         `).join('');
