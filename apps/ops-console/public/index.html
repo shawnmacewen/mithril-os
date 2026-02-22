@@ -151,8 +151,8 @@
       .ha-item-top { display:flex; justify-content:space-between; gap:8px; align-items:center; }
       .ha-actions { display:flex; gap:6px; margin-top:6px; align-items:center; flex-wrap:wrap; }
       .ha-set-row { display:flex; justify-content:flex-end; margin-top:6px; }
-      .ha-controls-grid { display:grid; grid-template-columns: 1fr 68px; gap:8px; align-items:stretch; margin-top:8px; }
-      .ha-btn.color-set.square { width:68px; height:100%; min-height:102px; border-radius:10px; display:flex; align-items:center; justify-content:center; }
+      .ha-controls-grid { display:grid; grid-template-columns: minmax(0, 1fr) 56px; gap:8px; align-items:stretch; margin-top:8px; width:100%; }
+      .ha-btn.color-set.square { width:56px; height:100%; min-height:86px; border-radius:9px; display:flex; align-items:center; justify-content:center; padding:0; }
 
       .ha-btn.color-set.is-active {
         border-color: color-mix(in srgb, var(--btn-color, var(--highlight)) 70%, var(--border));
@@ -161,7 +161,7 @@
       }
 
       .ha-actions input[type="range"] { width:130px; }
-      .ha-sliders-stack { display:flex; flex-direction:column; gap:6px; margin-top:8px; flex:1; min-width:260px; }
+      .ha-sliders-stack { display:flex; flex-direction:column; gap:6px; margin-top:8px; flex:1; min-width:0; }
       .ha-slider-row { display:grid; grid-template-columns:1fr; gap:8px; align-items:center; }
       .ha-slider-row input[type="range"] { width:100%; }
       .ha-slider-row input[type="range"].hue-slider {
@@ -201,7 +201,7 @@
         gap:10px;
         align-items:stretch;
       }
-      .ha-device-main { min-height: 128px; }
+      .ha-device-main { min-height: 128px; overflow:hidden; }
       .ha-power-btn {
         width:52px;
         height:100%;
