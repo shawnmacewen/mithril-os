@@ -1,0 +1,1484 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mithril-OS · Ops Console</title>
+    <style>
+      :root {
+        --bg:#0b1020;
+        --panel:#121a2f;
+        --panel-2:#0f1730;
+        --border:#223052;
+        --muted:#8fa1c7;
+        --text:#e7eeff;
+        --ok:#43d17f;
+        --bad:#ff6b6b;
+        --highlight:#f3c64b;
+        --nav-text:#e7eeff;
+      }
+      :root[data-theme="light"] {
+        --bg:#ffffff;
+        --panel:#f9fafc;
+        --panel-2:#ffffff;
+        --border:#d7dce7;
+        --muted:#5f6f8f;
+        --text:#1f2a3d;
+        --ok:#228a4d;
+        --bad:#c53939;
+        --highlight:#d4a514;
+        --nav-text:#3c4558;
+      }
+
+      * { box-sizing: border-box; }
+      body { margin:0; font-family:Inter,system-ui,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--text); overflow-x:hidden; }
+      .bg-parallax { position:fixed; inset:0; z-index:-2; pointer-events:none; }
+      .bg-layer { position:absolute; inset:0; background-image:url('/assets/mithril-landscape.svg'); background-size:cover; background-position:center; }
+      .bg-layer.far { opacity:.18; transform:translateY(var(--parallax-far,0px)); }
+      .bg-layer.mid { opacity:.12; transform:translateY(var(--parallax-mid,0px)) scale(1.03); }
+      .bg-layer.near { opacity:.08; transform:translateY(var(--parallax-near,0px)) scale(1.06); }
+      .layout { display:grid; grid-template-columns:280px 1fr; min-height:100vh; position:relative; z-index:1; transition:grid-template-columns .2s ease; }
+      .layout.nav-collapsed { grid-template-columns:84px 1fr; }
+      .nav { background:var(--panel); border-right:1px solid var(--border); padding:16px; display:flex; flex-direction:column; overflow:hidden; position:sticky; top:0; height:100vh; }
+      .brand { font-weight:700; margin-bottom:18px; display:flex; align-items:center; gap:10px; }
+      .brand small { color:var(--muted); display:block; font-weight:500; margin-top:4px; }
+      .brand .brand-icon { display:block; width:34px; height:34px; border-radius:8px; object-fit:cover; object-position:center; background:#fff; margin-left:-5px; }
+      .nav-links { flex:1; }
+      .nav a { display:flex; align-items:center; gap:10px; color:var(--nav-text); text-decoration:none; padding:10px 12px; border-radius:10px; margin-bottom:6px; white-space:nowrap; }
+      .nav a.active,.nav a:hover { background:color-mix(in srgb, var(--highlight) 16%, transparent); }
+      .nav-icon { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; flex:0 0 auto; opacity:.95; }
+      .nav a[data-view='dashboard'] .nav-icon { color:#8b5cf6; }
+      .nav a[data-view='homeassistant'] .nav-icon { color:#22c55e; }
+      .nav a[data-view='agents'] .nav-icon { color:#06b6d4; }
+      .nav a[data-view='watchers'] .nav-icon { color:#f59e0b; }
+      .nav a[data-view='openclaw'] .nav-icon { color:#3b82f6; }
+      .nav a[data-view='models'] .nav-icon { color:#ec4899; }
+      .nav a[data-view='logs'] .nav-icon { color:#ef4444; }
+      .nav a[data-view='projects'] .nav-icon { color:#10b981; }
+      .nav a[data-view='policies'] .nav-icon { color:#f97316; }
+      .nav a[data-view='changelog'] .nav-icon { color:#a78bfa; }
+      .nav a[data-view='config'] .nav-icon { color:#14b8a6; }
+      .layout.nav-collapsed .brand .brand-text,
+      .layout.nav-collapsed .brand small,
+      .layout.nav-collapsed .nav a { font-size:0; }
+      .layout.nav-collapsed .brand { padding-left:5px; }
+      .layout.nav-collapsed .brand .brand-icon { display:block; }
+      .layout.nav-collapsed .nav a { justify-content:center; padding:10px 8px; }
+      .layout.nav-collapsed .nav .nav-icon { width:22px; height:22px; margin:0; }
+      .main { padding:20px; }
+      .toolbar { display:flex; gap:10px; align-items:center; margin:8px 0 18px; flex-wrap:wrap; }
+      .cards { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
+      .card { background:var(--panel); border:1px solid var(--border); border-left:4px solid var(--highlight); border-radius:14px; padding:14px; }
+      .muted { color:var(--muted); font-size:13px; }
+      .row { display:flex; justify-content:space-between; gap:10px; margin:8px 0; }
+      .ok { color:var(--ok); }
+      .bad { color:var(--bad); }
+      .hidden { display:none; }
+      button { background:var(--panel-2); border:1px solid var(--border); color:var(--text); padding:8px 12px; border-radius:9px; cursor:pointer; }
+      button:hover { filter:brightness(1.04); }
+      button.danger { border-color:#8a3a3a; background:#3a1e27; color:#fff; }
+      pre { white-space:pre-wrap; background:var(--panel-2); border:1px solid var(--border); border-radius:10px; padding:10px; max-height:420px; overflow:auto; }
+      table { width:100%; border-collapse:collapse; font-size:14px; }
+      .clickable-row { cursor:pointer; }
+      .clickable-row:hover { background:color-mix(in srgb, var(--highlight) 10%, transparent); }
+      .metric-grid { display:grid; grid-template-columns:repeat(4,minmax(150px,1fr)); gap:10px; margin-bottom:12px; }
+      .metric-card { background:var(--panel); border:1px solid var(--border); border-left:4px solid var(--highlight); border-radius:12px; padding:10px; }
+      .metric-label { color:var(--muted); font-size:12px; }
+      .metric-value { font-size:22px; font-weight:700; margin-top:3px; }
+      .active-badge { display:inline-flex; align-items:center; justify-content:center; height:20px; padding:0 8px; border-radius:999px; background:color-mix(in srgb, #22c55e 26%, var(--panel-2)); border:1px solid #22c55e; color:#22c55e; font-weight:700; font-size:10px; line-height:1; }
+      .inactive-badge { display:inline-flex; align-items:center; justify-content:center; height:20px; padding:0 8px; border-radius:999px; border:1px solid var(--border); color:var(--muted); font-weight:700; font-size:10px; line-height:1; }
+      .status-pill { display:inline-flex; align-items:center; justify-content:center; height:20px; padding:0 8px; border-radius:999px; font-weight:700; font-size:10px; line-height:1; border:1px solid var(--border); }
+      .status-pill.ok { color:#22c55e; border-color:#22c55e; background:color-mix(in srgb, #22c55e 18%, var(--panel-2)); }
+      .status-pill.warn { color:#f59e0b; border-color:#f59e0b; background:color-mix(in srgb, #f59e0b 18%, var(--panel-2)); }
+      .status-pill.bad { color:#ef4444; border-color:#ef4444; background:color-mix(in srgb, #ef4444 18%, var(--panel-2)); }
+      .queue-badges { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+      .spark { width:100%; height:44px; border:1px solid var(--border); border-radius:8px; background:var(--panel-2); margin-top:8px; }
+      .ha-item { border:1px solid var(--border); border-radius:10px; padding:8px; margin-bottom:8px; }
+
+      /* Home Assistant section: Mithril Glass style */
+      #view-homeassistant {
+        position: relative;
+        border-radius: 0;
+        margin: -20px;
+        padding: 24px;
+        min-height: calc(100vh - 70px);
+        background: center / cover no-repeat fixed url('/assets/mithril-os-ha-background-cats-lake-2560x1536.png');
+      }
+      #view-homeassistant .card {
+        background: rgba(20, 35, 30, 0.10);
+        border: 1px solid rgba(255,255,255,0.24);
+        border-radius: 20px;
+        box-shadow: 0 10px 28px rgba(0,0,0,0.22);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+      #view-homeassistant h2,
+      #view-homeassistant h3,
+      #view-homeassistant strong { color: #F5F8F4; }
+      #view-homeassistant .muted,
+      #view-homeassistant li { color: #D6E3DA; }
+      .ha-item-top { display:flex; justify-content:space-between; gap:8px; align-items:center; }
+      .ha-actions { display:flex; gap:6px; margin-top:6px; align-items:center; }
+      .ha-actions input[type="range"] { width:130px; }
+      th, td { border-bottom:1px solid var(--border); padding:8px; text-align:left; vertical-align:top; }
+      th { color:var(--muted); font-weight:600; }
+      .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border); }
+      .pill.ok { color:var(--ok); }
+      .pill.bad { color:var(--bad); }
+      .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+      .jobs-columns { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+      @media (max-width: 1080px) { .jobs-columns { grid-template-columns:1fr; } }
+      .logs-controls { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+      input, select { background:var(--panel-2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:6px 8px; }
+      .agent-tile { display:flex; align-items:center; gap:12px; }
+      .avatar { width:52px; height:52px; border-radius:50%; border:2px solid var(--highlight); display:flex; align-items:center; justify-content:center; font-size:24px; background:var(--panel-2); }
+      .agent-file-buttons { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 12px; }
+      .agent-file-buttons button { border-radius:999px; padding:6px 12px; border:1px solid var(--chip-border,#5b6a8f); background:#ffffff; color:#1f2a3d; }
+      .agent-file-buttons button.active { border-color:var(--chip-active,#7aa2ff); background:color-mix(in srgb, var(--chip-active,#7aa2ff) 26%, white); box-shadow:0 0 0 1px color-mix(in srgb, var(--chip-active,#7aa2ff) 45%, transparent); color:var(--text); font-weight:600; }
+      .agent-tiles-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px; margin:8px 0 12px; }
+      .agent-tile-card { border:1px solid var(--border); background:var(--panel-2); border-radius:12px; padding:10px; }
+      .agent-tile-card.active { border-color:var(--highlight); box-shadow:0 0 0 1px color-mix(in srgb, var(--highlight) 35%, transparent); }
+      .agent-tile-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+      .agent-file-row { display:flex; gap:8px; flex-wrap:wrap; }
+      .agent-file-row button { border-radius:999px; padding:5px 10px; font-size:12px; border:1px solid var(--chip-border,#5b6a8f); background:#ffffff; color:#1f2a3d; }
+      .agent-file-row button.active { border-color:var(--chip-active,#7aa2ff); background:color-mix(in srgb, var(--chip-active,#7aa2ff) 26%, white); box-shadow:0 0 0 1px color-mix(in srgb, var(--chip-active,#7aa2ff) 45%, transparent); color:var(--text); font-weight:600; }
+      details summary { cursor:pointer; color:var(--muted); margin-bottom:8px; }
+      .theme-wrap { padding-top:8px; border-top:1px solid var(--border); display:grid; gap:10px; }
+      .switch-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+      .switch { position:relative; width:48px; height:28px; display:inline-block; }
+      .switch input { opacity:0; width:0; height:0; }
+      .slider { position:absolute; inset:0; cursor:pointer; background:var(--panel-2); border:1px solid var(--border); border-radius:999px; transition:all .18s ease; }
+      .slider:before { content:""; position:absolute; width:20px; height:20px; left:3px; top:3px; border-radius:50%; background:var(--text); transition:all .18s ease; }
+      .switch input:checked + .slider { background:color-mix(in srgb, var(--highlight) 28%, var(--panel-2)); }
+      .switch input:checked + .slider:before { transform:translateX(20px); }
+      .layout.nav-collapsed .switch-row .label-text,
+      .layout.nav-collapsed #navToggleLabel { display:none; }
+      .layout.nav-collapsed .theme-wrap { justify-items:center; }
+
+    </style>
+  </head>
+  <body>
+    <div class="bg-parallax" aria-hidden="true">
+      <div class="bg-layer far"></div>
+      <div class="bg-layer mid"></div>
+      <div class="bg-layer near"></div>
+    </div>
+    <div class="layout" id="layoutRoot">
+      <aside class="nav">
+        <div class="brand"><img class="brand-icon" src="/assets/mithril-os-nav-crystal.png" alt="mirthril-os" /><span class="brand-text">mirthril-os<small>Ops Console · v1.4</small></span></div>
+
+        <div class="nav-links">
+          <a data-view="homeassistant" href="#homeassistant"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M6 10v11h12V10"/><path d="M10 21v-5h4v5"/></svg>Home Assistant</a>
+          <a class="active" data-view="dashboard" href="#dashboard"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Dashboard</a>
+          <a data-view="agents" href="#agents"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><path d="M12 6V3"/></svg>Agents</a>
+          <a data-view="watchers" href="#watchers"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/></svg>Watchers</a>
+          <a data-view="openclaw" href="#openclaw"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.7.5 1 1.1 1 1.8V18h6v-1.5c0-.7.3-1.3 1-1.8A7 7 0 0 0 12 2Z"/></svg>OpenClaw</a>
+          <a data-view="models" href="#models"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="12" cy="17" r="2"/><path d="M8 8.5l2.8 6"/><path d="M16 8.5l-2.8 6"/><path d="M8 7h8"/></svg>Models</a>
+          <a data-view="logs" href="#logs"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M16 3v4h4"/><path d="M8 11h8"/><path d="M8 15h8"/></svg>Logs</a>
+          <a data-view="projects" href="#projects"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h18"/></svg>Projects</a>
+          <a data-view="policies" href="#policies"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>Policies</a>
+          <a data-view="changelog" href="#changelog"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M6 4h12"/><path d="M6 12h12"/><path d="M6 20h12"/><circle cx="4" cy="4" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="20" r="1"/></svg>Changelog</a>
+          <a data-view="config" href="#config"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z"/></svg>Diagnostics</a>
+        </div>
+
+        <div class="theme-wrap">
+          <button id="navToggle"><span id="navToggleLabel">Minimize Nav</span></button>
+          <div class="switch-row">
+            <span class="label-text muted">Theme</span>
+            <label class="switch" title="Toggle light/dark theme">
+              <input id="themeToggleSwitch" type="checkbox" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <div id="uiBootError" class="card hidden" style="border-left-color:#ef4444;margin-bottom:12px;"></div>
+
+        <section id="view-dashboard">
+          <h2>Dashboard</h2>
+          <div class="metric-grid" id="metricsGrid">
+            <div class="metric-card"><div class="metric-label">Agents</div><div class="metric-value" id="metricAgents">-</div></div>
+            <div class="metric-card"><div class="metric-label">Active Models</div><div class="metric-value" id="metricModels">-</div></div>
+            <div class="metric-card"><div class="metric-label">Running Watchers</div><div class="metric-value" id="metricWatchers">-</div></div>
+            <div class="metric-card"><div class="metric-label">Containers Up</div><div class="metric-value" id="metricContainers">-</div></div>
+          </div>
+          <h2>System Status</h2>
+          <div class="cards">
+            <section class="card"><h3>OpenClaw</h3><div id="openclawBlock" class="muted">Loading…</div></section>
+            <section class="card"><h3>Home Assistant</h3><div id="haBlock" class="muted">Loading…</div></section>
+            <section class="card"><h3>Docker</h3><div id="dockerBlock" class="muted">Loading…</div></section>
+          </div>
+        </section>
+
+        <section id="view-agents" class="hidden">
+          <h2>Agents</h2>
+          <div class="card" style="margin-bottom:12px;">
+            <h3>Current Agent</h3>
+            <div class="agent-tile">
+              <div class="avatar" id="currentAgentAvatar">👁️</div>
+              <div>
+                <div style="font-weight:700;" id="currentAgentName">OddEye</div>
+                <div class="muted" id="currentAgentModel">Model: loading…</div>
+              </div>
+            </div>
+            <div id="mainAgentFileButtons" class="agent-file-buttons" style="margin-top:10px;"></div>
+          </div>
+
+          <div class="card" style="margin-bottom:12px;">
+            <h3>Agent Operations Summary</h3>
+            <div class="row"><span>COO</span><strong id="cooAgentId">-</strong></div>
+            <div class="row"><span>Direct user override</span><strong id="directOverrideState">-</strong></div>
+            <div class="row"><span>Delegations (running / blocked)</span><strong id="delegationCounts">-</strong></div>
+            <div class="muted" id="delegationCadence">-</div>
+            <details style="margin-top:8px;">
+              <summary>Advanced delegation table</summary>
+              <table id="delegationsTable" style="margin-top:8px;">
+                <thead><tr><th>ID</th><th>Assignee</th><th>Status</th><th>Objective</th><th>Updated</th></tr></thead>
+                <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+              </table>
+            </details>
+          </div>
+
+          <div class="card" style="margin-bottom:12px;">
+            <h3>What each agent is doing now</h3>
+            <table id="agentNowTable">
+              <thead><tr><th>Agent</th><th>Role</th><th>Status</th><th>Current task</th><th>Last update</th><th>Blockers</th></tr></thead>
+              <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="card" style="margin-bottom:12px;">
+            <details>
+              <summary>Advanced delegation timeline</summary>
+              <table id="delegationTimelineTable" style="margin-top:8px;">
+                <thead><tr><th>ID</th><th>Assignee</th><th>Latest</th><th>Events</th><th>Objective</th></tr></thead>
+                <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+              </table>
+            </details>
+          </div>
+
+          <div class="card" style="margin-bottom:12px;">
+            <div id="agentTiles" class="agent-tiles-grid"></div>
+            <pre id="agentMdContent">Select an agent file to view markdown content.</pre>
+          </div>
+
+          <div class="card">
+            <details>
+              <summary>Show raw Agents + Bindings JSON</summary>
+              <pre id="agentsRaw">Loading…</pre>
+            </details>
+          </div>
+        </section>
+
+        <section id="view-watchers" class="hidden">
+          <h2>Watchers</h2>
+          <div class="card">
+            <table id="watchersTable">
+              <thead><tr><th>Name</th><th>Running</th><th>Systemd</th><th>Interval</th><th>Last Update</th><th>Actions</th></tr></thead>
+              <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="card" style="margin-top:12px;"><h3>Watchers Raw</h3><pre id="watchersRaw">Loading…</pre></div>
+        </section>
+
+        <section id="view-openclaw" class="hidden">
+          <h2>OpenClaw</h2>
+          <div class="cards">
+            <div class="card">
+              <h3>Gateway Health</h3>
+              <div class="row"><span>TCP 18789</span><strong id="ocTcp">-</strong></div>
+              <div class="row"><span>Uptime</span><strong id="ocUptime">-</strong></div>
+              <div class="row"><span>Config readable</span><strong id="ocCfg">-</strong></div>
+            </div>
+            <div class="card">
+              <h3>Model Runtime</h3>
+              <div class="row"><span>Primary</span><strong id="ocPrimaryModel">-</strong></div>
+              <div class="row"><span>Fallback</span><strong id="ocFallbackModel">-</strong></div>
+              <div class="row"><span>Profiles</span><strong id="ocProfiles">-</strong></div>
+            </div>
+            <div class="card">
+              <h3>Session / Queue</h3>
+              <div class="row"><span>Active</span><strong id="ocQueueActive">-</strong></div>
+              <div class="row"><span>Waiting</span><strong id="ocQueueWaiting">-</strong></div>
+              <div class="row"><span>Queued</span><strong id="ocQueueQueued">-</strong></div>
+              <div class="queue-badges" id="ocQueueBadges"></div>
+              <svg id="ocQueueSpark" class="spark" viewBox="0 0 300 44" preserveAspectRatio="none"></svg>
+            </div>
+            <div class="card">
+              <h3>Token & Cost</h3>
+              <div class="row"><span>Input tokens</span><strong id="ocTokIn">-</strong></div>
+              <div class="row"><span>Output tokens</span><strong id="ocTokOut">-</strong></div>
+              <div class="row"><span>Total tokens</span><strong id="ocTokTotal">-</strong></div>
+              <div class="row"><span>Est. cost</span><strong id="ocTokCost">-</strong></div>
+              <div class="row"><span>Source</span><strong id="ocTokSource">-</strong></div>
+              <div class="row"><span>Captured</span><strong id="ocTokCaptured">-</strong></div>
+              <div class="muted" id="ocTokNote">Built-in session telemetry</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>Channel Bindings Matrix</h3>
+            <table id="ocBindingsTable"><thead><tr><th>#</th><th>Channel</th><th>Chat</th><th>Agent</th><th>Note</th></tr></thead><tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody></table>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>Tool Permissions</h3>
+            <div class="row"><span>exec.security</span><strong id="ocExecSecurity">-</strong></div>
+            <div class="row"><span>exec.ask</span><strong id="ocExecAsk">-</strong></div>
+            <div class="muted" id="ocToolsList">-</div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>Config Explorer (read-only)</h3>
+            <input id="ocConfigSearch" placeholder="search config path/value" />
+            <table id="ocConfigTable" style="margin-top:8px;"><thead><tr><th>Path</th><th>Value</th></tr></thead><tbody><tr><td colspan="2" class="muted">Loading…</td></tr></tbody></table>
+          </div>
+
+          <div class="card" style="margin-top:12px;"><details><summary>OpenClaw Raw JSON</summary><pre id="openclawRaw">Loading…</pre></details></div>
+        </section>
+        <section id="view-models" class="hidden">
+          <h2>Models</h2>
+          <div id="modelsGrid" class="cards"></div>
+          <div class="card" style="margin-top:12px;"><details><summary>Show raw models JSON</summary><pre id="modelsRaw">Loading…</pre></details></div>
+        </section>
+        <section id="view-homeassistant" class="hidden">
+          <h2>Home Assistant Controls</h2>
+          <div class="cards">
+            <div class="card"><h3>Office</h3><div id="haOffice">Loading…</div></div>
+            <div class="card"><h3>Bedroom</h3><div id="haBedroom">Loading…</div></div>
+            <div class="card"><h3>Living Room</h3><div id="haLivingRoom">Loading…</div></div>
+            <div class="card"><h3>Dining Room</h3><div id="haDiningRoom">Loading…</div></div>
+          </div>
+          <div class="card" style="margin-top:12px;"><details><summary>Other / Unmapped Devices</summary><div id="haOther">Loading…</div></details></div>
+          <div class="card" style="margin-top:12px;"><details><summary>Show raw HA JSON</summary><pre id="haRaw">Loading…</pre></details></div>
+        </section>
+
+        <section id="view-logs" class="hidden">
+          <h2>Logs</h2>
+          <div class="toolbar" style="margin:0 0 8px;">
+            <button id="logsTabGateway">Gateway Logs</button>
+            <button id="logsTabAudit">Audit Trail</button>
+            <button id="logsTabJobs">Jobs & Scheduled Tasks</button>
+          </div>
+
+          <div id="logsGatewayPane" class="card">
+            <div class="logs-controls">
+              <select id="logLevel"><option value="">All levels</option><option value="ERROR">ERROR</option><option value="WARN">WARN</option><option value="INFO">INFO</option><option value="DEBUG">DEBUG</option></select>
+              <input id="logQuery" placeholder="filter text" />
+              <select id="logPageSize"><option value="10">10 rows</option><option value="50" selected>50 rows</option><option value="100">100 rows</option></select>
+              <button id="loadLogsBtn">Apply filter</button>
+              <button id="logsPrev">Prev</button>
+              <button id="logsNext">Next</button>
+              <span id="logsPageLabel" class="muted">Page 1</span>
+            </div>
+            <table id="logsTable">
+              <thead><tr><th>Time</th><th>Bracket Tags</th><th>Type</th><th>Level</th><th>Message</th></tr></thead>
+              <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+            </table>
+            <h4 style="margin-top:12px;">Selected Log Row (raw)</h4>
+            <pre id="logsRaw">Click a row to inspect full raw log.</pre>
+            <button id="copyLogsBtn">Copy selected raw log</button>
+          </div>
+
+          <div id="logsAuditPane" class="hidden">
+            <div class="card">
+              <div class="toolbar" style="margin:0 0 8px;">
+                <button id="commitsPrev">Prev</button>
+                <button id="commitsNext">Next</button>
+                <span id="commitsPageLabel" class="muted">Page 1</span>
+              </div>
+              <table id="commitsTable">
+                <thead><tr><th>Commit</th><th>Date</th><th>Author</th><th>Message</th><th>Type</th><th>Pushed</th></tr></thead>
+                <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+              </table>
+            </div>
+            <div class="card" style="margin-top:12px;"><h3>Audit Raw</h3><pre id="auditRaw">Loading…</pre></div>
+          </div>
+
+          <div id="logsJobsPane" class="hidden">
+            <div class="card" style="margin-bottom:12px;">
+              <h3>Jobs & Scheduled Tasks</h3>
+              <div class="muted">Split view: delegated jobs on the left, scheduled tasks on the right. Use details for raw row drill-down.</div>
+              <details style="margin-top:10px;">
+                <summary>Advanced delegation controls</summary>
+                <div class="grid2" style="margin-top:10px;">
+                  <div>
+                    <div class="muted" style="margin-bottom:6px;">Start delegation</div>
+                    <input id="delegationSummaryInput" placeholder="Task summary for target agent" style="width:100%; margin-bottom:8px;" />
+                    <div class="toolbar" style="margin:0;">
+                      <input id="delegationTargetInput" value="koda" placeholder="target agent" />
+                      <input id="delegationNotifyChannelInput" value="1474209566437671096" placeholder="notify channel id" />
+                      <button id="delegationStartBtn">Start Handoff</button>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="muted" style="margin-bottom:6px;">Complete delegation</div>
+                    <input id="delegationJobIdInput" placeholder="Job ID (e.g. DEL-KODA-...)" style="width:100%; margin-bottom:8px;" />
+                    <div class="toolbar" style="margin:0;">
+                      <select id="delegationCompleteStatus"><option value="done">done</option><option value="failed">failed</option></select>
+                      <button id="delegationCompleteBtn">Complete Handoff</button>
+                    </div>
+                  </div>
+                </div>
+                <pre id="delegationOutput" style="margin-top:10px;">No delegation action run yet.</pre>
+              </details>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+              <div class="toolbar" style="margin:0 0 8px;">
+                <select id="jobsKindFilter"><option value="">All types</option><option value="scheduled">Scheduled</option><option value="job">Jobs</option><option value="delegation">Delegations</option></select>
+                <select id="jobsStatusFilter"><option value="">All statuses</option><option value="queued">queued</option><option value="running">running</option><option value="blocked">blocked</option><option value="done">done</option><option value="failed">failed</option></select>
+                <button id="jobsRefreshBtn">Refresh</button>
+              </div>
+              <div class="jobs-columns">
+                <div class="card" style="margin:0;">
+                  <h3 style="margin-top:0;">Delegated Jobs</h3>
+                  <table id="delegatedJobsTable">
+                    <thead><tr><th>Task</th><th>Owner → Assignee</th><th>Status</th><th>When</th><th>Summary</th><th>Details</th></tr></thead>
+                    <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+                  </table>
+                </div>
+                <div class="card" style="margin:0;">
+                  <h3 style="margin-top:0;">Scheduled Jobs</h3>
+                  <table id="scheduledJobsTable">
+                    <thead><tr><th>Task</th><th>Owner → Assignee</th><th>Status</th><th>When</th><th>Summary</th><th>Details</th></tr></thead>
+                    <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:12px;"><h3>Work Board Raw</h3><pre id="jobsRaw">Loading…</pre></div>
+          </div>
+        </section>
+
+        <section id="view-projects" class="hidden">
+          <h2>Project Area</h2>
+          <div class="card" style="margin-bottom:12px;">
+            <div class="row"><span>Total projects</span><strong id="projectsTotal">-</strong></div>
+            <div class="row"><span>Healthy repos</span><strong id="projectsHealthy">-</strong></div>
+            <div class="row"><span>Repos with local changes</span><strong id="projectsDirty">-</strong></div>
+            <div class="muted" id="projectsSource">-</div>
+          </div>
+          <div class="card">
+            <table id="projectsTable"><thead><tr><th>Project</th><th>Branch</th><th>Working tree</th><th>Latest commits</th></tr></thead><tbody><tr><td colspan="4" class="muted">Loading…</td></tr></tbody></table>
+          </div>
+          <div class="card" style="margin-top:12px;"><details><summary>Projects Raw JSON</summary><pre id="projectsRaw">Loading…</pre></details></div>
+        </section>
+
+        <section id="view-policies" class="hidden">
+          <h2>Policies</h2>
+          <div class="card" style="margin-bottom:12px;">
+            <div class="row"><span>Total policies</span><strong id="policiesTotal">-</strong></div>
+            <div class="row"><span>Active</span><strong id="policiesActive">-</strong></div>
+            <div class="row"><span>Readable files</span><strong id="policiesReadable">-</strong></div>
+            <div class="muted" id="policiesSource">-</div>
+          </div>
+          <div class="card">
+            <table id="policiesTable"><thead><tr><th>Policy</th><th>Status</th><th>Owner</th><th>Scope</th><th>File meta</th></tr></thead><tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody></table>
+          </div>
+          <div class="card" style="margin-top:12px;"><details><summary>Policies Raw JSON</summary><pre id="policiesRaw">Loading…</pre></details></div>
+        </section>
+
+        <section id="view-changelog" class="hidden">
+          <h2>Public Changelog</h2>
+          <div class="card" style="margin-bottom:12px;">
+            <div id="changelogHeader" class="muted">Loading changelog…</div>
+          </div>
+          <div id="changelogCards" class="cards"></div>
+          <div class="card" style="margin-top:12px;"><details><summary>Changelog Raw JSON</summary><pre id="changelogRaw">Loading…</pre></details></div>
+        </section>
+
+        <section id="view-backups" class="hidden">
+          <h2>Diagnostics</h2>
+          <div class="toolbar" style="margin:0 0 10px;">
+            <button onclick="location.hash='config'">Overview</button>
+            <button onclick="location.hash='jobs'">Scheduled Jobs</button>
+            <button onclick="location.hash='backups'">Backups</button>
+          </div>
+          <h3>Backups</h3>
+
+          <div class="cards">
+            <div class="card">
+              <h3>Backup Health</h3>
+              <div class="row"><span>Status</span><strong id="backupHealth">-</strong></div>
+              <div class="muted" id="backupHealthReason">-</div>
+              <div class="row"><span>Latest snapshot</span><strong id="backupLatest">-</strong></div>
+              <div class="row"><span>Snapshots</span><strong id="backupCount">-</strong></div>
+              <div class="row"><span>Storage used</span><strong id="backupUsage">-</strong></div>
+              <div class="row"><span>Timer</span><strong id="backupTimer">-</strong></div>
+              <button id="runBackupBtn">Run Backup Now</button>
+            </div>
+            <div class="card">
+              <h3>Retention Policy</h3>
+              <div class="row"><span>Daily</span><strong id="retDaily">-</strong></div>
+              <div class="row"><span>Weekly</span><strong id="retWeekly">-</strong></div>
+              <div class="row"><span>Monthly</span><strong id="retMonthly">-</strong></div>
+              <div class="muted">Preview: based on latest snapshots and configured retention windows.</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>Backup Targets</h3>
+            <table id="backupTargetsTable">
+              <thead><tr><th>Target</th><th>Status</th><th>Detail</th></tr></thead>
+              <tbody><tr><td colspan="3" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>Snapshots</h3>
+            <table id="snapshotsTable">
+              <thead><tr><th>Name</th><th>Size</th><th>Files</th><th>Checksum</th><th>Path</th><th>Taken (Local)</th></tr></thead>
+              <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="card" style="margin-top:12px;"><h3>Run Logs</h3><pre id="backupLogs">Loading…</pre></div>
+          <div class="card" style="margin-top:12px;"><h3>Service status</h3><pre id="backupStatusRaw">Loading…</pre></div>
+        </section>
+
+        <section id="view-jobs" class="hidden">
+          <h2>Diagnostics</h2>
+          <div class="toolbar" style="margin:0 0 10px;">
+            <button onclick="location.hash='config'">Overview</button>
+            <button onclick="location.hash='jobs'">Scheduled Jobs</button>
+            <button onclick="location.hash='backups'">Backups</button>
+          </div>
+          <h3>Scheduled Jobs</h3>
+          <div class="muted" style="margin-bottom:8px;">Tip: For unified tracking (scheduled + jobs + delegations), use <strong>Logs → Jobs & Scheduled Tasks</strong>.</div>
+          <div class="card" style="margin-bottom:12px;">
+            <div class="row"><span>Total scheduled sources</span><strong id="scheduledJobsCount">-</strong></div>
+            <div class="row"><span>Healthy/running</span><strong id="scheduledJobsHealthy">-</strong></div>
+            <div class="row"><span>Needs attention</span><strong id="scheduledJobsAttention">-</strong></div>
+          </div>
+          <div class="card">
+            <div class="muted" style="margin-bottom:10px;">Detailed scheduling and assignment view now lives in Logs.</div>
+            <button onclick="location.hash='logs'; setTimeout(() => document.getElementById('logsTabJobs')?.click(), 0);">Open Jobs & Scheduled Tasks</button>
+          </div>
+        </section>
+
+        <section id="view-config" class="hidden">
+          <h2>Diagnostics</h2>
+          <div class="toolbar" style="margin:0 0 10px;">
+            <button onclick="location.hash='config'">Overview</button>
+            <button onclick="location.hash='jobs'">Scheduled Jobs</button>
+            <button onclick="location.hash='backups'">Backups</button>
+          </div>
+          <div class="toolbar">
+            <button id="refreshBtn">Refresh</button>
+            <label class="muted"><input id="autoRefresh" type="checkbox" /> Auto-refresh (10s)</label>
+            <span id="stamp" class="muted"></span>
+          </div>
+          <div class="card" style="margin-bottom:12px;">
+            <h3>Service Health</h3>
+            <table id="servicesTable"><thead><tr><th>Service</th><th>Status</th><th>Detail</th></tr></thead><tbody><tr><td colspan="3" class="muted">Loading…</td></tr></tbody></table>
+          </div>
+
+          <div class="grid2" style="margin-bottom:12px;">
+            <div class="card"><h3>Quick Actions</h3><button data-action="deploy-ops-console">Deploy Ops Console</button> <button data-action="restart-ops-console">Restart Ops Console</button></div>
+            <div class="card"><h3>Service Actions</h3><button data-action="restart-watcher">Restart Watcher</button> <button class="danger" data-action="restart-homeassistant">Restart Home Assistant</button></div>
+            <div class="card"><h3>OpenClaw Updates</h3><button data-action="update-openclaw-gateway">Update OpenClaw Gateway</button> <button data-action="restart-openclaw-gateway">Restart OpenClaw Gateway</button><div class="muted" style="margin-top:8px;">Uses <code>/home/mini-home-lab/openclaw</code> docker compose workflow.</div></div>
+          </div>
+          <div class="card" style="margin-bottom:12px;"><h3>Action Output</h3><pre id="actionOutput">No action run yet.</pre></div>
+
+          <div class="card">
+            <h3>Config Validator</h3>
+            <div id="configSummary" class="muted">Loading…</div>
+            <table id="configTable" style="margin-top:8px;">
+              <thead><tr><th>Key</th><th>Status</th><th>Hint</th></tr></thead>
+              <tbody><tr><td colspan="3" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+        <!-- Audit Trail moved into Logs sub-nav -->
+      </main>
+    </div>
+
+    <script>
+      const views = ["dashboard","agents","watchers","openclaw","models","homeassistant","logs","projects","policies","changelog","backups","jobs","config"];
+      let autoTimer = null;
+      let cache = {};
+
+      function showUiBootError(msg){
+        const el = document.getElementById('uiBootError');
+        if (!el) return;
+        el.classList.remove('hidden');
+        el.innerHTML = `<strong>UI diagnostics:</strong> <span class='bad'>${msg}</span>`;
+      }
+
+      window.addEventListener('error', (e) => {
+        showUiBootError(`${e.message || 'unknown error'} @ ${e.filename || ''}:${e.lineno || ''}`);
+      });
+      window.addEventListener('unhandledrejection', (e) => {
+        const m = e?.reason?.message || String(e?.reason || 'unhandled promise rejection');
+        showUiBootError(m);
+      });
+      let currentAgentFilesIndex = [];
+      let commitsPage = 1;
+      const commitsPageSize = 8;
+      let logsPage = 1;
+      let logsRows = [];
+      let logsTab = 'gateway';
+      const queueHistory = [];
+
+      function setTheme(theme){
+        const next = theme === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('mithril-theme', next);
+        const toggle = document.getElementById('themeToggleSwitch');
+        if (toggle) toggle.checked = next === 'light';
+      }
+
+      function initTheme(){
+        const saved = localStorage.getItem('mithril-theme') || 'dark';
+        setTheme(saved);
+        document.getElementById('themeToggleSwitch').addEventListener('change', (e) => {
+          setTheme(e.target.checked ? 'light' : 'dark');
+        });
+      }
+
+      function setNavCollapsed(collapsed){
+        const layout = document.getElementById('layoutRoot');
+        layout.classList.toggle('nav-collapsed', Boolean(collapsed));
+        localStorage.setItem('mithril-nav-collapsed', collapsed ? '1' : '0');
+        document.getElementById('navToggleLabel').textContent = collapsed ? 'Expand Nav' : 'Minimize Nav';
+      }
+
+      function initNavCollapse(){
+        const collapsed = localStorage.getItem('mithril-nav-collapsed') === '1';
+        setNavCollapsed(collapsed);
+        document.getElementById('navToggle').addEventListener('click', () => {
+          const isCollapsed = document.getElementById('layoutRoot').classList.contains('nav-collapsed');
+          setNavCollapsed(!isCollapsed);
+        });
+      }
+
+      function showView(name){
+        views.forEach(v => {
+          document.getElementById(`view-${v}`).classList.toggle("hidden", v !== name);
+          const link = document.querySelector(`.nav a[data-view='${v}']`);
+          if (!link) return;
+          const diagnosticsActive = (name === 'config' || name === 'jobs' || name === 'backups') && v === 'config';
+          link.classList.toggle("active", v === name || diagnosticsActive);
+        });
+      }
+
+      function setLogsTab(tab){
+        logsTab = (tab === 'audit' || tab === 'jobs') ? tab : 'gateway';
+        const gatewayPane = document.getElementById('logsGatewayPane');
+        const auditPane = document.getElementById('logsAuditPane');
+        const jobsPane = document.getElementById('logsJobsPane');
+        const gatewayBtn = document.getElementById('logsTabGateway');
+        const auditBtn = document.getElementById('logsTabAudit');
+        const jobsBtn = document.getElementById('logsTabJobs');
+        gatewayPane.classList.toggle('hidden', logsTab !== 'gateway');
+        auditPane.classList.toggle('hidden', logsTab !== 'audit');
+        jobsPane.classList.toggle('hidden', logsTab !== 'jobs');
+        gatewayBtn.classList.toggle('active', logsTab === 'gateway');
+        auditBtn.classList.toggle('active', logsTab === 'audit');
+        jobsBtn.classList.toggle('active', logsTab === 'jobs');
+      }
+
+      async function jget(url){
+        try {
+          const r = await fetch(url);
+          const t = await r.text();
+          try { return JSON.parse(t); } catch { return { ok:false, error:`Non-JSON response from ${url}`, raw:t.slice(0,300) }; }
+        } catch (e) {
+          return { ok:false, error:String(e?.message || e) };
+        }
+      }
+      async function jpost(url, body){
+        try {
+          const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+          const t = await r.text();
+          try { return JSON.parse(t); } catch { return { ok:false, error:`Non-JSON response from ${url}`, raw:t.slice(0,300) }; }
+        } catch (e) {
+          return { ok:false, error:String(e?.message || e) };
+        }
+      }
+      function chipStyleForName(name){
+        let h = 0;
+        for (let i = 0; i < name.length; i++) h = (h * 33 + name.charCodeAt(i)) >>> 0;
+        const hue = h % 360;
+        return `--chip-border:hsl(${hue} 58% 46%);--chip-active:hsl(${hue} 72% 52%);`;
+      }
+
+      function renderWatchersTable(rows){
+        const tbody = document.querySelector('#watchersTable tbody');
+        if (!rows || rows.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" class="muted">No watchers configured</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = rows.map(w => {
+          const running = w.running ? `<span class='pill ok'>running</span>` : `<span class='pill bad'>stopped</span>`;
+          const systemd = w.systemdActive === 'active' ? `<span class='pill ok'>active</span>` : `<span class='pill bad'>${w.systemdActive || 'unknown'}</span>`;
+          return `<tr><td>${w.name || w.id}</td><td>${running}</td><td>${systemd}</td><td>${w.effectiveIntervalSeconds ?? ''}s</td><td>${w.lastUpdatedAt || ''}</td><td><button data-watch='${w.id}' data-op='start'>Start</button> <button data-watch='${w.id}' data-op='stop'>Stop</button> <button data-watch='${w.id}' data-op='restart'>Restart</button></td></tr>`;
+        }).join('');
+
+        tbody.querySelectorAll('button[data-watch]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = btn.dataset.watch;
+            const op = btn.dataset.op;
+            const resp = await jpost(`/api/watchers/${id}/action`, { action: op });
+            cache.watchers = { ok: true, rows: resp.watchers || [] };
+            renderWatchersTable(cache.watchers.rows);
+            document.getElementById('watchersRaw').textContent = JSON.stringify(resp, null, 2);
+          });
+        });
+      }
+
+      function renderServicesTable(rows){
+        const tbody = document.querySelector('#servicesTable tbody');
+        tbody.innerHTML = rows.map(r => `<tr><td>${r.service}</td><td>${r.status === 'healthy' ? `<span class='pill ok'>healthy</span>` : `<span class='pill bad'>${r.status}</span>`}</td><td>${r.detail || ''}</td></tr>`).join('');
+      }
+
+      async function loadAgentMdFile(agentId, fileName){
+        const data = await jget(`/api/agents/${encodeURIComponent(agentId)}/files/${encodeURIComponent(fileName)}`);
+        if (!data.ok) {
+          document.getElementById('agentMdContent').textContent = data.error || 'Failed to load file';
+          return;
+        }
+        document.getElementById('agentMdContent').textContent = data.text || '(empty file)';
+      }
+
+      function renderAgentMdUI(indexRows){
+        currentAgentFilesIndex = indexRows || [];
+        const tiles = document.getElementById('agentTiles');
+        const mainButtons = document.getElementById('mainAgentFileButtons');
+
+        if (!currentAgentFilesIndex.length) {
+          tiles.innerHTML = '';
+          mainButtons.innerHTML = '';
+          document.getElementById('agentMdContent').textContent = 'No agent markdown files found.';
+          return;
+        }
+
+        let activeAgentId = currentAgentFilesIndex.find(r => r.agentId === 'main')?.agentId || currentAgentFilesIndex[0].agentId;
+        const selectedFileByAgent = {};
+
+        const openFile = async (agentId, fileName) => {
+          activeAgentId = agentId;
+          selectedFileByAgent[agentId] = fileName;
+          await loadAgentMdFile(agentId, fileName);
+          drawTiles();
+          drawMainButtons();
+        };
+
+        const drawMainButtons = () => {
+          const main = currentAgentFilesIndex.find(r => r.agentId === 'main');
+          if (!main) {
+            mainButtons.innerHTML = '';
+            return;
+          }
+          const files = [...new Set([...(main.workspaceFiles || []), ...(main.files || [])])];
+          const selected = selectedFileByAgent.main || files[0] || null;
+          mainButtons.innerHTML = files.length
+            ? files.map((f) => `<button data-agent-id="main" data-file="${f}" style="${chipStyleForName(f)}" class="${selected===f?'active':''}">${f}</button>`).join('')
+            : '<span class="muted">No markdown files</span>';
+
+          mainButtons.querySelectorAll('button[data-agent-id][data-file]').forEach(btn => {
+            btn.addEventListener('click', () => openFile(btn.dataset.agentId, btn.dataset.file));
+          });
+        };
+
+        const drawTiles = () => {
+          const nonMain = currentAgentFilesIndex.filter(r => r.agentId !== 'main');
+          tiles.innerHTML = nonMain.map((r) => {
+            const files = [...new Set([...(r.workspaceFiles || []), ...(r.files || [])])];
+            const selected = selectedFileByAgent[r.agentId] || files[0] || null;
+            const fileButtons = files.length
+              ? files.map((f) => `<button data-agent-id="${r.agentId}" data-file="${f}" style="${chipStyleForName(f)}" class="${selected===f?'active':''}">${f}</button>`).join('')
+              : `<span class="muted">No markdown files</span>`;
+
+            const coo = cache?.agentControl?.routing?.cooAgentId || 'main';
+            const role = r.agentId === coo ? 'COO' : 'specialist';
+            const roleBadge = role === 'COO'
+              ? `<span class="status-pill ok">COO</span>`
+              : `<span class="status-pill warn">specialist</span>`;
+
+            return `
+              <div class="agent-tile-card ${r.agentId===activeAgentId?'active':''}">
+                <div class="agent-tile-top">
+                  <strong>${r.agentId} ${roleBadge}</strong>
+                  <span class="muted">${files.length} file${files.length===1?'':'s'}</span>
+                </div>
+                <div class="agent-file-row">${fileButtons}</div>
+              </div>
+            `;
+          }).join('');
+
+          tiles.querySelectorAll('button[data-agent-id][data-file]').forEach(btn => {
+            btn.addEventListener('click', () => openFile(btn.dataset.agentId, btn.dataset.file));
+          });
+        };
+
+        drawTiles();
+        drawMainButtons();
+
+        const firstRow = currentAgentFilesIndex.find(r => r.agentId === activeAgentId) || currentAgentFilesIndex[0];
+        const firstFiles = [...new Set([...(firstRow?.workspaceFiles || []), ...(firstRow?.files || [])])];
+        if (firstFiles.length) {
+          openFile(firstRow.agentId, firstFiles[0]);
+        } else {
+          document.getElementById('agentMdContent').textContent = `No markdown files available for ${firstRow.agentId}.`;
+        }
+      }
+
+      function renderLogsTable(rows){
+        const tbody = document.querySelector('#logsTable tbody');
+        const pageSize = Number(document.getElementById('logPageSize')?.value || 50);
+        const totalPages = Math.max(1, Math.ceil((rows?.length || 0) / pageSize));
+        logsPage = Math.min(logsPage, totalPages);
+        const start = (logsPage - 1) * pageSize;
+        const pageRows = (rows || []).slice(start, start + pageSize);
+        document.getElementById('logsPageLabel').textContent = `Page ${logsPage} / ${totalPages}`;
+
+        if (!rows?.length) {
+          tbody.innerHTML = `<tr><td colspan="5" class="muted">No log lines</td></tr>`;
+          document.getElementById('logsRaw').textContent = '(no log selected)';
+          return;
+        }
+
+        tbody.innerHTML = pageRows.map((r, i) => {
+          const timeCol = r.timeTag || '-';
+          const tags = Array.isArray(r.tags) && r.tags.length ? r.tags.slice(0, 3).join(' · ') : '-';
+          const type = r.type || r.subsystem || 'core';
+          const msg = (r.message || r.text || '').slice(0, 180);
+          return `<tr class="clickable-row" data-i="${start + i}"><td>${timeCol}</td><td>${tags}</td><td>${type}</td><td>${r.level}</td><td>${msg}</td></tr>`;
+        }).join('');
+
+        tbody.querySelectorAll('tr[data-i]').forEach(tr => {
+          tr.addEventListener('click', () => {
+            const row = rows[Number(tr.dataset.i)];
+            document.getElementById('logsRaw').textContent = row?.raw || row?.message || row?.text || '';
+          });
+        });
+      }
+
+      function renderScheduledJobs(data){
+        if (!data?.ok) {
+          document.getElementById('scheduledJobsCount').textContent = '-';
+          document.getElementById('scheduledJobsHealthy').textContent = '-';
+          document.getElementById('scheduledJobsAttention').textContent = '-';
+          return;
+        }
+
+        const rows = data.rows || [];
+        const healthy = rows.filter((r) => ['running','active','configured'].some((k) => String(r.status||'').toLowerCase().includes(k))).length;
+        document.getElementById('scheduledJobsCount').textContent = String(rows.length);
+        document.getElementById('scheduledJobsHealthy').textContent = String(healthy);
+        document.getElementById('scheduledJobsAttention').textContent = String(Math.max(rows.length - healthy, 0));
+      }
+
+      function renderOpenclawDeep(data, usage){
+        if (!data?.ok) return;
+        document.getElementById('ocTcp').textContent = data.gateway?.tcpOk ? 'OK' : 'DOWN';
+        document.getElementById('ocUptime').textContent = data.gateway?.uptime || '-';
+        document.getElementById('ocCfg').textContent = String(data.gateway?.configReadable ?? '-');
+
+        document.getElementById('ocPrimaryModel').textContent = data.models?.primary || '-';
+        document.getElementById('ocFallbackModel').textContent = data.models?.fallback || '-';
+        document.getElementById('ocProfiles').textContent = (data.models?.connectedProfiles || []).join(', ') || '-';
+
+        const qA = Number(data.queue?.active ?? 0);
+        const qW = Number(data.queue?.waiting ?? 0);
+        const qQ = Number(data.queue?.queued ?? 0);
+        document.getElementById('ocQueueActive').textContent = Number.isFinite(qA) ? qA : '-';
+        document.getElementById('ocQueueWaiting').textContent = Number.isFinite(qW) ? qW : '-';
+        document.getElementById('ocQueueQueued').textContent = Number.isFinite(qQ) ? qQ : '-';
+
+        const pill = (label, val) => {
+          const cls = val === 0 ? 'ok' : (val <= 2 ? 'warn' : 'bad');
+          return `<span class='status-pill ${cls}'>${label}: ${val}</span>`;
+        };
+        document.getElementById('ocQueueBadges').innerHTML = `${pill('active', qA)} ${pill('waiting', qW)} ${pill('queued', qQ)}`;
+
+        const qTotal = (Number.isFinite(qA)?qA:0) + (Number.isFinite(qW)?qW:0) + (Number.isFinite(qQ)?qQ:0);
+        queueHistory.push(qTotal);
+        if (queueHistory.length > 24) queueHistory.shift();
+        const spark = document.getElementById('ocQueueSpark');
+        const arr = queueHistory.length ? queueHistory : [0];
+        const max = Math.max(1, ...arr);
+        const pts = arr.map((v, i) => `${(i/(arr.length-1||1))*300},${44-(v/max)*36}`).join(' ');
+        spark.innerHTML = `<polyline points='${pts}' fill='none' stroke='var(--highlight)' stroke-width='2' />`;
+
+        document.getElementById('ocExecSecurity').textContent = data.tools?.execSecurity || '-';
+        document.getElementById('ocExecAsk').textContent = data.tools?.execAsk || '-';
+        document.getElementById('ocToolsList').textContent = `tools: ${(data.tools?.available || []).join(', ') || '-'}`;
+
+        const bTbody = document.querySelector('#ocBindingsTable tbody');
+        bTbody.innerHTML = (data.bindings || []).length
+          ? (data.bindings || []).map(r => `<tr><td>${r.id}</td><td>${r.channel}</td><td>${r.chat}</td><td>${r.agentId}</td><td>${r.note || ''}</td></tr>`).join('')
+          : `<tr><td colspan='5' class='muted'>No bindings</td></tr>`;
+
+        const cfgRows = data.configFlat || [];
+        const cfgTbody = document.querySelector('#ocConfigTable tbody');
+        const drawCfg = (q='') => {
+          const qq = q.trim().toLowerCase();
+          const rows = !qq ? cfgRows : cfgRows.filter(r => `${r.path} ${r.value}`.toLowerCase().includes(qq));
+          cfgTbody.innerHTML = rows.slice(0, 120).map(r => `<tr><td class='muted'>${r.path}</td><td>${r.value}</td></tr>`).join('') || `<tr><td colspan='2' class='muted'>No matches</td></tr>`;
+        };
+        drawCfg('');
+        const inp = document.getElementById('ocConfigSearch');
+        inp.oninput = () => drawCfg(inp.value || '');
+
+        const u = usage?.ok ? (usage.usage || {}) : {};
+        const inTok = u.inputTokens ?? u.promptTokens ?? u.input_tokens ?? null;
+        const outTok = u.outputTokens ?? u.completionTokens ?? u.output_tokens ?? null;
+        const totalTok = u.totalTokens ?? u.total_tokens ?? ((Number(inTok)||0) + (Number(outTok)||0) || null);
+        const cost = u.costUsd ?? u.cost ?? u.estimatedCostUsd ?? null;
+        document.getElementById('ocTokIn').textContent = inTok ?? '-';
+        document.getElementById('ocTokOut').textContent = outTok ?? '-';
+        document.getElementById('ocTokTotal').textContent = totalTok ?? '-';
+        document.getElementById('ocTokCost').textContent = cost !== null && cost !== undefined ? `$${Number(cost).toFixed(4)}` : '-';
+        document.getElementById('ocTokSource').textContent = usage?.source || '-';
+        document.getElementById('ocTokCaptured').textContent = usage?.capturedAt ? new Date(usage.capturedAt).toLocaleString() : '-';
+        document.getElementById('ocTokNote').textContent = usage?.ok ? (usage?.note || 'Telemetry bridge active') : (usage?.error || 'Telemetry unavailable in this runtime');
+      }
+
+      function renderBackupsPage(backups){
+        const health = backups.backupHealth || 'warning';
+        const healthCls = health === 'healthy' ? 'ok' : (health === 'failed' ? 'bad' : 'warn');
+        document.getElementById('backupHealth').innerHTML = `<span class='status-pill ${healthCls}'>${health.toUpperCase()}</span>`;
+        document.getElementById('backupHealthReason').textContent = backups.backupHealthReason || '';
+        document.getElementById('backupLatest').textContent = backups.latestSnapshot || '-';
+        document.getElementById('backupCount').textContent = String(backups.snapshotCount ?? '-');
+        document.getElementById('backupUsage').textContent = backups.backupUsage || '-';
+        document.getElementById('backupTimer').textContent = backups.timerLine || '-';
+        document.getElementById('backupStatusRaw').textContent = backups.serviceStatusText || 'No status';
+        document.getElementById('backupLogs').textContent = backups.logsText || 'No logs yet';
+
+        document.getElementById('retDaily').textContent = String(backups.retention?.daily ?? '-');
+        document.getElementById('retWeekly').textContent = String(backups.retention?.weekly ?? '-');
+        document.getElementById('retMonthly').textContent = String(backups.retention?.monthly ?? '-');
+
+        const tBody = document.querySelector('#backupTargetsTable tbody');
+        const targets = backups.sourceStatus || [];
+        tBody.innerHTML = targets.length
+          ? targets.map(t => `<tr><td>${t.name}</td><td><span class='status-pill ${t.ok ? 'ok':'warn'}'>${t.ok ? 'OK':'CHECK'}</span></td><td>${t.detail || ''}</td></tr>`).join('')
+          : `<tr><td colspan='3' class='muted'>No target status yet</td></tr>`;
+
+        const sBody = document.querySelector('#snapshotsTable tbody');
+        const rows = backups.snapshotRows || [];
+        const toLocalTaken = (name='') => {
+          const m = String(name).match(/^(\d{4})-(\d{2})-(\d{2})_(\d{2})(\d{2})(\d{2})$/);
+          if (!m) return '-';
+          const [,y,mo,d,h,mi,s] = m;
+          const dt = new Date(`${y}-${mo}-${d}T${h}:${mi}:${s}Z`);
+          return Number.isNaN(dt.getTime()) ? '-' : dt.toLocaleString();
+        };
+        sBody.innerHTML = rows.length
+          ? rows.map(r => `<tr><td>${r.name}</td><td>${r.size}</td><td>${r.fileCount}</td><td>${r.checksum}</td><td class='muted'>${r.path}</td><td>${toLocalTaken(r.name)}</td></tr>`).join('')
+          : `<tr><td colspan='6' class='muted'>No snapshots found</td></tr>`;
+      }
+
+      function renderConfigValidator(data){
+        const summary = document.getElementById('configSummary');
+        const tbody = document.querySelector('#configTable tbody');
+        if (!data?.ok) {
+          summary.textContent = data?.error || 'Config validation failed';
+          tbody.innerHTML = `<tr><td colspan="3" class="bad">No checks available</td></tr>`;
+          return;
+        }
+        summary.textContent = `Path: ${data.envPath} · pass:${data.summary.pass} · warnings:${data.summary.warnings} · errors:${data.summary.errors}`;
+        tbody.innerHTML = (data.checks || []).map(c => `<tr><td>${c.key}</td><td>${c.ok ? `<span class='pill ok'>ok</span>` : `<span class='pill bad'>${c.level}</span>`}</td><td>${c.hint || ''}</td></tr>`).join('');
+      }
+
+      function renderCommitTimeline(data){
+        const tbody = document.querySelector('#commitsTable tbody');
+        const label = document.getElementById('commitsPageLabel');
+        if (!data?.ok) {
+          tbody.innerHTML = `<tr><td colspan="6" class="bad">${data?.error || 'Failed to load commits'}</td></tr>`;
+          label.textContent = 'Page 1';
+          return;
+        }
+
+        const rows = data.rows || [];
+        const totalPages = Math.max(1, Math.ceil(rows.length / commitsPageSize));
+        commitsPage = Math.min(commitsPage, totalPages);
+        const start = (commitsPage - 1) * commitsPageSize;
+        const pageRows = rows.slice(start, start + commitsPageSize);
+
+        label.textContent = `Page ${commitsPage} / ${totalPages}`;
+        tbody.innerHTML = pageRows.map(r => `<tr><td><code>${r.short}</code></td><td>${r.date}</td><td>${r.author}</td><td>${r.subject}</td><td>${r.type || 'LOCAL'}</td><td>${r.pushed ? `<span class='pill ok'>yes</span>` : `<span class='pill bad'>no</span>`}</td></tr>`).join('');
+      }
+
+      function renderAgentControlOverview(data){
+        const routing = data?.routing || {};
+        const override = routing?.policy?.directUserOverride;
+        const counts = data?.counts || {};
+        document.getElementById('cooAgentId').textContent = routing?.cooAgentId || 'main';
+        document.getElementById('directOverrideState').textContent = override?.enabled ? 'allowed' : 'disabled';
+        document.getElementById('delegationCounts').textContent = `${counts.running || 0} running / ${counts.blocked || 0} blocked`;
+        document.getElementById('delegationCadence').textContent = data?.cadence?.reviewHint || 'Cadence check unavailable';
+
+        const rows = data?.delegations || [];
+        const tbody = document.querySelector('#delegationsTable tbody');
+        if (!rows.length) {
+          tbody.innerHTML = `<tr><td colspan="5" class="muted">No delegations logged yet</td></tr>`;
+        } else {
+          tbody.innerHTML = rows.slice(0, 10).map((r) => `
+            <tr>
+              <td>${r.id || '-'}</td>
+              <td>${r.assigneeAgentId || r.actorAgentId || '-'}</td>
+              <td>${r.status || '-'}</td>
+              <td>${(r.objective || r.note || '').slice(0, 90)}</td>
+              <td>${r.ts ? new Date(r.ts).toLocaleString() : '-'}</td>
+            </tr>
+          `).join('');
+        }
+
+        const nowRows = data?.perAgent || [];
+        const nowBody = document.querySelector('#agentNowTable tbody');
+        if (!nowRows.length) {
+          nowBody.innerHTML = `<tr><td colspan="6" class="muted">No agent activity yet</td></tr>`;
+        } else {
+          nowBody.innerHTML = nowRows.map((r) => `
+            <tr>
+              <td>${r.agentId}</td>
+              <td>${r.role === 'COO' ? '<span class="status-pill ok">COO</span>' : '<span class="status-pill warn">specialist</span>'}</td>
+              <td>${r.currentStatus || 'idle'}</td>
+              <td>${(r.currentTask || 'idle').slice(0, 80)}</td>
+              <td>${r.lastUpdateAt ? new Date(r.lastUpdateAt).toLocaleString() : '-'}</td>
+              <td>${r.blockerCount || 0}</td>
+            </tr>
+          `).join('');
+        }
+
+        const timeline = data?.timeline || [];
+        const timeBody = document.querySelector('#delegationTimelineTable tbody');
+        if (!timeline.length) {
+          timeBody.innerHTML = `<tr><td colspan="5" class="muted">No delegation timeline yet</td></tr>`;
+        } else {
+          timeBody.innerHTML = timeline.slice(0, 12).map((t) => `
+            <tr>
+              <td>${t.id}</td>
+              <td>${t.assigneeAgentId || '-'}</td>
+              <td>${t.latestStatus || '-'}</td>
+              <td>${(t.events || []).map((e) => e.status).filter(Boolean).join(' → ')}</td>
+              <td>${(t.objective || '').slice(0, 80)}</td>
+            </tr>
+          `).join('');
+        }
+      }
+
+      function renderProjectsOverview(data){
+        document.getElementById('projectsRaw').textContent = JSON.stringify(data || {}, null, 2);
+        if (!data?.ok) {
+          document.getElementById('projectsTotal').textContent = '-';
+          document.getElementById('projectsHealthy').textContent = '-';
+          document.getElementById('projectsDirty').textContent = '-';
+          document.getElementById('projectsSource').textContent = data?.error || 'Projects unavailable';
+          document.querySelector('#projectsTable tbody').innerHTML = `<tr><td colspan="4" class="bad">${data?.error || 'Unavailable'}</td></tr>`;
+          return;
+        }
+        document.getElementById('projectsTotal').textContent = String(data?.summary?.total ?? 0);
+        document.getElementById('projectsHealthy').textContent = String(data?.summary?.healthy ?? 0);
+        document.getElementById('projectsDirty').textContent = String(data?.summary?.dirty ?? 0);
+        document.getElementById('projectsSource').textContent = `Source: ${data.source || 'default'}`;
+
+        const rows = data.rows || [];
+        const tbody = document.querySelector('#projectsTable tbody');
+        if (!rows.length) {
+          tbody.innerHTML = `<tr><td colspan="4" class="muted">No projects configured yet. Add entries in /mithril-os/config/projects-monitor.json</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = rows.map((r) => {
+          const state = r.dirty ? '<span class="status-pill warn">local changes</span>' : '<span class="status-pill ok">clean</span>';
+          const commits = (r.commits || []).map((c) => `<div class="muted">${c.hash || ''} · ${c.subject || ''}</div>`).join('') || '<span class="muted">no commits</span>';
+          return `<tr><td><strong>${r.name}</strong><div class="muted">${r.path || ''}</div></td><td>${r.branch || '-'}</td><td>${state}<div class="muted">${r.statusLine || ''}</div></td><td>${commits}</td></tr>`;
+        }).join('');
+      }
+
+      function renderPoliciesOverview(data){
+        document.getElementById('policiesRaw').textContent = JSON.stringify(data || {}, null, 2);
+        if (!data?.ok) {
+          document.getElementById('policiesTotal').textContent = '-';
+          document.getElementById('policiesActive').textContent = '-';
+          document.getElementById('policiesReadable').textContent = '-';
+          document.getElementById('policiesSource').textContent = data?.error || 'Policies unavailable';
+          document.querySelector('#policiesTable tbody').innerHTML = `<tr><td colspan="5" class="bad">${data?.error || 'Unavailable'}</td></tr>`;
+          return;
+        }
+        document.getElementById('policiesTotal').textContent = String(data?.summary?.total ?? 0);
+        document.getElementById('policiesActive').textContent = String(data?.summary?.active ?? 0);
+        document.getElementById('policiesReadable').textContent = String(data?.summary?.readable ?? 0);
+        document.getElementById('policiesSource').textContent = `Source: ${data.source || 'default'}`;
+
+        const rows = data.rows || [];
+        const tbody = document.querySelector('#policiesTable tbody');
+        if (!rows.length) {
+          tbody.innerHTML = `<tr><td colspan="5" class="muted">No policies configured yet.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = rows.map((r) => {
+          const st = String(r.status || 'active').toLowerCase();
+          const badge = st === 'active' ? '<span class="status-pill ok">active</span>' : `<span class="status-pill warn">${st}</span>`;
+          const meta = r.ok
+            ? `<div class="muted">${r.path}<br/>${r.sizeBytes || 0} bytes · ${r.words || 0} words · sha ${r.sha || '-'}<br/>${r.modifiedAt || '-'}</div>`
+            : `<div class="muted bad">${r.path || ''}<br/>${r.error || 'unreadable'}</div>`;
+          return `<tr><td><strong>${r.title || r.id || '-'}</strong><div class="muted">${(r.tags || []).join(' · ')}</div></td><td>${badge}</td><td>${r.owner || '-'}</td><td>${r.scope || '-'}</td><td>${meta}</td></tr>`;
+        }).join('');
+      }
+
+      function renderPublicChangelog(data){
+        const header = document.getElementById('changelogHeader');
+        const cards = document.getElementById('changelogCards');
+        const raw = document.getElementById('changelogRaw');
+
+        raw.textContent = JSON.stringify(data || {}, null, 2);
+        if (!data?.ok) {
+          header.textContent = data?.error || 'Changelog unavailable';
+          cards.innerHTML = '';
+          return;
+        }
+
+        header.textContent = `${data.title || 'Public Changelog'} — ${data.subtitle || ''}`.trim();
+        const rows = data.releases || [];
+        if (!rows.length) {
+          cards.innerHTML = `<div class="card"><div class="muted">No releases published yet.</div></div>`;
+          return;
+        }
+
+        cards.innerHTML = rows.map((r) => `
+          <div class="card">
+            <div class="row"><strong>${r.version || '-'}</strong><span class="muted">${r.date || ''}</span></div>
+            <div class="muted" style="margin-bottom:8px;">${r.whyItMatters || ''}</div>
+            <ul>${(r.highlights || []).map((h) => `<li>${h}</li>`).join('')}</ul>
+            <div class="muted">${(r.tags || []).join(' · ')}</div>
+          </div>
+        `).join('');
+      }
+
+      function renderJobsTable(data){
+        const delegatedBody = document.querySelector('#delegatedJobsTable tbody');
+        const scheduledBody = document.querySelector('#scheduledJobsTable tbody');
+        const badge = (s='') => {
+          const x = String(s).toLowerCase();
+          if (x === 'done') return `<span class='pill ok'>done</span>`;
+          if (x === 'failed' || x === 'blocked') return `<span class='pill bad'>${x || 'unknown'}</span>`;
+          if (x === 'running' || x === 'scheduled' || x === 'configured') return `<span class='pill ok'>${x}</span>`;
+          return `<span class='pill'>${x || 'unknown'}</span>`;
+        };
+
+        if (!data?.ok) {
+          const err = data?.error || 'Failed to load work board';
+          delegatedBody.innerHTML = `<tr><td colspan="6" class="bad">${err}</td></tr>`;
+          scheduledBody.innerHTML = `<tr><td colspan="6" class="bad">${err}</td></tr>`;
+          document.getElementById('jobsRaw').textContent = JSON.stringify(data || {}, null, 2);
+          return;
+        }
+
+        const rows = data.rows || [];
+        const scheduledRows = rows.filter((r) => String(r.type || '').toLowerCase() === 'scheduled');
+        const delegatedRows = rows.filter((r) => String(r.type || '').toLowerCase() !== 'scheduled');
+
+        const renderRows = (targetBody, subset, emptyText) => {
+          if (!subset.length) {
+            targetBody.innerHTML = `<tr><td colspan="6" class="muted">${emptyText}</td></tr>`;
+            return;
+          }
+          targetBody.innerHTML = subset.map((r, i) => {
+            const ownerAssignee = `${r.owner || '-'} → ${r.assignee || '-'}`;
+            const when = r.whenText || r.updatedAt || '-';
+            const summary = r.summary || '-';
+            return `<tr><td><strong>${r.task || r.id}</strong><div class='muted'><code>${r.id || '-'}</code> · ${r.type || 'work'}</div></td><td>${ownerAssignee}</td><td>${badge(r.status)}</td><td>${when}</td><td>${summary}</td><td><button data-work-detail='${i}'>View</button></td></tr>`;
+          }).join('');
+
+          targetBody.querySelectorAll('button[data-work-detail]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const i = Number(btn.dataset.workDetail || -1);
+              const row = subset[i] || null;
+              document.getElementById('jobsRaw').textContent = JSON.stringify(row || {}, null, 2);
+            });
+          });
+        };
+
+        renderRows(delegatedBody, delegatedRows, 'No delegated jobs matched current filters.');
+        renderRows(scheduledBody, scheduledRows, 'No scheduled jobs matched current filters.');
+        document.getElementById('jobsRaw').textContent = JSON.stringify(data, null, 2);
+      }
+
+      async function loadJobs(){
+        const type = document.getElementById('jobsKindFilter')?.value || '';
+        const status = document.getElementById('jobsStatusFilter')?.value || '';
+        const data = await jget(`/api/work/overview?limit=300&type=${encodeURIComponent(type)}&status=${encodeURIComponent(status)}`);
+        cache.jobs = data;
+        renderJobsTable(data);
+      }
+
+      async function startDelegationHandoff(){
+        const summary = (document.getElementById('delegationSummaryInput')?.value || '').trim();
+        const targetAgent = (document.getElementById('delegationTargetInput')?.value || 'koda').trim();
+        const notifyChannelId = (document.getElementById('delegationNotifyChannelInput')?.value || '').trim();
+        if (!summary) {
+          document.getElementById('delegationOutput').textContent = 'Summary is required.';
+          return;
+        }
+        const out = await jpost('/api/delegations/handoff/start', {
+          sourceAgent: 'oddeye',
+          targetAgent,
+          summary,
+          kind: 'delegation',
+          notify: true,
+          notifyChannelId,
+        });
+        document.getElementById('delegationOutput').textContent = JSON.stringify(out, null, 2);
+        if (out?.jobId) document.getElementById('delegationJobIdInput').value = out.jobId;
+        await loadJobs();
+      }
+
+      async function completeDelegationHandoff(){
+        const jobId = (document.getElementById('delegationJobIdInput')?.value || '').trim();
+        const status = (document.getElementById('delegationCompleteStatus')?.value || 'done').trim();
+        const targetAgent = (document.getElementById('delegationTargetInput')?.value || 'koda').trim();
+        const notifyChannelId = (document.getElementById('delegationNotifyChannelInput')?.value || '').trim();
+        if (!jobId) {
+          document.getElementById('delegationOutput').textContent = 'Job ID is required.';
+          return;
+        }
+        const out = await jpost('/api/delegations/handoff/complete', {
+          jobId,
+          status,
+          sourceAgent: 'oddeye',
+          targetAgent,
+          summary: `Handoff ${status}`,
+          notify: true,
+          notifyChannelId,
+        });
+        document.getElementById('delegationOutput').textContent = JSON.stringify(out, null, 2);
+        await loadJobs();
+      }
+
+      function renderModelsTiles(models){
+        const grid = document.getElementById('modelsGrid');
+        const rows = models?.rows || [];
+        if (!rows.length) {
+          grid.innerHTML = `<div class='card'><span class='muted'>No model data available</span></div>`;
+          return;
+        }
+        grid.innerHTML = rows.map(m => {
+          const badge = m.active
+            ? `<span class='active-badge'>ACTIVE</span>`
+            : (m.connected ? `<span class='inactive-badge'>DISABLED</span>` : `<span class='inactive-badge'>NOT INSTALLED</span>`);
+          return `
+          <div class='card'>
+            <div class='row'><strong>${m.name}</strong>${badge}</div>
+            <div class='muted'>Company: ${m.company || 'n/a'}</div>
+            <div class='muted'>Version: ${m.version || 'n/a'}</div>
+            <div class='muted'>Files: ${m.files || 'n/a'}</div>
+            <div class='muted'>Profile: ${m.profile || 'n/a'} ${m.connected ? '· connected' : ''}</div>
+          </div>
+        `;}).join('');
+      }
+
+      function renderHaArea(targetId, items){
+        const el = document.getElementById(targetId);
+        if (!items?.length) {
+          el.innerHTML = `<div class='muted'>No light/switch entities found for this area.</div>`;
+          return;
+        }
+
+        el.innerHTML = items.map((e) => `
+          <div class='ha-item'>
+            <div class='ha-item-top'>
+              <strong>${e.name}</strong>
+              <span class='${e.state === 'on' ? 'active-badge' : 'inactive-badge'}'>${e.state}</span>
+            </div>
+            <div class='muted'>${e.entity_id}</div>
+            <div class='ha-actions'>
+              <button data-ha-action='toggle' data-entity='${e.entity_id}'>Toggle</button>
+              ${e.supportsBrightness ? `<input type='range' min='1' max='100' value='${e.brightnessPct ?? 100}' data-entity='${e.entity_id}'/><button data-ha-action='set-brightness' data-entity='${e.entity_id}'>Set</button>` : ''}
+            </div>
+          </div>
+        `).join('');
+
+        el.querySelectorAll('button[data-ha-action]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const entity_id = btn.dataset.entity;
+            const action = btn.dataset.haAction;
+            if (action === 'toggle') {
+              await jpost('/api/ha/entity/action', { entity_id, action: 'toggle' });
+            } else {
+              const slider = el.querySelector(`input[type='range'][data-entity='${entity_id}']`);
+              const brightnessPct = Number(slider?.value || 100);
+              await jpost('/api/ha/entity/action', { entity_id, action: 'turn_on', brightnessPct });
+            }
+            const fresh = await jget('/api/ha/areas');
+            renderHaArea('haOffice', fresh.grouped?.office || []);
+            renderHaArea('haBedroom', fresh.grouped?.bedroom || []);
+            renderHaArea('haLivingRoom', fresh.grouped?.living_room || []);
+            renderHaArea('haDiningRoom', fresh.grouped?.dining_room || []);
+            renderHaArea('haOther', fresh.grouped?.other || []);
+            document.getElementById('haRaw').textContent = JSON.stringify(fresh, null, 2);
+          });
+        });
+      }
+
+      async function loadLogs(){
+        const level = document.getElementById('logLevel').value;
+        const q = document.getElementById('logQuery').value;
+        const data = await jget(`/api/logs/gateway?limit=800&level=${encodeURIComponent(level)}&q=${encodeURIComponent(q)}`);
+        cache.logs = data;
+        if (!data.ok) {
+          document.querySelector('#logsTable tbody').innerHTML = `<tr><td colspan="5" class="bad">${data.error || 'No logs available'}</td></tr>`;
+          document.getElementById('logsRaw').textContent = data.error || 'No logs available';
+          return;
+        }
+        logsRows = data.rows || [];
+        renderLogsTable(logsRows);
+      }
+
+      async function loadAll(){
+        const stamp = document.getElementById('stamp');
+        stamp.textContent = 'Refreshing…';
+
+        try {
+          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard] = await Promise.all([
+            jget('/api/status'),
+            jget('/api/openclaw/overview'),
+            jget('/api/openclaw/deep'),
+            jget('/api/openclaw/usage'),
+            jget('/api/agents'),
+            jget('/api/agents/files'),
+            jget('/api/agent-control/overview'),
+            jget('/api/openclaw/models'),
+            jget('/api/project-monitor/overview'),
+            jget('/api/policies/overview'),
+            jget('/api/changelog/public'),
+            jget('/api/watchers'),
+            jget('/api/services/health'),
+            jget('/api/config/diagnostics'),
+            jget('/api/audit/trail'),
+            jget('/api/git/commits?limit=25'),
+            jget('/api/system/docker'),
+            jget('/api/ha/areas'),
+            jget('/api/backups/status'),
+            jget('/api/scheduled-jobs'),
+            jget('/api/work/overview?limit=300')
+          ]);
+
+          cache = { status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard };
+          stamp.textContent = `Updated: ${status.timestamp}`;
+
+          document.getElementById('currentAgentName').textContent = 'OddEye';
+          document.getElementById('currentAgentModel').textContent = `Model: ${status.openclaw.model || models.primaryModel || 'n/a'}`;
+
+          const gw = status.openclaw.gatewayTcp18789;
+          document.getElementById('openclawBlock').innerHTML = `<div class='row'><span>Config readable</span><strong class='${status.openclaw.configReadable?'ok':'bad'}'>${status.openclaw.configReadable}</strong></div><div class='row'><span>Gateway TCP 18789</span><strong class='${gw.ok?'ok':'bad'}'>${gw.ok?'OK':'DOWN'}</strong></div><div class='row'><span>Primary model</span><strong>${status.openclaw.model || 'n/a'}</strong></div><div class='row'><span>Channels</span><strong>${status.openclaw.channels.join(', ') || 'none'}</strong></div><div class='row'><span>Exec security</span><strong>${status.openclaw.execSecurity || 'n/a'}</strong></div><div class='row'><span>Exec ask</span><strong>${status.openclaw.execAsk || 'n/a'}</strong></div>`;
+
+          document.getElementById('haBlock').innerHTML = `<div class='row'><span>URL</span><strong>${status.homeAssistant.url}</strong></div><div class='row'><span>Token configured</span><strong class='${status.homeAssistant.tokenConfigured?'ok':'bad'}'>${status.homeAssistant.tokenConfigured}</strong></div><div class='row'><span>API status</span><strong class='${status.homeAssistant.api.ok?'ok':'bad'}'>${status.homeAssistant.api.ok ? 'OK' : (status.homeAssistant.api.error || 'DOWN')}</strong></div>`;
+
+          if (docker.ok) {
+            document.getElementById('dockerBlock').innerHTML = docker.rows.map(r => `<div class='row'><span>${r.name}</span><strong>${r.status}</strong></div>`).join('');
+          } else {
+            document.getElementById('dockerBlock').innerHTML = `<span class='bad'>${docker.error}</span>`;
+          }
+
+          renderWatchersTable(watchers.rows || []);
+          renderServicesTable(services.rows || []);
+
+          document.getElementById('metricAgents').textContent = String((agents.agentIds || []).length || 1);
+          document.getElementById('metricModels').textContent = String((models.rows || []).filter(m => m.active).length);
+          document.getElementById('metricWatchers').textContent = String((watchers.rows || []).filter(w => w.running).length);
+          document.getElementById('metricContainers').textContent = String((docker.rows || []).length || 0);
+
+          document.getElementById('watchersRaw').textContent = JSON.stringify(watchers, null, 2);
+          renderOpenclawDeep(ocDeep, ocUsage);
+          document.getElementById('openclawRaw').textContent = JSON.stringify(ocDeep, null, 2);
+          document.getElementById('agentsRaw').textContent = JSON.stringify(agents, null, 2);
+          renderAgentMdUI(agentsFiles.rows || []);
+          renderAgentControlOverview(agentControl || {});
+          renderModelsTiles(models);
+          renderProjectsOverview(projects || {});
+          renderPoliciesOverview(policies || {});
+          renderPublicChangelog(changelog || {});
+          document.getElementById('modelsRaw').textContent = JSON.stringify(models, null, 2);
+          renderHaArea('haOffice', haAreas.grouped?.office || []);
+          renderHaArea('haBedroom', haAreas.grouped?.bedroom || []);
+          renderHaArea('haLivingRoom', haAreas.grouped?.living_room || []);
+          renderHaArea('haDiningRoom', haAreas.grouped?.dining_room || []);
+          renderHaArea('haOther', haAreas.grouped?.other || []);
+          document.getElementById('haRaw').textContent = JSON.stringify(haAreas, null, 2);
+
+          renderBackupsPage(backups);
+          renderScheduledJobs(jobs);
+          renderConfigValidator(configDiag);
+          renderCommitTimeline(commits);
+          renderJobsTable(workBoard);
+          document.getElementById('auditRaw').textContent = JSON.stringify(audit, null, 2);
+
+          await loadLogs();
+        } catch (e) {
+          const msg = `Error: ${e.message || e}`;
+          stamp.textContent = msg;
+          showUiBootError(msg);
+        }
+      }
+
+      function initNav(){
+        function route(){
+          let h = (location.hash || '#dashboard').replace('#','');
+          if (h === 'services' || h === 'actions') h = 'config';
+          if (h === 'audit') h = 'logs';
+          showView(views.includes(h) ? h : 'dashboard');
+        }
+        window.addEventListener('hashchange', route); route();
+      }
+
+      document.getElementById('refreshBtn').addEventListener('click', loadAll);
+      document.getElementById('logsTabGateway').addEventListener('click', () => setLogsTab('gateway'));
+      document.getElementById('logsTabAudit').addEventListener('click', () => setLogsTab('audit'));
+      document.getElementById('logsTabJobs').addEventListener('click', () => { setLogsTab('jobs'); loadJobs(); });
+      document.getElementById('loadLogsBtn').addEventListener('click', () => { logsPage = 1; loadLogs(); });
+      document.getElementById('jobsRefreshBtn').addEventListener('click', loadJobs);
+      document.getElementById('jobsKindFilter').addEventListener('change', loadJobs);
+      document.getElementById('jobsStatusFilter').addEventListener('change', loadJobs);
+      document.getElementById('delegationStartBtn').addEventListener('click', startDelegationHandoff);
+      document.getElementById('delegationCompleteBtn').addEventListener('click', completeDelegationHandoff);
+      document.getElementById('logsPrev').addEventListener('click', () => { logsPage = Math.max(1, logsPage - 1); renderLogsTable(logsRows); });
+      document.getElementById('logsNext').addEventListener('click', () => { logsPage = logsPage + 1; renderLogsTable(logsRows); });
+      document.getElementById('logPageSize').addEventListener('change', () => { logsPage = 1; renderLogsTable(logsRows); });
+      document.getElementById('copyLogsBtn').addEventListener('click', async () => { await navigator.clipboard.writeText(document.getElementById('logsRaw').textContent || ''); });
+      document.getElementById('runBackupBtn').addEventListener('click', async () => {
+        if (!confirm('Run backup now?')) return;
+        const out = await jpost('/api/backups/run', {});
+        document.getElementById('backupStatusRaw').textContent = JSON.stringify(out, null, 2);
+        await loadAll();
+      });
+      document.getElementById('commitsPrev').addEventListener('click', () => { commitsPage = Math.max(1, commitsPage - 1); renderCommitTimeline(cache.commits || { ok:true, rows:[] }); });
+      document.getElementById('commitsNext').addEventListener('click', () => { commitsPage = commitsPage + 1; renderCommitTimeline(cache.commits || { ok:true, rows:[] }); });
+
+      document.querySelectorAll('button[data-action]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const action = btn.dataset.action;
+          if (!confirm(`Run action: ${action}?`)) return;
+          const out = await jpost(`/api/actions/${action}`, { confirm: 'yes' });
+          document.getElementById('actionOutput').textContent = JSON.stringify(out, null, 2);
+          await loadAll();
+        });
+      });
+
+      document.getElementById('autoRefresh').addEventListener('change', (e) => {
+        if (e.target.checked) autoTimer = setInterval(loadAll, 10000);
+        else if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+      });
+
+      window.addEventListener('scroll', () => {
+        const y = window.scrollY || 0;
+        document.documentElement.style.setProperty('--parallax-far', `${y * 0.04}px`);
+        document.documentElement.style.setProperty('--parallax-mid', `${y * 0.07}px`);
+        document.documentElement.style.setProperty('--parallax-near', `${y * 0.1}px`);
+      }, { passive: true });
+
+      initTheme();
+      initNavCollapse();
+      initNav();
+      setLogsTab('gateway');
+      loadAll();
+    </script>
+  </body>
+</html>
