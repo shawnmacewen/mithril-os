@@ -1572,7 +1572,6 @@
           if (s) s.style.setProperty('--hue', String(hue));
           if (setBtn) {
             setBtn.style.setProperty('--btn-color', `hsl(${hue} ${sat}% 50%)`);
-            setBtn.style.color = sat < 18 ? '#111827' : '#ffffff';
           }
           // value labels removed by design
         };
