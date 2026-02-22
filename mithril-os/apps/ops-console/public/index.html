@@ -646,11 +646,32 @@
       }
 
       function initNavCollapse(){
-        const collapsed = localStorage.getItem('mithril-nav-collapsed') === '1';
-        setNavCollapsed(collapsed);
+        const navEl = document.querySelector('.nav');
+        const hoverDelayMs = 3000;
+        let collapseTimer = null;
+
+        const scheduleCollapse = () => {
+          if (collapseTimer) clearTimeout(collapseTimer);
+          collapseTimer = setTimeout(() => setNavCollapsed(true), hoverDelayMs);
+        };
+
+        // Default behavior: collapsed until hovered.
+        setNavCollapsed(true);
+
+        navEl?.addEventListener('mouseenter', () => {
+          if (collapseTimer) clearTimeout(collapseTimer);
+          setNavCollapsed(false);
+        });
+
+        navEl?.addEventListener('mouseleave', () => {
+          scheduleCollapse();
+        });
+
         document.getElementById('navToggle').addEventListener('click', () => {
           const isCollapsed = document.getElementById('layoutRoot').classList.contains('nav-collapsed');
           setNavCollapsed(!isCollapsed);
+          if (!isCollapsed) scheduleCollapse();
+          else if (collapseTimer) clearTimeout(collapseTimer);
         });
       }
 
