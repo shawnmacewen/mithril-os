@@ -135,6 +135,11 @@
       .metric-value { font-size:22px; font-weight:700; margin-top:3px; }
       .active-badge { display:inline-flex; align-items:center; justify-content:center; height:20px; padding:0 8px; border-radius:999px; background:color-mix(in srgb, #22c55e 26%, var(--panel-2)); border:1px solid #22c55e; color:#22c55e; font-weight:700; font-size:10px; line-height:1; }
       .inactive-badge { display:inline-flex; align-items:center; justify-content:center; height:20px; padding:0 8px; border-radius:999px; border:1px solid var(--border); color:var(--muted); font-weight:700; font-size:10px; line-height:1; }
+      .inactive-badge.off {
+        color:#d47c7c;
+        border-color: color-mix(in srgb, #d47c7c 55%, var(--border));
+        background: color-mix(in srgb, #7f2a2a 26%, var(--panel-2));
+      }
       .status-pill { display:inline-flex; align-items:center; justify-content:center; height:20px; padding:0 8px; border-radius:999px; font-weight:700; font-size:10px; line-height:1; border:1px solid var(--border); }
       .status-pill.ok { color:#22c55e; border-color:#22c55e; background:color-mix(in srgb, #22c55e 18%, var(--panel-2)); }
       .status-pill.warn { color:#f59e0b; border-color:#f59e0b; background:color-mix(in srgb, #f59e0b 18%, var(--panel-2)); }
@@ -1467,7 +1472,7 @@
                 <div class='ha-item-top'>
                   <strong>${e.name}</strong>
                   <div class='ha-device-meta'>
-                    <span class='${e.state === 'on' ? 'active-badge' : 'inactive-badge'}'>${e.state}</span>
+                    <span class='${e.state === 'on' ? 'active-badge' : (e.state === 'off' ? 'inactive-badge off' : 'inactive-badge')}'>${e.state}</span>
                     <span class='ha-info'>i<span class='ha-tooltip'>${e.entity_id}</span></span>
                   </div>
                 </div>

@@ -232,3 +232,5 @@
 .ds-ha-range { -webkit-appearance:none; appearance:none; height:8px; border-radius:999px; border:1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border)); background: linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 45%, var(--color-surface-2)), var(--color-surface-2)); }
 .ds-ha-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:16px; height:16px; border-radius:50%; background:var(--color-text); border:2px solid color-mix(in srgb, var(--color-primary) 65%, var(--color-border)); }
 .ds-ha-range::-moz-range-thumb { width:16px; height:16px; border-radius:50%; background:var(--color-text); border:2px solid color-mix(in srgb, var(--color-primary) 65%, var(--color-border)); }
+
+.ds-pill-off { border-color: color-mix(in srgb, #d47c7c 55%, var(--color-border)); color:#d47c7c; background: color-mix(in srgb, #7f2a2a 26%, var(--color-surface-2)); }
