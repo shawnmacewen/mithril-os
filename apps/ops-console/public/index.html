@@ -376,61 +376,128 @@
 
         <section id="view-agents" class="hidden">
           <h2>Agents</h2>
-          <div class="card" style="margin-bottom:12px;">
-            <h3>Current Agent</h3>
-            <div class="agent-tile">
-              <div class="avatar" id="currentAgentAvatar">👁️</div>
-              <div>
-                <div style="font-weight:700;" id="currentAgentName">OddEye</div>
-                <div class="muted" id="currentAgentModel">Model: loading…</div>
+          <div class="toolbar ds-tabs" style="margin:0 0 8px;">
+            <button id="agentsTabOverview" class="ds-tab is-active">Overview</button>
+            <button id="agentsTabJobs" class="ds-tab">Jobs</button>
+          </div>
+
+          <div id="agentsOverviewPane">
+            <div class="card" style="margin-bottom:12px;">
+              <h3>Current Agent</h3>
+              <div class="agent-tile">
+                <div class="avatar" id="currentAgentAvatar">👁️</div>
+                <div>
+                  <div style="font-weight:700;" id="currentAgentName">OddEye</div>
+                  <div class="muted" id="currentAgentModel">Model: loading…</div>
+                </div>
+              </div>
+              <div id="mainAgentFileButtons" class="agent-file-buttons" style="margin-top:10px;"></div>
+            </div>
+
+            <div class="card" style="margin-bottom:12px;">
+              <h3>Agent Operations Summary</h3>
+              <div class="row"><span>COO</span><strong id="cooAgentId">-</strong></div>
+              <div class="row"><span>Direct user override</span><strong id="directOverrideState">-</strong></div>
+              <div class="row"><span>Delegations (running / blocked)</span><strong id="delegationCounts">-</strong></div>
+              <div class="muted" id="delegationCadence">-</div>
+              <details style="margin-top:8px;">
+                <summary>Advanced delegation table</summary>
+                <table id="delegationsTable" style="margin-top:8px;">
+                  <thead><tr><th>ID</th><th>Assignee</th><th>Status</th><th>Objective</th><th>Updated</th></tr></thead>
+                  <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+                </table>
+              </details>
+            </div>
+
+            <div class="card" style="margin-bottom:12px;">
+              <h3>What each agent is doing now</h3>
+              <table id="agentNowTable">
+                <thead><tr><th>Agent</th><th>Role</th><th>Status</th><th>Current task</th><th>Last update</th><th>Blockers</th></tr></thead>
+                <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+              </table>
+            </div>
+
+            <div class="card" style="margin-bottom:12px;">
+              <details>
+                <summary>Advanced delegation timeline</summary>
+                <table id="delegationTimelineTable" style="margin-top:8px;">
+                  <thead><tr><th>ID</th><th>Assignee</th><th>Latest</th><th>Events</th><th>Objective</th></tr></thead>
+                  <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
+                </table>
+              </details>
+            </div>
+
+            <div class="card" style="margin-bottom:12px;">
+              <div id="agentTiles" class="agent-tiles-grid"></div>
+              <pre id="agentMdContent">Select an agent file to view markdown content.</pre>
+            </div>
+
+            <div class="card">
+              <details>
+                <summary>Show raw Agents + Bindings JSON</summary>
+                <pre id="agentsRaw">Loading…</pre>
+              </details>
+            </div>
+          </div>
+
+          <div id="agentsJobsPane" class="hidden">
+            <div class="card" style="margin-bottom:12px;">
+              <h3>Jobs</h3>
+              <div class="muted">Split view: delegated jobs on the left, scheduled tasks on the right. Use details for raw row drill-down.</div>
+              <details style="margin-top:10px;">
+                <summary>Advanced delegation controls</summary>
+                <div class="grid2" style="margin-top:10px;">
+                  <div>
+                    <div class="muted" style="margin-bottom:6px;">Start delegation</div>
+                    <input id="delegationSummaryInput" placeholder="Task summary for target agent" style="width:100%; margin-bottom:8px;" />
+                    <div class="toolbar" style="margin:0;">
+                      <input id="delegationTargetInput" value="koda" placeholder="target agent" />
+                      <input id="delegationNotifyChannelInput" value="1474209566437671096" placeholder="notify channel id" />
+                      <button id="delegationStartBtn">Start Handoff</button>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="muted" style="margin-bottom:6px;">Complete delegation</div>
+                    <input id="delegationJobIdInput" placeholder="Job ID (e.g. DEL-KODA-...)" style="width:100%; margin-bottom:8px;" />
+                    <div class="toolbar" style="margin:0;">
+                      <select id="delegationCompleteStatus"><option value="done">done</option><option value="failed">failed</option></select>
+                      <button id="delegationCompleteBtn">Complete Handoff</button>
+                    </div>
+                  </div>
+                </div>
+                <pre id="delegationOutput" style="margin-top:10px;">No delegation action run yet.</pre>
+              </details>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+              <div class="toolbar" style="margin:0 0 8px;">
+                <select id="jobsKindFilter"><option value="">All types</option><option value="scheduled">Scheduled</option><option value="job">Jobs</option><option value="delegation">Delegations</option></select>
+                <select id="jobsStatusFilter"><option value="">All statuses</option><option value="queued">queued</option><option value="running">running</option><option value="blocked">blocked</option><option value="done">done</option><option value="failed">failed</option></select>
+                <button id="jobsRefreshBtn">Refresh</button>
+              </div>
+              <div class="jobs-columns">
+                <div class="card" style="margin:0;">
+                  <h3 style="margin-top:0;">Delegated Jobs</h3>
+                  <table id="delegatedJobsTable">
+                    <thead><tr><th>Task</th><th>Owner → Assignee</th><th>Status</th><th>When</th><th>Summary</th><th>Details</th></tr></thead>
+                    <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+                  </table>
+                </div>
+                <div class="card" style="margin:0;">
+                  <h3 style="margin-top:0;">Scheduled Jobs</h3>
+                  <table id="scheduledJobsTable">
+                    <thead><tr><th>Task</th><th>Owner → Assignee</th><th>Status</th><th>When</th><th>Summary</th><th>Details</th></tr></thead>
+                    <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+                  </table>
+                </div>
               </div>
             </div>
-            <div id="mainAgentFileButtons" class="agent-file-buttons" style="margin-top:10px;"></div>
-          </div>
-
-          <div class="card" style="margin-bottom:12px;">
-            <h3>Agent Operations Summary</h3>
-            <div class="row"><span>COO</span><strong id="cooAgentId">-</strong></div>
-            <div class="row"><span>Direct user override</span><strong id="directOverrideState">-</strong></div>
-            <div class="row"><span>Delegations (running / blocked)</span><strong id="delegationCounts">-</strong></div>
-            <div class="muted" id="delegationCadence">-</div>
-            <details style="margin-top:8px;">
-              <summary>Advanced delegation table</summary>
-              <table id="delegationsTable" style="margin-top:8px;">
-                <thead><tr><th>ID</th><th>Assignee</th><th>Status</th><th>Objective</th><th>Updated</th></tr></thead>
-                <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
-              </table>
-            </details>
-          </div>
-
-          <div class="card" style="margin-bottom:12px;">
-            <h3>What each agent is doing now</h3>
-            <table id="agentNowTable">
-              <thead><tr><th>Agent</th><th>Role</th><th>Status</th><th>Current task</th><th>Last update</th><th>Blockers</th></tr></thead>
-              <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
-            </table>
-          </div>
-
-          <div class="card" style="margin-bottom:12px;">
-            <details>
-              <summary>Advanced delegation timeline</summary>
-              <table id="delegationTimelineTable" style="margin-top:8px;">
-                <thead><tr><th>ID</th><th>Assignee</th><th>Latest</th><th>Events</th><th>Objective</th></tr></thead>
-                <tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody>
-              </table>
-            </details>
-          </div>
-
-          <div class="card" style="margin-bottom:12px;">
-            <div id="agentTiles" class="agent-tiles-grid"></div>
-            <pre id="agentMdContent">Select an agent file to view markdown content.</pre>
-          </div>
-
-          <div class="card">
-            <details>
-              <summary>Show raw Agents + Bindings JSON</summary>
-              <pre id="agentsRaw">Loading…</pre>
-            </details>
+            <div class="card" style="margin-top:12px;"><h3>Work Board Raw</h3><pre id="jobsRaw">Loading…</pre></div>
+            <div class="card" style="margin-top:12px;">
+              <h3>Scheduled Jobs Health</h3>
+              <div class="row"><span>Total scheduled sources</span><strong id="scheduledJobsCount">-</strong></div>
+              <div class="row"><span>Healthy/running</span><strong id="scheduledJobsHealthy">-</strong></div>
+              <div class="row"><span>Needs attention</span><strong id="scheduledJobsAttention">-</strong></div>
+            </div>
           </div>
         </section>
 
@@ -528,7 +595,6 @@
           <div class="toolbar ds-tabs" style="margin:0 0 8px;">
             <button id="logsTabGateway" class="ds-tab is-active">Gateway Logs</button>
             <button id="logsTabAudit" class="ds-tab">Audit Trail</button>
-            <button id="logsTabJobs" class="ds-tab">Jobs & Scheduled Tasks</button>
           </div>
 
           <div id="logsGatewayPane" class="card">
@@ -565,59 +631,6 @@
             <div class="card" style="margin-top:12px;"><h3>Audit Raw</h3><pre id="auditRaw">Loading…</pre></div>
           </div>
 
-          <div id="logsJobsPane" class="hidden">
-            <div class="card" style="margin-bottom:12px;">
-              <h3>Jobs & Scheduled Tasks</h3>
-              <div class="muted">Split view: delegated jobs on the left, scheduled tasks on the right. Use details for raw row drill-down.</div>
-              <details style="margin-top:10px;">
-                <summary>Advanced delegation controls</summary>
-                <div class="grid2" style="margin-top:10px;">
-                  <div>
-                    <div class="muted" style="margin-bottom:6px;">Start delegation</div>
-                    <input id="delegationSummaryInput" placeholder="Task summary for target agent" style="width:100%; margin-bottom:8px;" />
-                    <div class="toolbar" style="margin:0;">
-                      <input id="delegationTargetInput" value="koda" placeholder="target agent" />
-                      <input id="delegationNotifyChannelInput" value="1474209566437671096" placeholder="notify channel id" />
-                      <button id="delegationStartBtn">Start Handoff</button>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="muted" style="margin-bottom:6px;">Complete delegation</div>
-                    <input id="delegationJobIdInput" placeholder="Job ID (e.g. DEL-KODA-...)" style="width:100%; margin-bottom:8px;" />
-                    <div class="toolbar" style="margin:0;">
-                      <select id="delegationCompleteStatus"><option value="done">done</option><option value="failed">failed</option></select>
-                      <button id="delegationCompleteBtn">Complete Handoff</button>
-                    </div>
-                  </div>
-                </div>
-                <pre id="delegationOutput" style="margin-top:10px;">No delegation action run yet.</pre>
-              </details>
-            </div>
-            <div class="card" style="margin-bottom:12px;">
-              <div class="toolbar" style="margin:0 0 8px;">
-                <select id="jobsKindFilter"><option value="">All types</option><option value="scheduled">Scheduled</option><option value="job">Jobs</option><option value="delegation">Delegations</option></select>
-                <select id="jobsStatusFilter"><option value="">All statuses</option><option value="queued">queued</option><option value="running">running</option><option value="blocked">blocked</option><option value="done">done</option><option value="failed">failed</option></select>
-                <button id="jobsRefreshBtn">Refresh</button>
-              </div>
-              <div class="jobs-columns">
-                <div class="card" style="margin:0;">
-                  <h3 style="margin-top:0;">Delegated Jobs</h3>
-                  <table id="delegatedJobsTable">
-                    <thead><tr><th>Task</th><th>Owner → Assignee</th><th>Status</th><th>When</th><th>Summary</th><th>Details</th></tr></thead>
-                    <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
-                  </table>
-                </div>
-                <div class="card" style="margin:0;">
-                  <h3 style="margin-top:0;">Scheduled Jobs</h3>
-                  <table id="scheduledJobsTable">
-                    <thead><tr><th>Task</th><th>Owner → Assignee</th><th>Status</th><th>When</th><th>Summary</th><th>Details</th></tr></thead>
-                    <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            <div class="card" style="margin-top:12px;"><h3>Work Board Raw</h3><pre id="jobsRaw">Loading…</pre></div>
-          </div>
         </section>
 
         <section id="view-projects" class="hidden">
@@ -661,7 +674,7 @@
           <h2>Diagnostics</h2>
           <div class="toolbar" style="margin:0 0 10px;">
             <button onclick="location.hash='config'">Overview</button>
-            <button onclick="location.hash='jobs'">Scheduled Jobs</button>
+            <button onclick="location.hash='agents'; setTimeout(() => document.getElementById('agentsTabJobs')?.click(), 0);">Agent Jobs</button>
             <button onclick="location.hash='backups'">Backups</button>
           </div>
           <h3>Backups</h3>
@@ -706,26 +719,6 @@
           <div class="card" style="margin-top:12px;"><h3>Service status</h3><pre id="backupStatusRaw">Loading…</pre></div>
         </section>
 
-        <section id="view-jobs" class="hidden">
-          <h2>Diagnostics</h2>
-          <div class="toolbar" style="margin:0 0 10px;">
-            <button onclick="location.hash='config'">Overview</button>
-            <button onclick="location.hash='jobs'">Scheduled Jobs</button>
-            <button onclick="location.hash='backups'">Backups</button>
-          </div>
-          <h3>Scheduled Jobs</h3>
-          <div class="muted" style="margin-bottom:8px;">Tip: For unified tracking (scheduled + jobs + delegations), use <strong>Logs → Jobs & Scheduled Tasks</strong>.</div>
-          <div class="card" style="margin-bottom:12px;">
-            <div class="row"><span>Total scheduled sources</span><strong id="scheduledJobsCount">-</strong></div>
-            <div class="row"><span>Healthy/running</span><strong id="scheduledJobsHealthy">-</strong></div>
-            <div class="row"><span>Needs attention</span><strong id="scheduledJobsAttention">-</strong></div>
-          </div>
-          <div class="card">
-            <div class="muted" style="margin-bottom:10px;">Detailed scheduling and assignment view now lives in Logs.</div>
-            <button onclick="location.hash='logs'; setTimeout(() => document.getElementById('logsTabJobs')?.click(), 0);">Open Jobs & Scheduled Tasks</button>
-          </div>
-        </section>
-
         <section id="view-designsystem" class="hidden">
           <h2>Design System</h2>
           <div class="card ds-state ds-state-empty" style="margin-bottom:12px; border-style:solid;">
@@ -741,7 +734,7 @@
           <h2>Diagnostics</h2>
           <div class="toolbar" style="margin:0 0 10px;">
             <button onclick="location.hash='config'">Overview</button>
-            <button onclick="location.hash='jobs'">Scheduled Jobs</button>
+            <button onclick="location.hash='agents'; setTimeout(() => document.getElementById('agentsTabJobs')?.click(), 0);">Agent Jobs</button>
             <button onclick="location.hash='backups'">Backups</button>
           </div>
           <div class="toolbar">
@@ -774,7 +767,7 @@
     </div>
 
     <script>
-      const views = ["dashboard","agents","watchers","openclaw","models","homeassistant","logs","projects","policies","changelog","designsystem","backups","jobs","config"];
+      const views = ["dashboard","agents","watchers","openclaw","models","homeassistant","logs","projects","policies","changelog","designsystem","backups","config"];
       let autoTimer = null;
       let cache = {};
       const haColorDrafts = {};
@@ -839,28 +832,37 @@
           document.getElementById(`view-${v}`).classList.toggle("hidden", v !== name);
           const link = document.querySelector(`.nav a[data-view='${v}']`);
           if (!link) return;
-          const diagnosticsActive = (name === 'config' || name === 'jobs' || name === 'backups') && v === 'config';
+          const diagnosticsActive = (name === 'config' || name === 'backups') && v === 'config';
           link.classList.toggle("active", v === name || diagnosticsActive);
         });
       }
 
       function setLogsTab(tab){
-        logsTab = (tab === 'audit' || tab === 'jobs') ? tab : 'gateway';
+        logsTab = (tab === 'audit') ? tab : 'gateway';
         const gatewayPane = document.getElementById('logsGatewayPane');
         const auditPane = document.getElementById('logsAuditPane');
-        const jobsPane = document.getElementById('logsJobsPane');
         const gatewayBtn = document.getElementById('logsTabGateway');
         const auditBtn = document.getElementById('logsTabAudit');
-        const jobsBtn = document.getElementById('logsTabJobs');
         gatewayPane.classList.toggle('hidden', logsTab !== 'gateway');
         auditPane.classList.toggle('hidden', logsTab !== 'audit');
-        jobsPane.classList.toggle('hidden', logsTab !== 'jobs');
         gatewayBtn.classList.toggle('active', logsTab === 'gateway');
         auditBtn.classList.toggle('active', logsTab === 'audit');
-        jobsBtn.classList.toggle('active', logsTab === 'jobs');
         gatewayBtn.classList.toggle('is-active', logsTab === 'gateway');
         auditBtn.classList.toggle('is-active', logsTab === 'audit');
-        jobsBtn.classList.toggle('is-active', logsTab === 'jobs');
+      }
+
+      function setAgentsTab(tab){
+        const active = tab === 'jobs' ? 'jobs' : 'overview';
+        const overviewPane = document.getElementById('agentsOverviewPane');
+        const jobsPane = document.getElementById('agentsJobsPane');
+        const overviewBtn = document.getElementById('agentsTabOverview');
+        const jobsBtn = document.getElementById('agentsTabJobs');
+        overviewPane.classList.toggle('hidden', active !== 'overview');
+        jobsPane.classList.toggle('hidden', active !== 'jobs');
+        overviewBtn.classList.toggle('is-active', active === 'overview');
+        jobsBtn.classList.toggle('is-active', active === 'jobs');
+        overviewBtn.classList.toggle('active', active === 'overview');
+        jobsBtn.classList.toggle('active', active === 'jobs');
       }
 
       async function jget(url){
@@ -1689,6 +1691,10 @@
           let h = (location.hash || '#dashboard').replace('#','');
           if (h === 'services' || h === 'actions') h = 'config';
           if (h === 'audit') h = 'logs';
+          if (h === 'jobs') {
+            h = 'agents';
+            setTimeout(() => setAgentsTab('jobs'), 0);
+          }
           showView(views.includes(h) ? h : 'dashboard');
         }
         window.addEventListener('hashchange', route); route();
@@ -1708,7 +1714,8 @@
       document.getElementById('refreshBtn').addEventListener('click', loadAll);
       document.getElementById('logsTabGateway').addEventListener('click', () => setLogsTab('gateway'));
       document.getElementById('logsTabAudit').addEventListener('click', () => setLogsTab('audit'));
-      document.getElementById('logsTabJobs').addEventListener('click', () => { setLogsTab('jobs'); loadJobs(); });
+      document.getElementById('agentsTabOverview').addEventListener('click', () => setAgentsTab('overview'));
+      document.getElementById('agentsTabJobs').addEventListener('click', () => { setAgentsTab('jobs'); loadJobs(); });
       document.getElementById('loadLogsBtn').addEventListener('click', () => { logsPage = 1; loadLogs(); });
       document.getElementById('jobsRefreshBtn').addEventListener('click', loadJobs);
       document.getElementById('jobsKindFilter').addEventListener('change', loadJobs);
@@ -1754,6 +1761,7 @@
       initNavCollapse();
       initNav();
       setLogsTab('gateway');
+      setAgentsTab('overview');
       loadAll();
     </script>
   </body>
