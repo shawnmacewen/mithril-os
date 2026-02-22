@@ -221,10 +221,11 @@
       }
       .ha-device-main { min-height: 0; overflow:hidden; }
       .ha-power-btn {
-        width:52px;
+        width:auto;
         height:auto;
         min-height:63px;
         align-self:stretch;
+        aspect-ratio:1 / 1;
         border-radius:10px;
         border:1px solid var(--border);
         background:var(--panel-2);
@@ -260,7 +261,7 @@
       /* HA compact density mode */
       .ha-compact .ha-item { padding:6px; margin-bottom:6px; }
       .ha-compact .ha-device { grid-template-columns: 44px 1fr; gap:8px; }
-      .ha-compact .ha-power-btn { width:44px; min-height:56px; border-radius:8px; }
+      .ha-compact .ha-power-btn { width:auto; min-height:56px; aspect-ratio:1 / 1; border-radius:8px; }
       .ha-compact .ha-power-btn svg { width:28px; height:28px; }
       .ha-compact .ha-item-top strong { font-size:14px; }
       .ha-compact .ha-device-meta { gap:5px; }
