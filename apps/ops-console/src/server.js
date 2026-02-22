@@ -1868,6 +1868,9 @@ const HA_AREA_OVERRIDES = {
   "light.wiz_rgbw_tunable_ba35cf": "dining_room",
   "light.wiz_rgbw_tunable_b9e1f7": "dining_room",
   "switch.wiz_socket_e14f25": "office",
+  "light.book_shelf_desk_light": "office",
+  "light.book_shelf_whiskey_lights": "office",
+  "light.tv_puck_lights": "office",
 };
 
 function inferArea(entity) {
