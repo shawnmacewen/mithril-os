@@ -257,6 +257,22 @@
       .ha-power-btn.kind-camera { color:#58c784; }
       .ha-power-btn.kind-home { color:color-mix(in srgb, var(--highlight) 70%, var(--text)); }
       .ha-device-meta { display:flex; gap:6px; align-items:center; }
+      /* HA compact density mode */
+      .ha-compact .ha-item { padding:6px; margin-bottom:6px; }
+      .ha-compact .ha-device { grid-template-columns: 44px 1fr; gap:8px; }
+      .ha-compact .ha-power-btn { width:44px; min-height:56px; border-radius:8px; }
+      .ha-compact .ha-power-btn svg { width:28px; height:28px; }
+      .ha-compact .ha-item-top strong { font-size:14px; }
+      .ha-compact .ha-device-meta { gap:5px; }
+      .ha-compact .active-badge,
+      .ha-compact .inactive-badge { height:18px; padding:0 7px; font-size:9px; }
+      .ha-compact .ha-controls-grid { grid-template-columns: minmax(0, 1fr) 46px; gap:6px; margin-top:6px; }
+      .ha-compact .ha-sliders-stack { gap:3px; margin-top:4px; }
+      .ha-compact .ha-slider-row { gap:6px; }
+      .ha-compact .ha-sliders-stack input[type="range"] { height:4px; }
+      .ha-compact .ha-sliders-stack input[type="range"]::-webkit-slider-thumb,
+      .ha-compact .ha-sliders-stack input[type="range"]::-moz-range-thumb { width:11px; height:11px; }
+      .ha-compact .ha-btn.color-set.square { width:46px; min-height:48px; border-radius:7px; font-size:11px; }
       .ha-info {
         position:relative;
         display:inline-flex; align-items:center; justify-content:center;
@@ -624,7 +640,7 @@
           <div id="modelsGrid" class="cards"></div>
           <div class="card" style="margin-top:12px;"><details><summary>Show raw models JSON</summary><pre id="modelsRaw">Loading…</pre></details></div>
         </section>
-        <section id="view-homeassistant" class="hidden">
+        <section id="view-homeassistant" class="hidden ha-compact">
           <div class="ha-header-row">
             <h2>Home Assistant Controls</h2>
             <div class="ha-mini-nav">
