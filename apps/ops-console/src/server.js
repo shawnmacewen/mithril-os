@@ -1899,6 +1899,10 @@ app.get("/api/ha/areas", async (_req, res) => {
         name: s.attributes?.friendly_name || s.entity_id,
         state: s.state,
         supportsBrightness: domain === "light",
+        supportsColor: domain === "light" && Array.isArray(s.attributes?.supported_color_modes)
+          ? s.attributes.supported_color_modes.some((m) => ["hs", "rgb", "rgbw", "rgbww", "xy"].includes(String(m)))
+          : false,
+        hsColor: Array.isArray(s.attributes?.hs_color) ? s.attributes.hs_color : null,
         brightnessPct: brightness,
       };
     });
@@ -1918,6 +1922,8 @@ app.post("/api/ha/entity/action", async (req, res) => {
   const entityId = String(req.body?.entity_id || "");
   const action = String(req.body?.action || "toggle");
   const brightnessPct = Number(req.body?.brightnessPct);
+  const hue = Number(req.body?.hue);
+  const saturation = Number(req.body?.saturation);
   if (!entityId || !entityId.includes(".")) return res.status(400).json({ ok: false, error: "entity_id required" });
 
   const [domain] = entityId.split(".");
@@ -1927,6 +1933,9 @@ app.post("/api/ha/entity/action", async (req, res) => {
   const body = { entity_id: entityId };
   if (domain === "light" && service === "turn_on" && Number.isFinite(brightnessPct)) {
     body.brightness_pct = Math.max(1, Math.min(100, Math.round(brightnessPct)));
+  }
+  if (domain === "light" && service === "turn_on" && Number.isFinite(hue) && Number.isFinite(saturation)) {
+    body.hs_color = [Math.max(0, Math.min(360, hue)), Math.max(0, Math.min(100, saturation))];
   }
 
   const result = await haRequest(`/api/services/${domain}/${service}`, { method: "POST", body });
