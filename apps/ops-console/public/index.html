@@ -146,6 +146,75 @@
       .ha-item-top { display:flex; justify-content:space-between; gap:8px; align-items:center; }
       .ha-actions { display:flex; gap:6px; margin-top:6px; align-items:center; flex-wrap:wrap; }
       .ha-actions input[type="range"] { width:130px; }
+      .ha-header-row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
+      .ha-mini-nav { display:flex; gap:8px; }
+      .ha-nav-btn {
+        width:42px; height:42px; border-radius:8px;
+        display:inline-flex; align-items:center; justify-content:center;
+        border:1px solid var(--border);
+        background:color-mix(in srgb, var(--highlight) 12%, var(--panel-2));
+        color:var(--text); font-weight:700; font-size:11px;
+      }
+      .ha-nav-btn.active {
+        border-color: color-mix(in srgb, var(--highlight) 70%, var(--border));
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--highlight) 45%, transparent);
+      }
+      .ha-device {
+        display:grid;
+        grid-template-columns: 46px 1fr;
+        gap:10px;
+        align-items:start;
+      }
+      .ha-device-icon {
+        width:44px; height:44px; border-radius:10px;
+        border:1px solid color-mix(in srgb, var(--highlight) 55%, var(--border));
+        background:color-mix(in srgb, var(--highlight) 14%, var(--panel-2));
+        display:flex; align-items:center; justify-content:center;
+        font-size:24px;
+      }
+      .ha-device-meta { display:flex; gap:6px; align-items:center; }
+      .ha-info {
+        position:relative;
+        display:inline-flex; align-items:center; justify-content:center;
+        width:20px; height:20px; border-radius:999px;
+        border:1px solid var(--border);
+        background:var(--panel-2);
+        color:var(--muted); font-size:12px; cursor:help;
+      }
+      .ha-info .ha-tooltip {
+        position:absolute;
+        top:24px; right:0;
+        min-width:260px;
+        padding:6px 8px;
+        border-radius:6px;
+        border:1px solid var(--border);
+        background:var(--panel);
+        color:var(--text);
+        font-size:12px;
+        opacity:0;
+        pointer-events:none;
+        transform:translateY(-3px);
+        transition:.15s ease;
+        z-index:10;
+      }
+      .ha-info:hover .ha-tooltip { opacity:1; pointer-events:auto; transform:translateY(0); }
+      .ha-actions input[type="range"] {
+        -webkit-appearance:none; appearance:none;
+        height:8px; border-radius:999px;
+        background: linear-gradient(90deg, color-mix(in srgb, var(--highlight) 45%, var(--panel-2)), var(--panel-2));
+        border:1px solid color-mix(in srgb, var(--highlight) 35%, var(--border));
+      }
+      .ha-actions input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance:none; appearance:none;
+        width:16px; height:16px; border-radius:50%;
+        background: var(--text);
+        border:2px solid color-mix(in srgb, var(--highlight) 65%, var(--border));
+      }
+      .ha-actions input[type="range"]::-moz-range-thumb {
+        width:16px; height:16px; border-radius:50%;
+        background: var(--text);
+        border:2px solid color-mix(in srgb, var(--highlight) 65%, var(--border));
+      }
       .ha-actions .ha-btn {
         border-radius:999px;
         padding:6px 12px;
@@ -391,15 +460,21 @@
           <div class="card" style="margin-top:12px;"><details><summary>Show raw models JSON</summary><pre id="modelsRaw">Loading…</pre></details></div>
         </section>
         <section id="view-homeassistant" class="hidden">
-          <h2>Home Assistant Controls</h2>
+          <div class="ha-header-row">
+            <h2>Home Assistant Controls</h2>
+            <div class="ha-mini-nav">
+              <button id="toggleHaOtherBtn" class="ha-nav-btn">Other</button>
+              <button id="toggleHaRawBtn" class="ha-nav-btn">Raw JSON</button>
+            </div>
+          </div>
           <div class="cards">
             <div class="card"><h3>Office</h3><div id="haOffice">Loading…</div></div>
             <div class="card"><h3>Bedroom</h3><div id="haBedroom">Loading…</div></div>
             <div class="card"><h3>Living Room</h3><div id="haLivingRoom">Loading…</div></div>
             <div class="card"><h3>Dining Room</h3><div id="haDiningRoom">Loading…</div></div>
           </div>
-          <div class="card" style="margin-top:12px;"><details><summary>Other / Unmapped Devices</summary><div id="haOther">Loading…</div></details></div>
-          <div class="card" style="margin-top:12px;"><details><summary>Show raw HA JSON</summary><pre id="haRaw">Loading…</pre></details></div>
+          <div id="haOtherCard" class="card hidden" style="margin-top:12px;"><h3>Other / Unmapped Devices</h3><div id="haOther">Loading…</div></div>
+          <div id="haRawCard" class="card hidden" style="margin-top:12px;"><h3>Raw HA JSON</h3><pre id="haRaw">Loading…</pre></div>
         </section>
 
         <section id="view-logs" class="hidden">
@@ -1336,6 +1411,18 @@
         `;}).join('');
       }
 
+      function getHaDeviceIcon(e){
+        const id = String(e.entity_id || '').toLowerCase();
+        const name = String(e.name || '').toLowerCase();
+        if (id.startsWith('light.') || name.includes('light') || name.includes('lamp')) return '💡';
+        if (id.startsWith('switch.') || name.includes('plug') || name.includes('outlet')) return '🔌';
+        if (name.includes('fan')) return '🌀';
+        if (name.includes('thermostat') || name.includes('temp')) return '🌡️';
+        if (name.includes('lock')) return '🔒';
+        if (name.includes('camera')) return '📷';
+        return '🏠';
+      }
+
       function renderHaArea(targetId, items){
         const el = document.getElementById(targetId);
         if (!items?.length) {
@@ -1345,14 +1432,21 @@
 
         el.innerHTML = items.map((e) => `
           <div class='ha-item'>
-            <div class='ha-item-top'>
-              <strong>${e.name}</strong>
-              <span class='${e.state === 'on' ? 'active-badge' : 'inactive-badge'}'>${e.state}</span>
-            </div>
-            <div class='muted'>${e.entity_id}</div>
-            <div class='ha-actions'>
-              <button class='ha-btn toggle' data-ha-action='toggle' data-entity='${e.entity_id}'>Toggle</button>
-              ${e.supportsBrightness ? `<input type='range' min='1' max='100' value='${e.brightnessPct ?? 100}' data-entity='${e.entity_id}'/><button class='ha-btn set' data-ha-action='set-brightness' data-entity='${e.entity_id}'>Set</button>` : ''}
+            <div class='ha-device'>
+              <div class='ha-device-icon' aria-hidden='true'>${getHaDeviceIcon(e)}</div>
+              <div>
+                <div class='ha-item-top'>
+                  <strong>${e.name}</strong>
+                  <div class='ha-device-meta'>
+                    <span class='${e.state === 'on' ? 'active-badge' : 'inactive-badge'}'>${e.state}</span>
+                    <span class='ha-info'>i<span class='ha-tooltip'>${e.entity_id}</span></span>
+                  </div>
+                </div>
+                <div class='ha-actions'>
+                  <button class='ha-btn toggle' data-ha-action='toggle' data-entity='${e.entity_id}'>Toggle</button>
+                  ${e.supportsBrightness ? `<input type='range' min='1' max='100' value='${e.brightnessPct ?? 100}' data-entity='${e.entity_id}'/><button class='ha-btn set' data-ha-action='set-brightness' data-entity='${e.entity_id}'>Set</button>` : ''}
+                </div>
+              </div>
             </div>
           </div>
         `).join('');
@@ -1489,6 +1583,17 @@
         }
         window.addEventListener('hashchange', route); route();
       }
+
+      const toggleHaCard = (btnId, cardId) => {
+        const btn = document.getElementById(btnId);
+        const card = document.getElementById(cardId);
+        btn?.addEventListener('click', () => {
+          card?.classList.toggle('hidden');
+          btn.classList.toggle('active', !card?.classList.contains('hidden'));
+        });
+      };
+      toggleHaCard('toggleHaOtherBtn', 'haOtherCard');
+      toggleHaCard('toggleHaRawBtn', 'haRawCard');
 
       document.getElementById('refreshBtn').addEventListener('click', loadAll);
       document.getElementById('logsTabGateway').addEventListener('click', () => setLogsTab('gateway'));
