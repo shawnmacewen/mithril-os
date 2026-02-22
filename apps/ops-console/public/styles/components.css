@@ -28,9 +28,6 @@
   box-shadow: var(--shadow-1);
 }
 
-.ds-card {
-  border-left: 4px solid var(--color-primary);
-}
 
 .ds-panel-header {
   display: flex;
@@ -169,15 +166,14 @@
 .ds-metric-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-left: 4px solid var(--color-primary);
-  border-radius: var(--radius-md);
+    border-radius: var(--radius-md);
   padding: var(--space-3);
 }
 .ds-metric-card-label { color: var(--color-muted); font-size: var(--font-size-xs); }
 .ds-metric-card-value { margin-top: 4px; font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); }
-.ds-metric-card.is-success { border-left-color: var(--color-success); }
-.ds-metric-card.is-warning { border-left-color: var(--color-warning); }
-.ds-metric-card.is-danger { border-left-color: var(--color-danger); }
+.ds-metric-card.is-success { border-color: color-mix(in srgb, var(--color-success) 40%, var(--color-border)); }
+.ds-metric-card.is-warning { border-color: color-mix(in srgb, var(--color-warning) 40%, var(--color-border)); }
+.ds-metric-card.is-danger { border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border)); }
 
 /* State blocks */
 .ds-state {
@@ -219,3 +215,20 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Home Assistant device kit */
+.ds-ha-device { border:1px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--space-2); background: var(--color-surface-2); }
+.ds-ha-row { display:grid; grid-template-columns: 44px 1fr; gap: var(--space-2); align-items:start; }
+.ds-ha-icon { width:44px; height:44px; display:flex; align-items:center; justify-content:center; }
+.ds-ha-icon svg { width:30px; height:30px; fill:none; stroke:currentColor; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
+.ds-ha-icon.light { color:#f6c445; }
+.ds-ha-icon.plug { color:#7fb2ff; }
+.ds-ha-icon.fan { color:#6fd3c9; }
+.ds-ha-actions { display:flex; align-items:center; gap: var(--space-2); flex-wrap:wrap; margin-top: var(--space-2); }
+.ds-ha-btn { border-radius:999px; padding:6px 12px; border:1px solid var(--color-border); background:var(--color-surface-2); color:var(--color-text); font-weight:600; }
+.ds-ha-btn.toggle { border-color: color-mix(in srgb, #6aa6ff 60%, var(--color-border)); background: color-mix(in srgb, #6aa6ff 18%, var(--color-surface-2)); }
+.ds-ha-btn.set { border-color: color-mix(in srgb, #54c08a 60%, var(--color-border)); background: color-mix(in srgb, #54c08a 20%, var(--color-surface-2)); }
+.ds-ha-range { -webkit-appearance:none; appearance:none; height:8px; border-radius:999px; border:1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border)); background: linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 45%, var(--color-surface-2)), var(--color-surface-2)); }
+.ds-ha-range::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:16px; height:16px; border-radius:50%; background:var(--color-text); border:2px solid color-mix(in srgb, var(--color-primary) 65%, var(--color-border)); }
+.ds-ha-range::-moz-range-thumb { width:16px; height:16px; border-radius:50%; background:var(--color-text); border:2px solid color-mix(in srgb, var(--color-primary) 65%, var(--color-border)); }
