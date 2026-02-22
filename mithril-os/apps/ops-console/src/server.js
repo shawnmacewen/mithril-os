@@ -2433,6 +2433,8 @@ app.post("/api/actions/:action", async (req, res) => {
     result = await shell("docker restart openclaw-gateway", 20000);
   } else if (action === "update-openclaw-gateway") {
     result = await shell("cd /home/mini-home-lab/openclaw && docker compose pull openclaw-gateway && docker compose up -d openclaw-gateway", 120000);
+  } else if (action === "logs-openclaw-gateway") {
+    result = await shell("docker logs --tail=120 openclaw-gateway", 15000);
   } else {
     return res.status(404).json({ ok: false, error: `Unknown action: ${action}` });
   }
