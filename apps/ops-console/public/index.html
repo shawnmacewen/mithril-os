@@ -293,14 +293,16 @@
       .ha-sliders-stack input[type="range"]::-webkit-slider-thumb {
         -webkit-appearance:none; appearance:none;
         width:13px; height:13px; border-radius:50%;
-        background: var(--text);
+        background: color-mix(in srgb, var(--highlight) 34%, var(--panel-2));
         border:2px solid color-mix(in srgb, var(--highlight) 65%, var(--border));
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--highlight) 28%, transparent);
       }
       .ha-actions input[type="range"]::-moz-range-thumb,
       .ha-sliders-stack input[type="range"]::-moz-range-thumb {
         width:13px; height:13px; border-radius:50%;
-        background: var(--text);
+        background: color-mix(in srgb, var(--highlight) 34%, var(--panel-2));
         border:2px solid color-mix(in srgb, var(--highlight) 65%, var(--border));
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--highlight) 28%, transparent);
       }
       .ha-actions .ha-btn {
         border-radius:999px;
