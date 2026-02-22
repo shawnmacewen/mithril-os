@@ -191,11 +191,15 @@
         </section>
         <section id="view-homeassistant" class="hidden">
           <h2>Home Assistant Controls</h2>
+          <div class="toolbar" style="margin:0 0 10px;">
+            <button id="haAllLightsOffBtn" class="danger">Turn off all lights</button>
+            <span class="muted">Room controls available in each card.</span>
+          </div>
           <div class="cards">
-            <div class="card"><h3>Office</h3><div id="haOffice">Loading…</div></div>
-            <div class="card"><h3>Bedroom</h3><div id="haBedroom">Loading…</div></div>
-            <div class="card"><h3>Living Room</h3><div id="haLivingRoom">Loading…</div></div>
-            <div class="card"><h3>Dining Room</h3><div id="haDiningRoom">Loading…</div></div>
+            <div class="card"><div class="row" style="margin:0 0 8px;"><h3 style="margin:0;">Office</h3><button data-ha-room-off="office">All lights off</button></div><div id="haOffice">Loading…</div></div>
+            <div class="card"><div class="row" style="margin:0 0 8px;"><h3 style="margin:0;">Bedroom</h3><button data-ha-room-off="bedroom">All lights off</button></div><div id="haBedroom">Loading…</div></div>
+            <div class="card"><div class="row" style="margin:0 0 8px;"><h3 style="margin:0;">Living Room</h3><button data-ha-room-off="living_room">All lights off</button></div><div id="haLivingRoom">Loading…</div></div>
+            <div class="card"><div class="row" style="margin:0 0 8px;"><h3 style="margin:0;">Dining Room</h3><button data-ha-room-off="dining_room">All lights off</button></div><div id="haDiningRoom">Loading…</div></div>
           </div>
           <div class="card" style="margin-top:12px;"><details><summary>Other / Unmapped Devices</summary><div id="haOther">Loading…</div></details></div>
           <div class="card" style="margin-top:12px;"><details><summary>Show raw HA JSON</summary><pre id="haRaw">Loading…</pre></details></div>
@@ -1007,6 +1011,37 @@
         `;}).join('');
       }
 
+      function isLightEntity(e){
+        return String(e?.entity_id || '').startsWith('light.') || String(e?.domain || '').toLowerCase() === 'light';
+      }
+
+      async function refreshHaPanels(){
+        const fresh = await jget('/api/ha/areas');
+        cache.haAreas = fresh;
+        renderHaArea('haOffice', fresh.grouped?.office || []);
+        renderHaArea('haBedroom', fresh.grouped?.bedroom || []);
+        renderHaArea('haLivingRoom', fresh.grouped?.living_room || []);
+        renderHaArea('haDiningRoom', fresh.grouped?.dining_room || []);
+        renderHaArea('haOther', fresh.grouped?.other || []);
+        document.getElementById('haRaw').textContent = JSON.stringify(fresh, null, 2);
+      }
+
+      async function turnOffAllLights(){
+        const grouped = cache?.haAreas?.grouped || {};
+        const byId = new Map();
+        Object.values(grouped).flat().filter(isLightEntity).forEach((e) => byId.set(e.entity_id, e));
+        const lights = Array.from(byId.values());
+        await Promise.all(lights.map((e) => jpost('/api/ha/entity/action', { entity_id: e.entity_id, action: 'turn_off' })));
+        await refreshHaPanels();
+      }
+
+      async function turnOffRoomLights(roomKey){
+        const grouped = cache?.haAreas?.grouped || {};
+        const lights = (grouped[roomKey] || []).filter(isLightEntity);
+        await Promise.all(lights.map((e) => jpost('/api/ha/entity/action', { entity_id: e.entity_id, action: 'turn_off' })));
+        await refreshHaPanels();
+      }
+
       function renderHaArea(targetId, items){
         const el = document.getElementById(targetId);
         if (!items?.length) {
@@ -1039,13 +1074,7 @@
               const brightnessPct = Number(slider?.value || 100);
               await jpost('/api/ha/entity/action', { entity_id, action: 'turn_on', brightnessPct });
             }
-            const fresh = await jget('/api/ha/areas');
-            renderHaArea('haOffice', fresh.grouped?.office || []);
-            renderHaArea('haBedroom', fresh.grouped?.bedroom || []);
-            renderHaArea('haLivingRoom', fresh.grouped?.living_room || []);
-            renderHaArea('haDiningRoom', fresh.grouped?.dining_room || []);
-            renderHaArea('haOther', fresh.grouped?.other || []);
-            document.getElementById('haRaw').textContent = JSON.stringify(fresh, null, 2);
+            await refreshHaPanels();
           });
         });
       }
@@ -1159,6 +1188,18 @@
       document.getElementById('logsTabGateway').addEventListener('click', () => setLogsTab('gateway'));
       document.getElementById('logsTabAudit').addEventListener('click', () => setLogsTab('audit'));
       document.getElementById('logsTabJobs').addEventListener('click', () => { setLogsTab('jobs'); loadJobs(); });
+      document.getElementById('haAllLightsOffBtn')?.addEventListener('click', async () => {
+        if (!confirm('Turn off all lights?')) return;
+        await turnOffAllLights();
+      });
+      document.querySelectorAll('button[data-ha-room-off]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const room = btn.dataset.haRoomOff;
+          if (!room) return;
+          if (!confirm(`Turn off all lights in ${room.replaceAll('_', ' ')}?`)) return;
+          await turnOffRoomLights(room);
+        });
+      });
       document.getElementById('loadLogsBtn').addEventListener('click', () => { logsPage = 1; loadLogs(); });
       document.getElementById('jobsRefreshBtn').addEventListener('click', loadJobs);
       document.getElementById('jobsKindFilter').addEventListener('change', loadJobs);
