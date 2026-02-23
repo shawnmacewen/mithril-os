@@ -435,6 +435,7 @@
             <section class="card"><h3>OpenClaw</h3><div id="openclawBlock" class="muted">Loading…</div></section>
             <section class="card"><h3>Home Assistant</h3><div id="haBlock" class="muted">Loading…</div></section>
             <section class="card"><h3>Docker</h3><div id="dockerBlock" class="muted">Loading…</div></section>
+            <section class="card"><h3>Backups</h3><div id="backupsBlock" class="muted">Loading…</div></section>
           </div>
         </section>
 
@@ -1856,6 +1857,26 @@
           } else {
             document.getElementById('dockerBlock').innerHTML = `<span class='bad'>${docker.error}</span>`;
           }
+
+          const localBackupOk = backups?.backupHealth === 'healthy';
+          const offsiteDone = backups?.offsite?.lastSyncDoneAt || null;
+          const offsiteMountReady = Boolean(backups?.offsite?.mountReady);
+          const offsiteHealthy = offsiteMountReady && Boolean(offsiteDone);
+          const localBadge = `<span class='status-pill ${localBackupOk ? 'ok' : 'warn'}'>${localBackupOk ? 'HEALTHY' : (backups?.backupHealth || 'UNKNOWN').toUpperCase()}</span>`;
+          const offsiteBadge = `<span class='status-pill ${offsiteHealthy ? 'ok' : 'warn'}'>${offsiteHealthy ? 'HEALTHY' : 'CHECK'}</span>`;
+          const fmtTs = (iso) => {
+            if (!iso) return '-';
+            const dt = new Date(iso);
+            return Number.isNaN(dt.getTime()) ? String(iso) : dt.toLocaleString();
+          };
+          document.getElementById('backupsBlock').innerHTML = `
+            <div class='row'><span>Local backup</span><strong>${localBadge}</strong></div>
+            <div class='row'><span>Last local trigger</span><strong>${fmtTs(backups?.lastBackupTriggerAt)}</strong></div>
+            <div class='row'><span>Next local trigger</span><strong>${fmtTs(backups?.nextBackupAt)}</strong></div>
+            <div class='row'><span>Offsite sync</span><strong>${offsiteBadge}</strong></div>
+            <div class='row'><span>Mount ready</span><strong>${offsiteMountReady ? 'YES' : 'NO'}</strong></div>
+            <div class='row'><span>Last offsite done</span><strong>${fmtTs(offsiteDone)}</strong></div>
+          `;
 
           renderWatchersTable(watchers.rows || []);
           renderServicesTable(services.rows || []);
