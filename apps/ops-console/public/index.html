@@ -98,8 +98,6 @@
       .nav a[data-view='dashboard'] .nav-icon { color:#8b5cf6; }
       .nav a[data-view='homeassistant'] .nav-icon { color:#22c55e; }
       .nav a[data-view='agents'] .nav-icon { color:#06b6d4; }
-      .nav a[data-view='watchers'] .nav-icon { color:#f59e0b; }
-      .nav a[data-view='openclaw'] .nav-icon { color:#3b82f6; }
       .nav a[data-view='projects'] .nav-icon { color:#10b981; }
       .nav a[data-view='policies'] .nav-icon { color:#f97316; }
       .nav a[data-view='config'] .nav-icon { color:#14b8a6; }
@@ -398,8 +396,6 @@
           <a data-view="homeassistant" href="#homeassistant"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M6 10v11h12V10"/><path d="M10 21v-5h4v5"/></svg>Home Assistant</a>
           <a class="active" data-view="dashboard" href="#dashboard"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Dashboard</a>
           <a data-view="agents" href="#agents"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><path d="M12 6V3"/></svg>Agents</a>
-          <a data-view="watchers" href="#watchers"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/></svg>Watchers</a>
-          <a data-view="openclaw" href="#openclaw"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.7.5 1 1.1 1 1.8V18h6v-1.5c0-.7.3-1.3 1-1.8A7 7 0 0 0 12 2Z"/></svg>OpenClaw</a>
           <a data-view="projects" href="#projects"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h18"/></svg>Projects</a>
           <a data-view="designsystem" href="#designsystem"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Platform</a>
           <a data-view="config" href="#config"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z"/></svg>Diagnostics</a>
@@ -567,6 +563,14 @@
               <div class="row"><span>Healthy/running</span><strong id="scheduledJobsHealthy">-</strong></div>
               <div class="row"><span>Needs attention</span><strong id="scheduledJobsAttention">-</strong></div>
             </div>
+            <div class="card" style="margin-top:12px;">
+              <h3>Watchers</h3>
+              <table id="watchersTable">
+                <thead><tr><th>Name</th><th>Running</th><th>Systemd</th><th>Interval</th><th>Last Update</th><th>Actions</th></tr></thead>
+                <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+              </table>
+            </div>
+            <div class="card" style="margin-top:12px;"><h3>Watchers Raw</h3><pre id="watchersRaw">Loading…</pre></div>
           </div>
 
           <div id="agentsModelsPane" class="hidden">
@@ -576,19 +580,18 @@
           </div>
         </section>
 
-        <section id="view-watchers" class="hidden">
-          <h2>Watchers</h2>
-          <div class="card">
-            <table id="watchersTable">
-              <thead><tr><th>Name</th><th>Running</th><th>Systemd</th><th>Interval</th><th>Last Update</th><th>Actions</th></tr></thead>
-              <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
-            </table>
-          </div>
-          <div class="card" style="margin-top:12px;"><h3>Watchers Raw</h3><pre id="watchersRaw">Loading…</pre></div>
-        </section>
+        
 
         <section id="view-openclaw" class="hidden">
-          <h2>OpenClaw</h2>
+          <h2>Diagnostics</h2>
+          <div class="toolbar" style="margin:0 0 10px;">
+            <button onclick="location.hash='config'">Overview</button>
+            <button onclick="location.hash='openclaw'">OpenClaw</button>
+            <button onclick="location.hash='backups'">Backups</button>
+            <button onclick="location.hash='logs'">Gateway Logs</button>
+            <button onclick="location.hash='audit'">Audit Trail</button>
+          </div>
+          <h3>OpenClaw</h3>
           <div class="cards">
             <div class="card">
               <h3>Gateway Health</h3>
@@ -664,7 +667,7 @@
           <h2>Diagnostics</h2>
           <div class="toolbar" style="margin:0 0 10px;">
             <button onclick="location.hash='config'">Overview</button>
-            <button onclick="location.hash='agents'; setTimeout(() => document.getElementById('agentsTabJobs')?.click(), 0);">Agent Jobs</button>
+            <button onclick="location.hash='openclaw'">OpenClaw</button>
             <button onclick="location.hash='backups'">Backups</button>
             <button onclick="location.hash='logs'">Gateway Logs</button>
             <button onclick="location.hash='audit'">Audit Trail</button>
@@ -732,7 +735,7 @@
           <h2>Diagnostics</h2>
           <div class="toolbar" style="margin:0 0 10px;">
             <button onclick="location.hash='config'">Overview</button>
-            <button onclick="location.hash='agents'; setTimeout(() => document.getElementById('agentsTabJobs')?.click(), 0);">Agent Jobs</button>
+            <button onclick="location.hash='openclaw'">OpenClaw</button>
             <button onclick="location.hash='backups'">Backups</button>
             <button onclick="location.hash='logs'">Gateway Logs</button>
             <button onclick="location.hash='audit'">Audit Trail</button>
@@ -823,7 +826,7 @@
           <h2>Diagnostics</h2>
           <div class="toolbar" style="margin:0 0 10px;">
             <button onclick="location.hash='config'">Overview</button>
-            <button onclick="location.hash='agents'; setTimeout(() => document.getElementById('agentsTabJobs')?.click(), 0);">Agent Jobs</button>
+            <button onclick="location.hash='openclaw'">OpenClaw</button>
             <button onclick="location.hash='backups'">Backups</button>
             <button onclick="location.hash='logs'">Gateway Logs</button>
             <button onclick="location.hash='audit'">Audit Trail</button>
@@ -883,7 +886,7 @@
     </div>
 
     <script>
-      const views = ["dashboard","agents","watchers","openclaw","homeassistant","logs","projects","designsystem","backups","config"];
+      const views = ["dashboard","agents","openclaw","homeassistant","logs","projects","designsystem","backups","config"];
       let autoTimer = null;
       let cache = {};
       const haColorDrafts = {};
@@ -969,7 +972,7 @@
           document.getElementById(`view-${v}`).classList.toggle("hidden", v !== name);
           const link = document.querySelector(`.nav a[data-view='${v}']`);
           if (!link) return;
-          const diagnosticsActive = (name === 'config' || name === 'backups' || name === 'logs') && v === 'config';
+          const diagnosticsActive = (name === 'config' || name === 'openclaw' || name === 'backups' || name === 'logs') && v === 'config';
           link.classList.toggle("active", v === name || diagnosticsActive);
         });
       }
@@ -1888,6 +1891,10 @@
             setTimeout(() => setLogsTab('gateway'), 0);
           }
           if (h === 'jobs') {
+            h = 'agents';
+            setTimeout(() => setAgentsTab('jobs'), 0);
+          }
+          if (h === 'watchers') {
             h = 'agents';
             setTimeout(() => setAgentsTab('jobs'), 0);
           }
