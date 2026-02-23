@@ -406,9 +406,8 @@
           <a data-view="models" href="#models"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="12" cy="17" r="2"/><path d="M8 8.5l2.8 6"/><path d="M16 8.5l-2.8 6"/><path d="M8 7h8"/></svg>Models</a>
           <a data-view="logs" href="#logs"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M16 3v4h4"/><path d="M8 11h8"/><path d="M8 15h8"/></svg>Logs</a>
           <a data-view="projects" href="#projects"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h18"/></svg>Projects</a>
-          <a data-view="policies" href="#policies"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>Policies</a>
           <a data-view="changelog" href="#changelog"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M6 4h12"/><path d="M6 12h12"/><path d="M6 20h12"/><circle cx="4" cy="4" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="20" r="1"/></svg>Changelog</a>
-          <a data-view="designsystem" href="#designsystem"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Design System</a>
+          <a data-view="designsystem" href="#designsystem"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Platform</a>
           <a data-view="config" href="#config"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z"/></svg>Diagnostics</a>
         </div>
 
@@ -722,19 +721,6 @@
           <div class="card" style="margin-top:12px;"><details><summary>Projects Raw JSON</summary><pre id="projectsRaw">Loading…</pre></details></div>
         </section>
 
-        <section id="view-policies" class="hidden">
-          <h2>Policies</h2>
-          <div class="card" style="margin-bottom:12px;">
-            <div class="row"><span>Total policies</span><strong id="policiesTotal">-</strong></div>
-            <div class="row"><span>Active</span><strong id="policiesActive">-</strong></div>
-            <div class="row"><span>Readable files</span><strong id="policiesReadable">-</strong></div>
-            <div class="muted" id="policiesSource">-</div>
-          </div>
-          <div class="card">
-            <table id="policiesTable"><thead><tr><th>Policy</th><th>Status</th><th>Owner</th><th>Scope</th><th>File meta</th></tr></thead><tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody></table>
-          </div>
-          <div class="card" style="margin-top:12px;"><details><summary>Policies Raw JSON</summary><pre id="policiesRaw">Loading…</pre></details></div>
-        </section>
 
         <section id="view-changelog" class="hidden">
           <h2>Public Changelog</h2>
@@ -795,13 +781,33 @@
         </section>
 
         <section id="view-designsystem" class="hidden">
-          <h2>Design System</h2>
-          <div class="card ds-state ds-state-empty" style="margin-bottom:12px; border-style:solid;">
-            <div class="row"><span>Embedded UI Kit (v2.0 foundation)</span><a href="/design-system.html" target="_blank" rel="noreferrer">Open in new tab</a></div>
-            <div class="muted">Reusable tokens and component primitives for Mithril-OS.</div>
+          <h2>Platform</h2>
+          <div class="toolbar ds-tabs" style="margin:0 0 8px;">
+            <button id="platformTabDesign" class="ds-tab is-active">Design System</button>
+            <button id="platformTabPolicies" class="ds-tab">Policies</button>
           </div>
-          <div class="card" style="padding:0; overflow:hidden;">
-            <iframe src="/design-system.html" title="Mithril-OS Design System" style="width:100%; height:78vh; border:0;"></iframe>
+
+          <div id="platformDesignPane">
+            <div class="card ds-state ds-state-empty" style="margin-bottom:12px; border-style:solid;">
+              <div class="row"><span>Embedded UI Kit (v2.0 foundation)</span><a href="/design-system.html" target="_blank" rel="noreferrer">Open in new tab</a></div>
+              <div class="muted">Reusable tokens and component primitives for Mithril-OS.</div>
+            </div>
+            <div class="card" style="padding:0; overflow:hidden;">
+              <iframe src="/design-system.html" title="Mithril-OS Design System" style="width:100%; height:78vh; border:0;"></iframe>
+            </div>
+          </div>
+
+          <div id="platformPoliciesPane" class="hidden">
+            <div class="card" style="margin-bottom:12px;">
+              <div class="row"><span>Total policies</span><strong id="policiesTotal">-</strong></div>
+              <div class="row"><span>Active</span><strong id="policiesActive">-</strong></div>
+              <div class="row"><span>Readable files</span><strong id="policiesReadable">-</strong></div>
+              <div class="muted" id="policiesSource">-</div>
+            </div>
+            <div class="card">
+              <table id="policiesTable"><thead><tr><th>Policy</th><th>Status</th><th>Owner</th><th>Scope</th><th>File meta</th></tr></thead><tbody><tr><td colspan="5" class="muted">Loading…</td></tr></tbody></table>
+            </div>
+            <div class="card" style="margin-top:12px;"><details><summary>Policies Raw JSON</summary><pre id="policiesRaw">Loading…</pre></details></div>
           </div>
         </section>
 
@@ -867,7 +873,7 @@
     </div>
 
     <script>
-      const views = ["dashboard","agents","watchers","openclaw","models","homeassistant","logs","projects","policies","changelog","designsystem","backups","config"];
+      const views = ["dashboard","agents","watchers","openclaw","models","homeassistant","logs","projects","changelog","designsystem","backups","config"];
       let autoTimer = null;
       let cache = {};
       const haColorDrafts = {};
@@ -984,6 +990,20 @@
         jobsBtn.classList.toggle('is-active', active === 'jobs');
         overviewBtn.classList.toggle('active', active === 'overview');
         jobsBtn.classList.toggle('active', active === 'jobs');
+      }
+
+      function setPlatformTab(tab){
+        const active = tab === 'policies' ? 'policies' : 'design';
+        const designPane = document.getElementById('platformDesignPane');
+        const policiesPane = document.getElementById('platformPoliciesPane');
+        const designBtn = document.getElementById('platformTabDesign');
+        const policiesBtn = document.getElementById('platformTabPolicies');
+        designPane.classList.toggle('hidden', active !== 'design');
+        policiesPane.classList.toggle('hidden', active !== 'policies');
+        designBtn.classList.toggle('is-active', active === 'design');
+        policiesBtn.classList.toggle('is-active', active === 'policies');
+        designBtn.classList.toggle('active', active === 'design');
+        policiesBtn.classList.toggle('active', active === 'policies');
       }
 
       async function jget(url){
@@ -1846,6 +1866,10 @@
             h = 'agents';
             setTimeout(() => setAgentsTab('jobs'), 0);
           }
+          if (h === 'policies') {
+            h = 'designsystem';
+            setTimeout(() => setPlatformTab('policies'), 0);
+          }
           showView(views.includes(h) ? h : 'dashboard');
         }
         window.addEventListener('hashchange', route); route();
@@ -1867,6 +1891,8 @@
       document.getElementById('logsTabAudit').addEventListener('click', () => setLogsTab('audit'));
       document.getElementById('agentsTabOverview').addEventListener('click', () => setAgentsTab('overview'));
       document.getElementById('agentsTabJobs').addEventListener('click', () => { setAgentsTab('jobs'); loadJobs(); });
+      document.getElementById('platformTabDesign').addEventListener('click', () => setPlatformTab('design'));
+      document.getElementById('platformTabPolicies').addEventListener('click', () => setPlatformTab('policies'));
       document.getElementById('loadLogsBtn').addEventListener('click', () => { logsPage = 1; loadLogs(); });
       document.getElementById('jobsRefreshBtn').addEventListener('click', loadJobs);
       document.getElementById('jobsKindFilter').addEventListener('change', loadJobs);
@@ -1913,6 +1939,7 @@
       initNav();
       setLogsTab('gateway');
       setAgentsTab('overview');
+      setPlatformTab('design');
       loadAll();
     </script>
   </body>
