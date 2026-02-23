@@ -1805,6 +1805,22 @@ app.get("/api/docs/openclaw-upgrade-checklist", async (_req, res) => {
   return res.status(404).json({ ok: false, error: "OpenClaw upgrade checklist not found" });
 });
 
+app.get("/api/docs/backup-restore-checklist", async (_req, res) => {
+  const candidates = [
+    "/mithril-os/docs/BACKUP_RESTORE_CHECKLIST.md",
+    path.join(OPS_REPO_DIR, "docs/BACKUP_RESTORE_CHECKLIST.md"),
+  ];
+  for (const p of candidates) {
+    try {
+      const content = await fs.readFile(p, "utf8");
+      return res.json({ ok: true, source: p, content });
+    } catch {
+      // try next
+    }
+  }
+  return res.status(404).json({ ok: false, error: "Backup restore checklist not found" });
+});
+
 async function sendProjectsOverview(res) {
   const cfg = await readProjectsConfig();
   const rows = [];

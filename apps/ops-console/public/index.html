@@ -844,6 +844,15 @@
             </details>
           </div>
 
+          <div class="card" style="margin-bottom:12px;">
+            <h3>Backup Restore Checklist</h3>
+            <div class="muted">Loaded from <code>/mithril-os/docs/BACKUP_RESTORE_CHECKLIST.md</code>.</div>
+            <details style="margin-top:8px;">
+              <summary>Show checklist</summary>
+              <pre id="backupRestoreChecklistMd" style="margin-top:8px; max-height:360px; overflow:auto;">Loading…</pre>
+            </details>
+          </div>
+
           <div class="card">
             <h3>Config Validator</h3>
             <div id="configSummary" class="muted">Loading…</div>
@@ -1723,7 +1732,7 @@
         stamp.textContent = 'Refreshing…';
 
         try {
-          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard, upgradeChecklist] = await Promise.all([
+          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard, upgradeChecklist, backupRestoreChecklist] = await Promise.all([
             jget('/api/status'),
             jget('/api/openclaw/overview'),
             jget('/api/openclaw/deep'),
@@ -1745,10 +1754,11 @@
             jget('/api/backups/status'),
             jget('/api/scheduled-jobs'),
             jget('/api/work/overview?limit=300'),
-            jget('/api/docs/openclaw-upgrade-checklist')
+            jget('/api/docs/openclaw-upgrade-checklist'),
+            jget('/api/docs/backup-restore-checklist')
           ]);
 
-          cache = { status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard, upgradeChecklist };
+          cache = { status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard, upgradeChecklist, backupRestoreChecklist };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
           document.getElementById('currentAgentName').textContent = 'OddEye';
@@ -1804,6 +1814,17 @@
               document.getElementById('upgradeChecklistMd').textContent = mdFallback || (upgradeChecklist?.error || 'Checklist unavailable');
             } catch {
               document.getElementById('upgradeChecklistMd').textContent = upgradeChecklist?.error || 'Checklist unavailable';
+            }
+          }
+
+          if (backupRestoreChecklist?.ok) {
+            document.getElementById('backupRestoreChecklistMd').textContent = backupRestoreChecklist.content || '';
+          } else {
+            try {
+              const mdFallback = await fetch('/backup-restore-checklist.md', { cache: 'no-store' }).then(r => r.ok ? r.text() : '');
+              document.getElementById('backupRestoreChecklistMd').textContent = mdFallback || (backupRestoreChecklist?.error || 'Checklist unavailable');
+            } catch {
+              document.getElementById('backupRestoreChecklistMd').textContent = backupRestoreChecklist?.error || 'Checklist unavailable';
             }
           }
           document.getElementById('auditRaw').textContent = JSON.stringify(audit, null, 2);
