@@ -23,6 +23,7 @@ SMB_MOUNT="${SMB_MOUNT:-/mnt/synology_backup}"
 SMB_ROOT="${SMB_ROOT:-backups}"
 
 RSYNC_FLAGS="${RSYNC_FLAGS:--aHAX --delete}"
+RSYNC_FLAGS_SMB="${RSYNC_FLAGS_SMB:--aH --delete}"
 
 log(){ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"; }
 
@@ -35,7 +36,7 @@ sync_one_local(){
   fi
   mkdir -p "$dst/latest"
   log "sync: $src -> $dst"
-  rsync $RSYNC_FLAGS "$src/" "$dst/latest/"
+  rsync $RSYNC_FLAGS_SMB "$src/" "$dst/latest/"
   log "ok: $dst"
 }
 
