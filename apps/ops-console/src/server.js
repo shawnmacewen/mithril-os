@@ -46,6 +46,20 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(express.json());
 
+const API_CACHE = new Map();
+function cacheGet(key) {
+  const row = API_CACHE.get(key);
+  if (!row) return null;
+  if (Date.now() > row.expiresAt) {
+    API_CACHE.delete(key);
+    return null;
+  }
+  return row.value;
+}
+function cacheSet(key, value, ttlMs) {
+  API_CACHE.set(key, { value, expiresAt: Date.now() + ttlMs });
+}
+
 function tcpCheck(host, port, timeoutMs = 1500) {
   return new Promise((resolve) => {
     const socket = new net.Socket();
@@ -2186,6 +2200,9 @@ app.post("/api/delegations/handoff/complete", async (req, res) => {
 });
 
 app.get("/api/backups/status", async (_req, res) => {
+  const cached = cacheGet("backups-status");
+  if (cached) return res.json(cached);
+
   const latest = await shell("readlink -f /backup/latest || true", 2000);
   const timers = await shell("systemctl list-timers --all --no-pager | grep mithril-backup || true", 2500);
   const backupTimerDetail = await shell("systemctl show mithril-backup.timer -p NextElapseUSecRealtime -p LastTriggerUSec --value || true", 2500);
@@ -2304,7 +2321,7 @@ app.get("/api/backups/status", async (_req, res) => {
       return { name, status, lastSyncAt };
     });
 
-  res.json({
+  const payload = {
     ok: true,
     latestSnapshot,
     latestSnapshotName: latestName,
@@ -2329,13 +2346,17 @@ app.get("/api/backups/status", async (_req, res) => {
       targets: offsiteTargetRows,
       historyTail: offsiteHistoryText.split("\n").slice(-60).join("\n"),
     },
-  });
+  };
+
+  cacheSet("backups-status", payload, 20000);
+  res.json(payload);
 });
 
 app.post("/api/backups/run", async (_req, res) => {
   const run = await shell("sudo -n systemctl start mithril-backup.service || systemctl start mithril-backup.service", 8000);
   if (!run.ok) return res.status(500).json(run);
   const status = await shell("systemctl status mithril-backup.service --no-pager -n 30 || true", 3000);
+  API_CACHE.delete("backups-status");
   return res.json({ ok: true, run, status: status.stdout });
 });
 
@@ -2344,6 +2365,7 @@ app.post("/api/backups/run-offsite", async (_req, res) => {
   const run = await shell(cmd, 120000);
   if (!run.ok) return res.status(500).json(run);
   const tail = await shell("tail -n 120 /backup/backup-history.log 2>/dev/null || true", 3000);
+  API_CACHE.delete("backups-status");
   return res.json({ ok: true, run, history: tail.stdout || "" });
 });
 

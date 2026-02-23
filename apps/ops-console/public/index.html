@@ -1008,6 +1008,9 @@
         auditBtn.classList.toggle('active', logsTab === 'audit');
         gatewayBtn.classList.toggle('is-active', logsTab === 'gateway');
         auditBtn.classList.toggle('is-active', logsTab === 'audit');
+        if (!logsRows.length || logsTab === 'gateway') {
+          loadLogs();
+        }
       }
 
       function setAgentsTab(tab){
@@ -1931,8 +1934,6 @@
             }
           }
           document.getElementById('auditRaw').textContent = JSON.stringify(audit, null, 2);
-
-          await loadLogs();
         } catch (e) {
           const msg = `Error: ${e.message || e}`;
           stamp.textContent = msg;

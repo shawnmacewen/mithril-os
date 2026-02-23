@@ -3,6 +3,18 @@
   "subtitle": "Feature highlights and user-facing improvements",
   "releases": [
     {
+      "version": "v2.1",
+      "date": "2026-02-23",
+      "highlights": [
+        "Navigation IA updated: Models moved under Agents, Changelog moved under Platform, and Diagnostics now groups OpenClaw, Backups, Logs, and Audit.",
+        "Backups page expanded with offsite sync tracking (last start/done, mount readiness, per-target status) and a one-click 'Run Offsite Sync Now' action.",
+        "Backup target coverage expanded to include BW-Shell and Railfin in local snapshot flow, with canonical path discipline aligned in docs/scripts.",
+        "Performance stabilization pass: backup status API now uses short TTL caching and logs load on-demand from Logs view to reduce startup latency."
+      ],
+      "whyItMatters": "Operators get clearer backup visibility and cleaner navigation while restoring faster perceived load times during day-to-day use.",
+      "tags": ["Backups", "Synology", "Navigation", "Performance"]
+    },
+    {
       "version": "v2.0",
       "date": "2026-02-21",
       "highlights": [
