@@ -24,6 +24,8 @@ SNAP="$SNAPSHOT_ROOT/$TIMESTAMP"
 SRC_OPENCLAW="/home/mini-home-lab/.openclaw"
 SRC_HA_CONFIG="/home/mini-home-lab/homelab/homeassistant/config"
 SRC_MITHRIL="/mithril-os"
+SRC_BW_SHELL="/home/mini-home-lab/.openclaw/workspace/work/bw-shell"
+SRC_RAILFIN="/home/mini-home-lab/work/railfin.io"
 SRC_SYSTEMD_DIR="/etc/systemd/system"
 SRC_OBSIDIAN_VAULT_PRIMARY="/home/node/.openclaw/workspace/productivity/Personal Assistant"
 SRC_OBSIDIAN_VAULT_FALLBACK="/home/mini-home-lab/.openclaw/workspace/productivity/Personal Assistant"
@@ -57,7 +59,7 @@ require_cmd find
 
 log "backup start: snapshot=$SNAP"
 
-mkdir -p "$SNAP/openclaw" "$SNAP/homeassistant" "$SNAP/mithril-os" "$SNAP/obsidian" "$SNAP/meta"
+mkdir -p "$SNAP/openclaw" "$SNAP/homeassistant" "$SNAP/mithril-os" "$SNAP/bw-shell" "$SNAP/railfin-io" "$SNAP/obsidian" "$SNAP/meta"
 
 if copy_tree "$SRC_OPENCLAW" "$SNAP/openclaw/.openclaw"; then
   log "ok: copied $SRC_OPENCLAW"
@@ -75,6 +77,18 @@ if copy_tree "$SRC_MITHRIL" "$SNAP/mithril-os/repo"; then
   log "ok: copied $SRC_MITHRIL"
 else
   log "warn: missing $SRC_MITHRIL"
+fi
+
+if copy_tree "$SRC_BW_SHELL" "$SNAP/bw-shell/repo"; then
+  log "ok: copied $SRC_BW_SHELL"
+else
+  log "warn: missing $SRC_BW_SHELL"
+fi
+
+if copy_tree "$SRC_RAILFIN" "$SNAP/railfin-io/repo"; then
+  log "ok: copied $SRC_RAILFIN"
+else
+  log "warn: missing $SRC_RAILFIN"
 fi
 
 if copy_tree "$SRC_OBSIDIAN_VAULT_PRIMARY" "$SNAP/obsidian/personal-assistant"; then

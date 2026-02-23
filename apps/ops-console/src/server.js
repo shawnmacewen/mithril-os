@@ -2262,6 +2262,18 @@ app.get("/api/backups/status", async (_req, res) => {
       detail: logText.includes("ok: copied /mithril-os") ? "copied" : "not confirmed",
     },
     {
+      key: "bwshell",
+      name: "BW-Shell",
+      ok: logText.includes("ok: copied /home/mini-home-lab/.openclaw/workspace/work/bw-shell"),
+      detail: logText.includes("ok: copied /home/mini-home-lab/.openclaw/workspace/work/bw-shell") ? "copied" : "not confirmed",
+    },
+    {
+      key: "railfin",
+      name: "Railfin",
+      ok: logText.includes("ok: copied /home/mini-home-lab/work/railfin.io"),
+      detail: logText.includes("ok: copied /home/mini-home-lab/work/railfin.io") ? "copied" : "not confirmed",
+    },
+    {
       key: "obsidian",
       name: "Obsidian Vault",
       ok: /ok:\s+copied\s+obsidian\s+vault/i.test(logText),

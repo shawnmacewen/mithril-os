@@ -4,6 +4,9 @@ Backups include:
 - OpenClaw state: `/home/mini-home-lab/.openclaw`
 - Home Assistant config: `/home/mini-home-lab/homelab/homeassistant/config`
 - Mithril-OS repo: `/mithril-os`
+- BW-Shell repo: `/home/mini-home-lab/.openclaw/workspace/work/bw-shell`
+- Railfin repo: `/home/mini-home-lab/work/railfin.io`
+- Obsidian vault: `/home/mini-home-lab/.openclaw/workspace/productivity/Personal Assistant`
 - Selected systemd unit files
 
 Output root:
