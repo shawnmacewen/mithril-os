@@ -26,8 +26,13 @@ RSYNC_FLAGS="${RSYNC_FLAGS:--aHAX --delete}"
 # SMB/CIFS targets often don't support Linux symlinks/ACL/xattrs.
 # Use copy-links so symlinked files are copied as regular files.
 RSYNC_FLAGS_SMB="${RSYNC_FLAGS_SMB:--aH --delete --copy-links}"
+OFFSITE_HISTORY_LOG="${OFFSITE_HISTORY_LOG:-/backup/backup-history.log}"
 
-log(){ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"; }
+log(){
+  local line="[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"
+  echo "$line"
+  echo "$line" >> "$OFFSITE_HISTORY_LOG" 2>/dev/null || true
+}
 
 sync_one_local(){
   local src="$1"

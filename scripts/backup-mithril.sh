@@ -29,7 +29,10 @@ SRC_OBSIDIAN_VAULT_PRIMARY="/home/node/.openclaw/workspace/productivity/Personal
 SRC_OBSIDIAN_VAULT_FALLBACK="/home/mini-home-lab/.openclaw/workspace/productivity/Personal Assistant"
 
 log() {
-  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"
+  local line="[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"
+  echo "$line"
+  # Persist every log line for diagnostics timeline (best effort)
+  echo "$line" >> "$HISTORY_LOG" 2>/dev/null || true
 }
 
 require_cmd() {
@@ -176,7 +179,5 @@ if [ "$OFFSITE_SYNC" = "1" ]; then
   fi
 fi
 
-{
-  log "backup run complete"
-  echo
-} >> "$HISTORY_LOG"
+log "backup run complete"
+echo >> "$HISTORY_LOG"
