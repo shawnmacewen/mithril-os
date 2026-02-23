@@ -751,7 +751,12 @@
               <div class="row"><span>Snapshots</span><strong id="backupCount">-</strong></div>
               <div class="row"><span>Storage used</span><strong id="backupUsage">-</strong></div>
               <div class="row"><span>Timer</span><strong id="backupTimer">-</strong></div>
-              <button id="runBackupBtn">Run Backup Now</button>
+              <div class="row"><span>Last backup trigger</span><strong id="backupLastTrigger">-</strong></div>
+              <div class="row"><span>Next backup trigger</span><strong id="backupNextTrigger">-</strong></div>
+              <div class="toolbar" style="margin-top:8px;">
+                <button id="runBackupBtn">Run Backup Now</button>
+                <button id="runOffsiteBtn">Run Offsite Sync Now</button>
+              </div>
             </div>
             <div class="card">
               <h3>Retention Policy</h3>
@@ -771,6 +776,18 @@
           </div>
 
           <div class="card" style="margin-top:12px;">
+            <h3>Offsite Sync (Synology)</h3>
+            <div class="row"><span>Mode</span><strong id="offsiteMode">-</strong></div>
+            <div class="row"><span>Mount ready</span><strong id="offsiteMount">-</strong></div>
+            <div class="row"><span>Last sync start</span><strong id="offsiteLastStart">-</strong></div>
+            <div class="row"><span>Last sync done</span><strong id="offsiteLastDone">-</strong></div>
+            <table id="offsiteTargetsTable" style="margin-top:8px;">
+              <thead><tr><th>Target</th><th>Status</th><th>Last file sync</th></tr></thead>
+              <tbody><tr><td colspan="3" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
             <h3>Snapshots</h3>
             <table id="snapshotsTable">
               <thead><tr><th>Name</th><th>Size</th><th>Files</th><th>Checksum</th><th>Path</th><th>Taken (Local)</th></tr></thead>
@@ -779,6 +796,7 @@
           </div>
 
           <div class="card" style="margin-top:12px;"><h3>Run Logs</h3><pre id="backupLogs">Loading…</pre></div>
+          <div class="card" style="margin-top:12px;"><h3>Offsite Sync History</h3><pre id="offsiteHistory">Loading…</pre></div>
           <div class="card" style="margin-top:12px;"><h3>Service status</h3><pre id="backupStatusRaw">Loading…</pre></div>
         </section>
 
@@ -1290,14 +1308,29 @@
       function renderBackupsPage(backups){
         const health = backups.backupHealth || 'warning';
         const healthCls = health === 'healthy' ? 'ok' : (health === 'failed' ? 'bad' : 'warn');
+        const fmt = (iso) => {
+          if (!iso) return '-';
+          const dt = new Date(iso);
+          return Number.isNaN(dt.getTime()) ? String(iso) : dt.toLocaleString();
+        };
+
         document.getElementById('backupHealth').innerHTML = `<span class='status-pill ${healthCls}'>${health.toUpperCase()}</span>`;
         document.getElementById('backupHealthReason').textContent = backups.backupHealthReason || '';
         document.getElementById('backupLatest').textContent = backups.latestSnapshot || '-';
         document.getElementById('backupCount').textContent = String(backups.snapshotCount ?? '-');
         document.getElementById('backupUsage').textContent = backups.backupUsage || '-';
         document.getElementById('backupTimer').textContent = backups.timerLine || '-';
+        document.getElementById('backupLastTrigger').textContent = fmt(backups.lastBackupTriggerAt);
+        document.getElementById('backupNextTrigger').textContent = fmt(backups.nextBackupAt);
         document.getElementById('backupStatusRaw').textContent = backups.serviceStatusText || 'No status';
         document.getElementById('backupLogs').textContent = backups.logsText || 'No logs yet';
+
+        const off = backups.offsite || {};
+        document.getElementById('offsiteMode').textContent = off.mode || '-';
+        document.getElementById('offsiteMount').innerHTML = `<span class='status-pill ${off.mountReady ? 'ok' : 'warn'}'>${off.mountReady ? 'READY' : 'NOT READY'}</span>`;
+        document.getElementById('offsiteLastStart').textContent = fmt(off.lastSyncStartAt);
+        document.getElementById('offsiteLastDone').textContent = fmt(off.lastSyncDoneAt);
+        document.getElementById('offsiteHistory').textContent = off.historyTail || 'No offsite history yet';
 
         document.getElementById('retDaily').textContent = String(backups.retention?.daily ?? '-');
         document.getElementById('retWeekly').textContent = String(backups.retention?.weekly ?? '-');
@@ -1308,6 +1341,12 @@
         tBody.innerHTML = targets.length
           ? targets.map(t => `<tr><td>${t.name}</td><td><span class='status-pill ${t.ok ? 'ok':'warn'}'>${t.ok ? 'OK':'CHECK'}</span></td><td>${t.detail || ''}</td></tr>`).join('')
           : `<tr><td colspan='3' class='muted'>No target status yet</td></tr>`;
+
+        const offTbody = document.querySelector('#offsiteTargetsTable tbody');
+        const offRows = off.targets || [];
+        offTbody.innerHTML = offRows.length
+          ? offRows.map((r) => `<tr><td>${r.name || '-'}</td><td><span class='status-pill ${r.status === 'ok' ? 'ok' : 'warn'}'>${String(r.status || '-').toUpperCase()}</span></td><td>${fmt(r.lastSyncAt)}</td></tr>`).join('')
+          : `<tr><td colspan='3' class='muted'>No offsite target data yet</td></tr>`;
 
         const sBody = document.querySelector('#snapshotsTable tbody');
         const rows = backups.snapshotRows || [];
@@ -1949,6 +1988,12 @@
         if (!confirm('Run backup now?')) return;
         const out = await jpost('/api/backups/run', {});
         document.getElementById('backupStatusRaw').textContent = JSON.stringify(out, null, 2);
+        await loadAll();
+      });
+      document.getElementById('runOffsiteBtn').addEventListener('click', async () => {
+        if (!confirm('Run offsite sync now?')) return;
+        const out = await jpost('/api/backups/run-offsite', {});
+        document.getElementById('offsiteHistory').textContent = out.ok ? (out.history || 'Offsite sync completed.') : JSON.stringify(out, null, 2);
         await loadAll();
       });
       document.getElementById('commitsPrev').addEventListener('click', () => { commitsPage = Math.max(1, commitsPage - 1); renderCommitTimeline(cache.commits || { ok:true, rows:[] }); });

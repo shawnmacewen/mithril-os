@@ -2188,11 +2188,15 @@ app.post("/api/delegations/handoff/complete", async (req, res) => {
 app.get("/api/backups/status", async (_req, res) => {
   const latest = await shell("readlink -f /backup/latest || true", 2000);
   const timers = await shell("systemctl list-timers --all --no-pager | grep mithril-backup || true", 2500);
+  const backupTimerDetail = await shell("systemctl show mithril-backup.timer -p NextElapseUSecRealtime -p LastTriggerUSec --value || true", 2500);
   const service = await shell("systemctl status mithril-backup.service --no-pager -n 40 || true", 3500);
   const snaps = await shell("find /backup/snapshots -mindepth 1 -maxdepth 1 -type d | wc -l", 2000);
   const usage = await shell("du -sh /backup 2>/dev/null || true", 2000);
   const list = await shell("find /backup/snapshots -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -r | head -n 40", 3000);
   const logs = await shell("journalctl -u mithril-backup.service -n 140 --no-pager || true", 4000);
+  const offsiteLogs = await shell("tail -n 220 /backup/backup-history.log 2>/dev/null || true", 3000);
+  const offsiteRoot = await shell("test -d /mnt/synology_backup/backups && echo yes || echo no", 1200);
+  const offsiteTargets = await shell("for d in openclaw mithril-os bw-shell railfin-io homeassistant productivity-vault; do if [ -d \"/mnt/synology_backup/backups/$d/latest\" ]; then t=$(find \"/mnt/synology_backup/backups/$d/latest\" -type f -printf '%TY-%Tm-%Td %TH:%TM:%TS\\n' 2>/dev/null | sort -r | head -n1 | cut -d'.' -f1); echo \"$d|ok|${t:-unknown}\"; else echo \"$d|missing|-\"; fi; done", 5000);
 
   const snapshotNames = list.stdout.trim() ? list.stdout.trim().split("\n") : [];
   const snapshotRows = [];
@@ -2265,6 +2269,29 @@ app.get("/api/backups/status", async (_req, res) => {
     },
   ];
 
+  const timerValues = (backupTimerDetail.stdout || "").split("\n").map((x) => x.trim()).filter(Boolean);
+  const nextBackupAt = timerValues[0] || null;
+  const lastBackupTriggerAt = timerValues[1] || null;
+
+  const offsiteHistoryText = offsiteLogs.stdout || "";
+  const offsiteLastStartMatch = offsiteHistoryText.match(/\[(.*?)\]\s+offsite sync start \(smb\):.*$/gm);
+  const offsiteLastDoneMatch = offsiteHistoryText.match(/\[(.*?)\]\s+offsite sync done.*$/gm);
+  const parseBracketIso = (line) => {
+    const m = String(line || "").match(/^\[([^\]]+)\]/);
+    return m ? m[1] : null;
+  };
+  const offsiteLastStart = offsiteLastStartMatch?.length ? parseBracketIso(offsiteLastStartMatch[offsiteLastStartMatch.length - 1]) : null;
+  const offsiteLastDone = offsiteLastDoneMatch?.length ? parseBracketIso(offsiteLastDoneMatch[offsiteLastDoneMatch.length - 1]) : null;
+
+  const offsiteTargetRows = (offsiteTargets.stdout || "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => {
+      const [name, status, lastSyncAt] = l.split("|");
+      return { name, status, lastSyncAt };
+    });
+
   res.json({
     ok: true,
     latestSnapshot,
@@ -2280,6 +2307,16 @@ app.get("/api/backups/status", async (_req, res) => {
     retention: { daily: 14, weekly: 8, monthly: 6 },
     sourceStatus,
     logsText: logText,
+    nextBackupAt,
+    lastBackupTriggerAt,
+    offsite: {
+      mode: "smb",
+      mountReady: offsiteRoot.stdout.trim() === "yes",
+      lastSyncStartAt: offsiteLastStart,
+      lastSyncDoneAt: offsiteLastDone,
+      targets: offsiteTargetRows,
+      historyTail: offsiteHistoryText.split("\n").slice(-60).join("\n"),
+    },
   });
 });
 
@@ -2288,6 +2325,14 @@ app.post("/api/backups/run", async (_req, res) => {
   if (!run.ok) return res.status(500).json(run);
   const status = await shell("systemctl status mithril-backup.service --no-pager -n 30 || true", 3000);
   return res.json({ ok: true, run, status: status.stdout });
+});
+
+app.post("/api/backups/run-offsite", async (_req, res) => {
+  const cmd = "sudo OFFSITE_SYNC=1 MODE=smb SMB_MOUNT=/mnt/synology_backup SMB_ROOT=backups /mithril-os/scripts/backup-offsite-synology.sh";
+  const run = await shell(cmd, 120000);
+  if (!run.ok) return res.status(500).json(run);
+  const tail = await shell("tail -n 120 /backup/backup-history.log 2>/dev/null || true", 3000);
+  return res.json({ ok: true, run, history: tail.stdout || "" });
 });
 
 async function getScheduledJobsRows() {
