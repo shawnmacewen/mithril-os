@@ -9,7 +9,7 @@ Use these as source-of-truth paths for host operations.
 - Ops Console app: `/mithril-os/apps/ops-console`
 
 ## Project Repos
-- BW-Shell: `/home/mini-home-lab/work/bw-shell`
+- BW-Shell: `/home/mini-home-lab/.openclaw/workspace/work/bw-shell`
 - Railfin: `/home/mini-home-lab/work/railfin.io`
 
 ## Home Assistant

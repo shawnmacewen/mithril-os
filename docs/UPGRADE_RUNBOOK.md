@@ -9,7 +9,7 @@ This runbook is for the mini-pc setup where OpenClaw is managed via Docker Compo
 - Mithril-OS live repo: `/mithril-os`
 - Ops Console app: `/mithril-os/apps/ops-console`
 - Host productivity vault: `/home/mini-home-lab/.openclaw/workspace/productivity/Personal Assistant`
-- BW-Shell repo: `/home/mini-home-lab/work/bw-shell`
+- BW-Shell repo: `/home/mini-home-lab/.openclaw/workspace/work/bw-shell`
 - Railfin repo: `/home/mini-home-lab/work/railfin.io`
 - Home Assistant config: `/home/mini-home-lab/homelab/homeassistant/config`
 - Synology SMB mount (offsite mode): `/mnt/synology_backup`

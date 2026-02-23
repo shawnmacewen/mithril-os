@@ -107,8 +107,8 @@ if [[ "$MODE" == "ssh" ]]; then
 
   sync_one_any_ssh "$SYN_ROOT/openclaw" "/home/mini-home-lab/.openclaw"
   sync_one_any_ssh "$SYN_ROOT/mithril-os" "/mithril-os"
-  sync_one_any_ssh "$SYN_ROOT/bw-shell" "/home/mini-home-lab/work/bw-shell" "/home/mini-home-lab/.openclaw/workspace/work/bw-shell"
-  sync_one_any_ssh "$SYN_ROOT/railfin-io" "/home/mini-home-lab/work/railfin.io" "/home/mini-home-lab/.openclaw/workspace/work/railfin.io"
+  sync_one_any_ssh "$SYN_ROOT/bw-shell" "/home/mini-home-lab/.openclaw/workspace/work/bw-shell"
+  sync_one_any_ssh "$SYN_ROOT/railfin-io" "/home/mini-home-lab/work/railfin.io"
   sync_one_any_ssh "$SYN_ROOT/homeassistant" "/home/mini-home-lab/homelab/homeassistant/config"
   sync_one_any_ssh "$SYN_ROOT/productivity-vault" "/home/mini-home-lab/.openclaw/workspace/productivity/Personal Assistant"
 
@@ -123,8 +123,8 @@ elif [[ "$MODE" == "smb" ]]; then
 
   sync_one_any_local "$BASE/openclaw" "/home/mini-home-lab/.openclaw"
   sync_one_any_local "$BASE/mithril-os" "/mithril-os"
-  sync_one_any_local "$BASE/bw-shell" "/home/mini-home-lab/work/bw-shell" "/home/mini-home-lab/.openclaw/workspace/work/bw-shell"
-  sync_one_any_local "$BASE/railfin-io" "/home/mini-home-lab/work/railfin.io" "/home/mini-home-lab/.openclaw/workspace/work/railfin.io"
+  sync_one_any_local "$BASE/bw-shell" "/home/mini-home-lab/.openclaw/workspace/work/bw-shell"
+  sync_one_any_local "$BASE/railfin-io" "/home/mini-home-lab/work/railfin.io"
   sync_one_any_local "$BASE/homeassistant" "/home/mini-home-lab/homelab/homeassistant/config"
   sync_one_any_local "$BASE/productivity-vault" "/home/mini-home-lab/.openclaw/workspace/productivity/Personal Assistant"
 
