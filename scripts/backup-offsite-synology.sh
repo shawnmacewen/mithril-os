@@ -47,6 +47,30 @@ sync_one_local(){
   log "ok: $dst"
 }
 
+sync_one_any_ssh(){
+  local dst="$1"
+  shift
+  for src in "$@"; do
+    if [[ -d "$src" ]]; then
+      sync_one_ssh "$src" "$dst"
+      return 0
+    fi
+  done
+  log "warn: missing all sources for $dst ($*)"
+}
+
+sync_one_any_local(){
+  local dst="$1"
+  shift
+  for src in "$@"; do
+    if [[ -d "$src" ]]; then
+      sync_one_local "$src" "$dst"
+      return 0
+    fi
+  done
+  log "warn: missing all sources for $dst ($*)"
+}
+
 if [[ "$MODE" == "ssh" ]]; then
   if [[ -z "$SYN_HOST" || -z "$SYN_USER" ]]; then
     echo "SYN_HOST and SYN_USER are required for MODE=ssh" >&2
@@ -81,12 +105,12 @@ if [[ "$MODE" == "ssh" ]]; then
     '$SYN_ROOT/homeassistant' \
     '$SYN_ROOT/productivity-vault'"
 
-  sync_one_ssh "/home/mini-home-lab/.openclaw" "$SYN_ROOT/openclaw"
-  sync_one_ssh "/mithril-os" "$SYN_ROOT/mithril-os"
-  sync_one_ssh "/home/mini-home-lab/work/bw-shell" "$SYN_ROOT/bw-shell"
-  sync_one_ssh "/home/mini-home-lab/work/railfin.io" "$SYN_ROOT/railfin-io"
-  sync_one_ssh "/home/mini-home-lab/homelab/homeassistant/config" "$SYN_ROOT/homeassistant"
-  sync_one_ssh "/home/mini-home-lab/.openclaw/workspace/productivity/Personal Assistant" "$SYN_ROOT/productivity-vault"
+  sync_one_any_ssh "$SYN_ROOT/openclaw" "/home/mini-home-lab/.openclaw"
+  sync_one_any_ssh "$SYN_ROOT/mithril-os" "/mithril-os"
+  sync_one_any_ssh "$SYN_ROOT/bw-shell" "/home/mini-home-lab/work/bw-shell" "/home/mini-home-lab/.openclaw/workspace/work/bw-shell"
+  sync_one_any_ssh "$SYN_ROOT/railfin-io" "/home/mini-home-lab/work/railfin.io" "/home/mini-home-lab/.openclaw/workspace/work/railfin.io"
+  sync_one_any_ssh "$SYN_ROOT/homeassistant" "/home/mini-home-lab/homelab/homeassistant/config"
+  sync_one_any_ssh "$SYN_ROOT/productivity-vault" "/home/mini-home-lab/.openclaw/workspace/productivity/Personal Assistant"
 
 elif [[ "$MODE" == "smb" ]]; then
   if [[ ! -d "$SMB_MOUNT" ]]; then
@@ -97,12 +121,12 @@ elif [[ "$MODE" == "smb" ]]; then
   BASE="$SMB_MOUNT/$SMB_ROOT"
   log "offsite sync start (smb): mount=$SMB_MOUNT root=$BASE"
 
-  sync_one_local "/home/mini-home-lab/.openclaw" "$BASE/openclaw"
-  sync_one_local "/mithril-os" "$BASE/mithril-os"
-  sync_one_local "/home/mini-home-lab/work/bw-shell" "$BASE/bw-shell"
-  sync_one_local "/home/mini-home-lab/work/railfin.io" "$BASE/railfin-io"
-  sync_one_local "/home/mini-home-lab/homelab/homeassistant/config" "$BASE/homeassistant"
-  sync_one_local "/home/mini-home-lab/.openclaw/workspace/productivity/Personal Assistant" "$BASE/productivity-vault"
+  sync_one_any_local "$BASE/openclaw" "/home/mini-home-lab/.openclaw"
+  sync_one_any_local "$BASE/mithril-os" "/mithril-os"
+  sync_one_any_local "$BASE/bw-shell" "/home/mini-home-lab/work/bw-shell" "/home/mini-home-lab/.openclaw/workspace/work/bw-shell"
+  sync_one_any_local "$BASE/railfin-io" "/home/mini-home-lab/work/railfin.io" "/home/mini-home-lab/.openclaw/workspace/work/railfin.io"
+  sync_one_any_local "$BASE/homeassistant" "/home/mini-home-lab/homelab/homeassistant/config"
+  sync_one_any_local "$BASE/productivity-vault" "/home/mini-home-lab/.openclaw/workspace/productivity/Personal Assistant"
 
 else
   echo "Unsupported MODE=$MODE (use ssh or smb)" >&2
