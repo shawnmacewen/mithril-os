@@ -1,0 +1,10 @@
+# Place this file at: /home/mini-home-lab/openclaw/docker-compose.override.yml
+# Keep local/custom mounts here so upstream compose pulls do not wipe your policy.
+
+services:
+  openclaw-gateway:
+    volumes:
+      - /mithril-os:/mithril-os
+      - /home/mini-home-lab/work/bw-shell:/work/bw-shell
+      - /home/mini-home-lab/work/railfin.io:/work/railfin.io
+      - /home/mini-home-lab/homelab/homeassistant/config:/homeassistant/config
