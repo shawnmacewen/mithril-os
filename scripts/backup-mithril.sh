@@ -13,6 +13,10 @@ KEEP_MONTHLY="${KEEP_MONTHLY:-6}"
 # Optional gzip tarballs for portable off-device copy
 MAKE_TARBALLS="${MAKE_TARBALLS:-0}"
 
+# Optional offsite sync hook (best-effort)
+OFFSITE_SYNC="${OFFSITE_SYNC:-0}"
+OFFSITE_SCRIPT="${OFFSITE_SCRIPT:-/mithril-os/scripts/backup-offsite-synology.sh}"
+
 TIMESTAMP="$(date -u +%Y-%m-%d_%H%M%S)"
 SNAP="$SNAPSHOT_ROOT/$TIMESTAMP"
 
@@ -159,6 +163,18 @@ rm -f "$keep_set_file"
 
 log "backup done: snapshot=$SNAP"
 log "latest => $(readlink -f "$LATEST_LINK" || true)"
+
+if [ "$OFFSITE_SYNC" = "1" ]; then
+  if [ -x "$OFFSITE_SCRIPT" ]; then
+    if "$OFFSITE_SCRIPT"; then
+      log "ok: offsite sync complete"
+    else
+      log "warn: offsite sync failed"
+    fi
+  else
+    log "warn: offsite script missing or not executable ($OFFSITE_SCRIPT)"
+  fi
+fi
 
 {
   log "backup run complete"

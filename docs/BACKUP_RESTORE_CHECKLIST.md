@@ -109,7 +109,30 @@ Only use this when targeted restore is insufficient.
 
 ---
 
-## 7) Common recovery commands
+## 7) Optional offsite replication (Synology)
+
+One trigger, separate target folders:
+
+```bash
+OFFSITE_SYNC=1 \
+SYN_HOST=<synology-ip> \
+SYN_USER=<backup-user> \
+SYN_ROOT=/volume1/backups \
+/mithril-os/scripts/backup-mithril.sh
+```
+
+This calls:
+- `/mithril-os/scripts/backup-offsite-synology.sh`
+
+Targets are independent under Synology root:
+- `openclaw/`
+- `mithril-os/`
+- `bw-shell/`
+- `railfin-io/`
+- `homeassistant/`
+- `productivity-vault/`
+
+## 8) Common recovery commands
 
 ### Stuck Mithril deploy lock
 ```bash
