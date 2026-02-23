@@ -379,6 +379,16 @@
       .layout.nav-collapsed .switch-row .label-text,
       .layout.nav-collapsed #navToggleLabel { display:none; }
       .layout.nav-collapsed .theme-wrap { justify-items:center; }
+      #navToggle {
+        width:36px;
+        height:32px;
+        min-width:36px;
+        padding:0;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+      }
+      #navToggleIcon { font-size:14px; line-height:1; }
 
     </style>
   </head>
@@ -402,7 +412,7 @@
         </div>
 
         <div class="theme-wrap">
-          <button id="navToggle"><span id="navToggleLabel">Minimize Nav</span></button>
+          <button id="navToggle" title="Minimize Nav" aria-label="Minimize Nav"><span id="navToggleIcon">◀</span><span id="navToggleLabel" class="hidden">Minimize Nav</span></button>
           <div class="switch-row">
             <span class="label-text muted">Theme</span>
             <select id="themePicker" title="Select theme" style="min-width:140px;">
@@ -963,7 +973,15 @@
         const layout = document.getElementById('layoutRoot');
         layout.classList.toggle('nav-collapsed', Boolean(collapsed));
         localStorage.setItem('mithril-nav-collapsed', collapsed ? '1' : '0');
-        document.getElementById('navToggleLabel').textContent = collapsed ? 'Expand Nav' : 'Minimize Nav';
+        const nextLabel = collapsed ? 'Expand Nav' : 'Minimize Nav';
+        document.getElementById('navToggleLabel').textContent = nextLabel;
+        const btn = document.getElementById('navToggle');
+        if (btn) {
+          btn.title = nextLabel;
+          btn.setAttribute('aria-label', nextLabel);
+        }
+        const icon = document.getElementById('navToggleIcon');
+        if (icon) icon.textContent = collapsed ? '▶' : '◀';
       }
 
       function initNavCollapse(){
