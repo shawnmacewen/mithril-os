@@ -1796,7 +1796,16 @@
           renderConfigValidator(configDiag);
           renderCommitTimeline(commits);
           renderJobsTable(workBoard);
-          document.getElementById('upgradeChecklistMd').textContent = upgradeChecklist?.ok ? (upgradeChecklist.content || '') : (upgradeChecklist?.error || 'Checklist unavailable');
+          if (upgradeChecklist?.ok) {
+            document.getElementById('upgradeChecklistMd').textContent = upgradeChecklist.content || '';
+          } else {
+            try {
+              const mdFallback = await fetch('/openclaw-upgrade-checklist.md', { cache: 'no-store' }).then(r => r.ok ? r.text() : '');
+              document.getElementById('upgradeChecklistMd').textContent = mdFallback || (upgradeChecklist?.error || 'Checklist unavailable');
+            } catch {
+              document.getElementById('upgradeChecklistMd').textContent = upgradeChecklist?.error || 'Checklist unavailable';
+            }
+          }
           document.getElementById('auditRaw').textContent = JSON.stringify(audit, null, 2);
 
           await loadLogs();
