@@ -111,20 +111,31 @@ Only use this when targeted restore is insufficient.
 
 ## 7) Optional offsite replication (Synology)
 
-One trigger, separate target folders:
+One trigger, separate target folders.
 
+### Mode A: SSH rsync
 ```bash
 OFFSITE_SYNC=1 \
+MODE=ssh \
 SYN_HOST=<synology-ip> \
 SYN_USER=<backup-user> \
 SYN_ROOT=/volume1/backups \
 /mithril-os/scripts/backup-mithril.sh
 ```
 
+### Mode B: SMB-mounted share (recommended fallback)
+```bash
+OFFSITE_SYNC=1 \
+MODE=smb \
+SMB_MOUNT=/mnt/synology_backup \
+SMB_ROOT=backups \
+/mithril-os/scripts/backup-mithril.sh
+```
+
 This calls:
 - `/mithril-os/scripts/backup-offsite-synology.sh`
 
-Targets are independent under Synology root:
+Targets are independent under backup root:
 - `openclaw/`
 - `mithril-os/`
 - `bw-shell/`
