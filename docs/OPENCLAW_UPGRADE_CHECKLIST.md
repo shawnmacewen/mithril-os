@@ -37,7 +37,7 @@ Use this checklist every time you upgrade OpenClaw from the Docker repo.
 
 - `/home/mini-home-lab/openclaw:/host/openclaw`
 - `/mithril-os:/mithril-os`
-- `/home/mini-home-lab/work/bw-shell:/work/bw-shell`
+- `/home/mini-home-lab/.openclaw/workspace/work/bw-shell:/work/bw-shell`
 - `/home/mini-home-lab/work/railfin.io:/work/railfin.io`
 - `/home/mini-home-lab/homelab/homeassistant/config:/homeassistant/config`
 
@@ -74,7 +74,7 @@ docker compose config >/tmp/compose.rendered.yml && echo OK
 
 - [ ] Verify key mounts are active
   ```bash
-  docker inspect openclaw-gateway --format '{{range .Mounts}}{{println .Source "->" .Destination}}{{end}}' | grep -E '/host/openclaw|/mithril-os|/work/bw-shell|/work/railfin.io|/homeassistant/config'
+  docker inspect openclaw-gateway --format '{{range .Mounts}}{{println .Source "->" .Destination}}{{end}}' | grep -E '/host/openclaw|/mithril-os|/\.openclaw/workspace/work/bw-shell|/work/railfin.io|/homeassistant/config'
   ```
 
 - [ ] Verify API health
