@@ -908,6 +908,8 @@
       const views = ["dashboard","agents","openclaw","homeassistant","logs","projects","designsystem","backups","config"];
       let autoTimer = null;
       let cache = {};
+      let projectsLoaded = false;
+      let platformLoaded = false;
       const haColorDrafts = {};
 
       function showUiBootError(msg){
@@ -994,6 +996,13 @@
           const diagnosticsActive = (name === 'config' || name === 'openclaw' || name === 'backups' || name === 'logs') && v === 'config';
           link.classList.toggle("active", v === name || diagnosticsActive);
         });
+
+        if (name === 'projects') {
+          ensureProjectsLoaded().catch((e) => showUiBootError(`Projects load failed: ${e.message || e}`));
+        }
+        if (name === 'designsystem') {
+          ensurePlatformLoaded().catch((e) => showUiBootError(`Platform load failed: ${e.message || e}`));
+        }
       }
 
       function setLogsTab(tab){
@@ -1813,12 +1822,35 @@
         renderLogsTable(logsRows);
       }
 
+      async function ensureProjectsLoaded(){
+        if (projectsLoaded) return;
+        const projects = await jget('/api/project-monitor/overview');
+        cache.projects = projects;
+        renderProjectsOverview(projects || {});
+        projectsLoaded = true;
+      }
+
+      async function ensurePlatformLoaded(){
+        if (platformLoaded) return;
+        const [policies, changelog] = await Promise.all([
+          jget('/api/policies/overview'),
+          jget('/api/changelog/public')
+        ]);
+        cache.policies = policies;
+        cache.changelog = changelog;
+        renderPoliciesOverview(policies || {});
+        renderPublicChangelog(changelog || {});
+        platformLoaded = true;
+      }
+
       async function loadAll(){
         const stamp = document.getElementById('stamp');
         stamp.textContent = 'Refreshing…';
+        projectsLoaded = false;
+        platformLoaded = false;
 
         try {
-          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard, upgradeChecklist, backupRestoreChecklist] = await Promise.all([
+          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard, upgradeChecklist, backupRestoreChecklist] = await Promise.all([
             jget('/api/status'),
             jget('/api/openclaw/overview'),
             jget('/api/openclaw/deep'),
@@ -1827,9 +1859,6 @@
             jget('/api/agents/files'),
             jget('/api/agent-control/overview'),
             jget('/api/openclaw/models'),
-            jget('/api/project-monitor/overview'),
-            jget('/api/policies/overview'),
-            jget('/api/changelog/public'),
             jget('/api/watchers'),
             jget('/api/services/health'),
             jget('/api/config/diagnostics'),
@@ -1844,7 +1873,7 @@
             jget('/api/docs/backup-restore-checklist')
           ]);
 
-          cache = { status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard, upgradeChecklist, backupRestoreChecklist };
+          cache = { status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard, upgradeChecklist, backupRestoreChecklist };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
           document.getElementById('currentAgentName').textContent = 'OddEye';
@@ -1896,9 +1925,6 @@
           renderAgentMdUI(agentsFiles.rows || []);
           renderAgentControlOverview(agentControl || {});
           renderModelsTiles(models);
-          renderProjectsOverview(projects || {});
-          renderPoliciesOverview(policies || {});
-          renderPublicChangelog(changelog || {});
           document.getElementById('modelsRaw').textContent = JSON.stringify(models, null, 2);
           renderHaArea('haOffice', haAreas.grouped?.office || []);
           renderHaArea('haBedroom', haAreas.grouped?.bedroom || []);
@@ -1934,6 +1960,10 @@
             }
           }
           document.getElementById('auditRaw').textContent = JSON.stringify(audit, null, 2);
+
+          const currentView = (location.hash || '#dashboard').replace('#','');
+          if (currentView === 'projects') await ensureProjectsLoaded();
+          if (currentView === 'designsystem' || currentView === 'policies' || currentView === 'changelog') await ensurePlatformLoaded();
         } catch (e) {
           const msg = `Error: ${e.message || e}`;
           stamp.textContent = msg;
