@@ -23,7 +23,9 @@ SMB_MOUNT="${SMB_MOUNT:-/mnt/synology_backup}"
 SMB_ROOT="${SMB_ROOT:-backups}"
 
 RSYNC_FLAGS="${RSYNC_FLAGS:--aHAX --delete}"
-RSYNC_FLAGS_SMB="${RSYNC_FLAGS_SMB:--aH --delete}"
+# SMB/CIFS targets often don't support Linux symlinks/ACL/xattrs.
+# Use copy-links so symlinked files are copied as regular files.
+RSYNC_FLAGS_SMB="${RSYNC_FLAGS_SMB:--aH --delete --copy-links}"
 
 log(){ echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"; }
 
