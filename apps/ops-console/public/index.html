@@ -100,11 +100,8 @@
       .nav a[data-view='agents'] .nav-icon { color:#06b6d4; }
       .nav a[data-view='watchers'] .nav-icon { color:#f59e0b; }
       .nav a[data-view='openclaw'] .nav-icon { color:#3b82f6; }
-      .nav a[data-view='models'] .nav-icon { color:#ec4899; }
-      .nav a[data-view='logs'] .nav-icon { color:#ef4444; }
       .nav a[data-view='projects'] .nav-icon { color:#10b981; }
       .nav a[data-view='policies'] .nav-icon { color:#f97316; }
-      .nav a[data-view='changelog'] .nav-icon { color:#a78bfa; }
       .nav a[data-view='config'] .nav-icon { color:#14b8a6; }
       .layout.nav-collapsed .brand .brand-text,
       .layout.nav-collapsed .brand small,
@@ -403,10 +400,7 @@
           <a data-view="agents" href="#agents"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><path d="M12 6V3"/></svg>Agents</a>
           <a data-view="watchers" href="#watchers"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/></svg>Watchers</a>
           <a data-view="openclaw" href="#openclaw"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.7.5 1 1.1 1 1.8V18h6v-1.5c0-.7.3-1.3 1-1.8A7 7 0 0 0 12 2Z"/></svg>OpenClaw</a>
-          <a data-view="models" href="#models"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="12" cy="17" r="2"/><path d="M8 8.5l2.8 6"/><path d="M16 8.5l-2.8 6"/><path d="M8 7h8"/></svg>Models</a>
-          <a data-view="logs" href="#logs"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M16 3v4h4"/><path d="M8 11h8"/><path d="M8 15h8"/></svg>Logs</a>
           <a data-view="projects" href="#projects"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h18"/></svg>Projects</a>
-          <a data-view="changelog" href="#changelog"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M6 4h12"/><path d="M6 12h12"/><path d="M6 20h12"/><circle cx="4" cy="4" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="20" r="1"/></svg>Changelog</a>
           <a data-view="designsystem" href="#designsystem"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Platform</a>
           <a data-view="config" href="#config"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z"/></svg>Diagnostics</a>
         </div>
@@ -453,6 +447,7 @@
           <div class="toolbar ds-tabs" style="margin:0 0 8px;">
             <button id="agentsTabOverview" class="ds-tab is-active">Overview</button>
             <button id="agentsTabJobs" class="ds-tab">Jobs</button>
+            <button id="agentsTabModels" class="ds-tab">Models</button>
           </div>
 
           <div id="agentsOverviewPane">
@@ -573,6 +568,12 @@
               <div class="row"><span>Needs attention</span><strong id="scheduledJobsAttention">-</strong></div>
             </div>
           </div>
+
+          <div id="agentsModelsPane" class="hidden">
+            <h3>Models</h3>
+            <div id="modelsGrid" class="cards"></div>
+            <div class="card" style="margin-top:12px;"><details><summary>Show raw models JSON</summary><pre id="modelsRaw">Loading…</pre></details></div>
+          </div>
         </section>
 
         <section id="view-watchers" class="hidden">
@@ -641,11 +642,6 @@
 
           <div class="card" style="margin-top:12px;"><details><summary>OpenClaw Raw JSON</summary><pre id="openclawRaw">Loading…</pre></details></div>
         </section>
-        <section id="view-models" class="hidden">
-          <h2>Models</h2>
-          <div id="modelsGrid" class="cards"></div>
-          <div class="card" style="margin-top:12px;"><details><summary>Show raw models JSON</summary><pre id="modelsRaw">Loading…</pre></details></div>
-        </section>
         <section id="view-homeassistant" class="hidden ha-compact">
           <div class="ha-header-row">
             <h2>Home Assistant Controls</h2>
@@ -665,7 +661,15 @@
         </section>
 
         <section id="view-logs" class="hidden">
-          <h2>Logs</h2>
+          <h2>Diagnostics</h2>
+          <div class="toolbar" style="margin:0 0 10px;">
+            <button onclick="location.hash='config'">Overview</button>
+            <button onclick="location.hash='agents'; setTimeout(() => document.getElementById('agentsTabJobs')?.click(), 0);">Agent Jobs</button>
+            <button onclick="location.hash='backups'">Backups</button>
+            <button onclick="location.hash='logs'">Gateway Logs</button>
+            <button onclick="location.hash='audit'">Audit Trail</button>
+          </div>
+          <h3>Logs</h3>
           <div class="toolbar ds-tabs" style="margin:0 0 8px;">
             <button id="logsTabGateway" class="ds-tab is-active">Gateway Logs</button>
             <button id="logsTabAudit" class="ds-tab">Audit Trail</button>
@@ -722,14 +726,7 @@
         </section>
 
 
-        <section id="view-changelog" class="hidden">
-          <h2>Public Changelog</h2>
-          <div class="card" style="margin-bottom:12px;">
-            <div id="changelogHeader" class="muted">Loading changelog…</div>
-          </div>
-          <div id="changelogCards" class="cards"></div>
-          <div class="card" style="margin-top:12px;"><details><summary>Changelog Raw JSON</summary><pre id="changelogRaw">Loading…</pre></details></div>
-        </section>
+        
 
         <section id="view-backups" class="hidden">
           <h2>Diagnostics</h2>
@@ -737,6 +734,8 @@
             <button onclick="location.hash='config'">Overview</button>
             <button onclick="location.hash='agents'; setTimeout(() => document.getElementById('agentsTabJobs')?.click(), 0);">Agent Jobs</button>
             <button onclick="location.hash='backups'">Backups</button>
+            <button onclick="location.hash='logs'">Gateway Logs</button>
+            <button onclick="location.hash='audit'">Audit Trail</button>
           </div>
           <h3>Backups</h3>
 
@@ -785,6 +784,7 @@
           <div class="toolbar ds-tabs" style="margin:0 0 8px;">
             <button id="platformTabDesign" class="ds-tab is-active">Design System</button>
             <button id="platformTabPolicies" class="ds-tab">Policies</button>
+            <button id="platformTabChangelog" class="ds-tab">Changelog</button>
           </div>
 
           <div id="platformDesignPane">
@@ -809,6 +809,14 @@
             </div>
             <div class="card" style="margin-top:12px;"><details><summary>Policies Raw JSON</summary><pre id="policiesRaw">Loading…</pre></details></div>
           </div>
+
+          <div id="platformChangelogPane" class="hidden">
+            <div class="card" style="margin-bottom:12px;">
+              <div id="changelogHeader" class="muted">Loading changelog…</div>
+            </div>
+            <div id="changelogCards" class="cards"></div>
+            <div class="card" style="margin-top:12px;"><details><summary>Changelog Raw JSON</summary><pre id="changelogRaw">Loading…</pre></details></div>
+          </div>
         </section>
 
         <section id="view-config" class="hidden">
@@ -817,6 +825,8 @@
             <button onclick="location.hash='config'">Overview</button>
             <button onclick="location.hash='agents'; setTimeout(() => document.getElementById('agentsTabJobs')?.click(), 0);">Agent Jobs</button>
             <button onclick="location.hash='backups'">Backups</button>
+            <button onclick="location.hash='logs'">Gateway Logs</button>
+            <button onclick="location.hash='audit'">Audit Trail</button>
           </div>
           <div class="toolbar">
             <button id="refreshBtn">Refresh</button>
@@ -873,7 +883,7 @@
     </div>
 
     <script>
-      const views = ["dashboard","agents","watchers","openclaw","models","homeassistant","logs","projects","changelog","designsystem","backups","config"];
+      const views = ["dashboard","agents","watchers","openclaw","homeassistant","logs","projects","designsystem","backups","config"];
       let autoTimer = null;
       let cache = {};
       const haColorDrafts = {};
@@ -959,7 +969,7 @@
           document.getElementById(`view-${v}`).classList.toggle("hidden", v !== name);
           const link = document.querySelector(`.nav a[data-view='${v}']`);
           if (!link) return;
-          const diagnosticsActive = (name === 'config' || name === 'backups') && v === 'config';
+          const diagnosticsActive = (name === 'config' || name === 'backups' || name === 'logs') && v === 'config';
           link.classList.toggle("active", v === name || diagnosticsActive);
         });
       }
@@ -979,31 +989,41 @@
       }
 
       function setAgentsTab(tab){
-        const active = tab === 'jobs' ? 'jobs' : 'overview';
+        const active = tab === 'jobs' ? 'jobs' : (tab === 'models' ? 'models' : 'overview');
         const overviewPane = document.getElementById('agentsOverviewPane');
         const jobsPane = document.getElementById('agentsJobsPane');
+        const modelsPane = document.getElementById('agentsModelsPane');
         const overviewBtn = document.getElementById('agentsTabOverview');
         const jobsBtn = document.getElementById('agentsTabJobs');
+        const modelsBtn = document.getElementById('agentsTabModels');
         overviewPane.classList.toggle('hidden', active !== 'overview');
         jobsPane.classList.toggle('hidden', active !== 'jobs');
+        modelsPane.classList.toggle('hidden', active !== 'models');
         overviewBtn.classList.toggle('is-active', active === 'overview');
         jobsBtn.classList.toggle('is-active', active === 'jobs');
+        modelsBtn.classList.toggle('is-active', active === 'models');
         overviewBtn.classList.toggle('active', active === 'overview');
         jobsBtn.classList.toggle('active', active === 'jobs');
+        modelsBtn.classList.toggle('active', active === 'models');
       }
 
       function setPlatformTab(tab){
-        const active = tab === 'policies' ? 'policies' : 'design';
+        const active = tab === 'policies' ? 'policies' : (tab === 'changelog' ? 'changelog' : 'design');
         const designPane = document.getElementById('platformDesignPane');
         const policiesPane = document.getElementById('platformPoliciesPane');
+        const changelogPane = document.getElementById('platformChangelogPane');
         const designBtn = document.getElementById('platformTabDesign');
         const policiesBtn = document.getElementById('platformTabPolicies');
+        const changelogBtn = document.getElementById('platformTabChangelog');
         designPane.classList.toggle('hidden', active !== 'design');
         policiesPane.classList.toggle('hidden', active !== 'policies');
+        changelogPane.classList.toggle('hidden', active !== 'changelog');
         designBtn.classList.toggle('is-active', active === 'design');
         policiesBtn.classList.toggle('is-active', active === 'policies');
+        changelogBtn.classList.toggle('is-active', active === 'changelog');
         designBtn.classList.toggle('active', active === 'design');
         policiesBtn.classList.toggle('active', active === 'policies');
+        changelogBtn.classList.toggle('active', active === 'changelog');
       }
 
       async function jget(url){
@@ -1861,14 +1881,27 @@
         function route(){
           let h = (location.hash || '#dashboard').replace('#','');
           if (h === 'services' || h === 'actions') h = 'config';
-          if (h === 'audit') h = 'logs';
+          if (h === 'audit') {
+            h = 'logs';
+            setTimeout(() => setLogsTab('audit'), 0);
+          } else if (h === 'logs') {
+            setTimeout(() => setLogsTab('gateway'), 0);
+          }
           if (h === 'jobs') {
             h = 'agents';
             setTimeout(() => setAgentsTab('jobs'), 0);
           }
+          if (h === 'models') {
+            h = 'agents';
+            setTimeout(() => setAgentsTab('models'), 0);
+          }
           if (h === 'policies') {
             h = 'designsystem';
             setTimeout(() => setPlatformTab('policies'), 0);
+          }
+          if (h === 'changelog') {
+            h = 'designsystem';
+            setTimeout(() => setPlatformTab('changelog'), 0);
           }
           showView(views.includes(h) ? h : 'dashboard');
         }
@@ -1891,8 +1924,10 @@
       document.getElementById('logsTabAudit').addEventListener('click', () => setLogsTab('audit'));
       document.getElementById('agentsTabOverview').addEventListener('click', () => setAgentsTab('overview'));
       document.getElementById('agentsTabJobs').addEventListener('click', () => { setAgentsTab('jobs'); loadJobs(); });
+      document.getElementById('agentsTabModels').addEventListener('click', () => setAgentsTab('models'));
       document.getElementById('platformTabDesign').addEventListener('click', () => setPlatformTab('design'));
       document.getElementById('platformTabPolicies').addEventListener('click', () => setPlatformTab('policies'));
+      document.getElementById('platformTabChangelog').addEventListener('click', () => setPlatformTab('changelog'));
       document.getElementById('loadLogsBtn').addEventListener('click', () => { logsPage = 1; loadLogs(); });
       document.getElementById('jobsRefreshBtn').addEventListener('click', loadJobs);
       document.getElementById('jobsKindFilter').addEventListener('change', loadJobs);
