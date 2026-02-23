@@ -81,7 +81,7 @@ if [[ "$MODE" == "ssh" ]]; then
   sync_one_ssh "/home/mini-home-lab/work/bw-shell" "$SYN_ROOT/bw-shell"
   sync_one_ssh "/home/mini-home-lab/work/railfin.io" "$SYN_ROOT/railfin-io"
   sync_one_ssh "/home/mini-home-lab/homelab/homeassistant/config" "$SYN_ROOT/homeassistant"
-  sync_one_ssh "/home/node/.openclaw/workspace/productivity/Personal Assistant" "$SYN_ROOT/productivity-vault"
+  sync_one_ssh "/home/mini-home-lab/.openclaw/workspace/productivity/Personal Assistant" "$SYN_ROOT/productivity-vault"
 
 elif [[ "$MODE" == "smb" ]]; then
   if [[ ! -d "$SMB_MOUNT" ]]; then
@@ -97,7 +97,7 @@ elif [[ "$MODE" == "smb" ]]; then
   sync_one_local "/home/mini-home-lab/work/bw-shell" "$BASE/bw-shell"
   sync_one_local "/home/mini-home-lab/work/railfin.io" "$BASE/railfin-io"
   sync_one_local "/home/mini-home-lab/homelab/homeassistant/config" "$BASE/homeassistant"
-  sync_one_local "/home/node/.openclaw/workspace/productivity/Personal Assistant" "$BASE/productivity-vault"
+  sync_one_local "/home/mini-home-lab/.openclaw/workspace/productivity/Personal Assistant" "$BASE/productivity-vault"
 
 else
   echo "Unsupported MODE=$MODE (use ssh or smb)" >&2
