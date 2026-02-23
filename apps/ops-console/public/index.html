@@ -1003,6 +1003,9 @@
         if (name === 'designsystem') {
           ensurePlatformLoaded().catch((e) => showUiBootError(`Platform load failed: ${e.message || e}`));
         }
+        if (name === 'config' || name === 'openclaw' || name === 'backups' || name === 'logs') {
+          ensureDiagnosticsLoaded().catch((e) => showUiBootError(`Diagnostics load failed: ${e.message || e}`));
+        }
       }
 
       function setLogsTab(tab){
@@ -1843,6 +1846,58 @@
         platformLoaded = true;
       }
 
+      async function ensureAgentJobsLoaded(){
+        if (cache.jobs && cache.workBoard) return;
+        const [jobs, workBoard] = await Promise.all([
+          jget('/api/scheduled-jobs'),
+          jget('/api/work/overview?limit=300')
+        ]);
+        cache.jobs = jobs;
+        cache.workBoard = workBoard;
+        renderScheduledJobs(jobs || {});
+        renderJobsTable(workBoard || {});
+      }
+
+      async function ensureDiagnosticsLoaded(){
+        if (cache.commits && cache.configDiag && cache.audit && cache.upgradeChecklist && cache.backupRestoreChecklist) return;
+        const [configDiag, audit, commits, upgradeChecklist, backupRestoreChecklist] = await Promise.all([
+          jget('/api/config/diagnostics'),
+          jget('/api/audit/trail'),
+          jget('/api/git/commits?limit=25'),
+          jget('/api/docs/openclaw-upgrade-checklist'),
+          jget('/api/docs/backup-restore-checklist')
+        ]);
+        cache.configDiag = configDiag;
+        cache.audit = audit;
+        cache.commits = commits;
+        cache.upgradeChecklist = upgradeChecklist;
+        cache.backupRestoreChecklist = backupRestoreChecklist;
+        renderConfigValidator(configDiag || {});
+        renderCommitTimeline(commits || {});
+        document.getElementById('auditRaw').textContent = JSON.stringify(audit || {}, null, 2);
+        if (upgradeChecklist?.ok) {
+          document.getElementById('upgradeChecklistMd').textContent = upgradeChecklist.content || '';
+        } else {
+          try {
+            const mdFallback = await fetch('/openclaw-upgrade-checklist.md', { cache: 'no-store' }).then(r => r.ok ? r.text() : '');
+            document.getElementById('upgradeChecklistMd').textContent = mdFallback || (upgradeChecklist?.error || 'Checklist unavailable');
+          } catch {
+            document.getElementById('upgradeChecklistMd').textContent = upgradeChecklist?.error || 'Checklist unavailable';
+          }
+        }
+
+        if (backupRestoreChecklist?.ok) {
+          document.getElementById('backupRestoreChecklistMd').textContent = backupRestoreChecklist.content || '';
+        } else {
+          try {
+            const mdFallback = await fetch('/backup-restore-checklist.md', { cache: 'no-store' }).then(r => r.ok ? r.text() : '');
+            document.getElementById('backupRestoreChecklistMd').textContent = mdFallback || (backupRestoreChecklist?.error || 'Checklist unavailable');
+          } catch {
+            document.getElementById('backupRestoreChecklistMd').textContent = backupRestoreChecklist?.error || 'Checklist unavailable';
+          }
+        }
+      }
+
       async function loadAll(){
         const stamp = document.getElementById('stamp');
         stamp.textContent = 'Refreshing…';
@@ -1850,7 +1905,7 @@
         platformLoaded = false;
 
         try {
-          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard, upgradeChecklist, backupRestoreChecklist] = await Promise.all([
+          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, docker, haAreas, backups] = await Promise.all([
             jget('/api/status'),
             jget('/api/openclaw/overview'),
             jget('/api/openclaw/deep'),
@@ -1861,19 +1916,12 @@
             jget('/api/openclaw/models'),
             jget('/api/watchers'),
             jget('/api/services/health'),
-            jget('/api/config/diagnostics'),
-            jget('/api/audit/trail'),
-            jget('/api/git/commits?limit=25'),
             jget('/api/system/docker'),
             jget('/api/ha/areas'),
-            jget('/api/backups/status'),
-            jget('/api/scheduled-jobs'),
-            jget('/api/work/overview?limit=300'),
-            jget('/api/docs/openclaw-upgrade-checklist'),
-            jget('/api/docs/backup-restore-checklist')
+            jget('/api/backups/status')
           ]);
 
-          cache = { status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard, upgradeChecklist, backupRestoreChecklist };
+          cache = { ...cache, status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, docker, haAreas, backups };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
           document.getElementById('currentAgentName').textContent = 'OddEye';
@@ -1934,36 +1982,12 @@
           document.getElementById('haRaw').textContent = JSON.stringify(haAreas, null, 2);
 
           renderBackupsPage(backups);
-          renderScheduledJobs(jobs);
-          renderConfigValidator(configDiag);
-          renderCommitTimeline(commits);
-          renderJobsTable(workBoard);
-          if (upgradeChecklist?.ok) {
-            document.getElementById('upgradeChecklistMd').textContent = upgradeChecklist.content || '';
-          } else {
-            try {
-              const mdFallback = await fetch('/openclaw-upgrade-checklist.md', { cache: 'no-store' }).then(r => r.ok ? r.text() : '');
-              document.getElementById('upgradeChecklistMd').textContent = mdFallback || (upgradeChecklist?.error || 'Checklist unavailable');
-            } catch {
-              document.getElementById('upgradeChecklistMd').textContent = upgradeChecklist?.error || 'Checklist unavailable';
-            }
-          }
-
-          if (backupRestoreChecklist?.ok) {
-            document.getElementById('backupRestoreChecklistMd').textContent = backupRestoreChecklist.content || '';
-          } else {
-            try {
-              const mdFallback = await fetch('/backup-restore-checklist.md', { cache: 'no-store' }).then(r => r.ok ? r.text() : '');
-              document.getElementById('backupRestoreChecklistMd').textContent = mdFallback || (backupRestoreChecklist?.error || 'Checklist unavailable');
-            } catch {
-              document.getElementById('backupRestoreChecklistMd').textContent = backupRestoreChecklist?.error || 'Checklist unavailable';
-            }
-          }
-          document.getElementById('auditRaw').textContent = JSON.stringify(audit, null, 2);
 
           const currentView = (location.hash || '#dashboard').replace('#','');
           if (currentView === 'projects') await ensureProjectsLoaded();
           if (currentView === 'designsystem' || currentView === 'policies' || currentView === 'changelog') await ensurePlatformLoaded();
+          if (currentView === 'agents' || currentView === 'jobs' || currentView === 'watchers') await ensureAgentJobsLoaded();
+          if (currentView === 'config' || currentView === 'openclaw' || currentView === 'backups' || currentView === 'logs' || currentView === 'audit') await ensureDiagnosticsLoaded();
         } catch (e) {
           const msg = `Error: ${e.message || e}`;
           stamp.textContent = msg;
@@ -2021,7 +2045,7 @@
       document.getElementById('logsTabGateway').addEventListener('click', () => setLogsTab('gateway'));
       document.getElementById('logsTabAudit').addEventListener('click', () => setLogsTab('audit'));
       document.getElementById('agentsTabOverview').addEventListener('click', () => setAgentsTab('overview'));
-      document.getElementById('agentsTabJobs').addEventListener('click', () => { setAgentsTab('jobs'); loadJobs(); });
+      document.getElementById('agentsTabJobs').addEventListener('click', () => { setAgentsTab('jobs'); ensureAgentJobsLoaded(); loadJobs(); });
       document.getElementById('agentsTabModels').addEventListener('click', () => setAgentsTab('models'));
       document.getElementById('platformTabDesign').addEventListener('click', () => setPlatformTab('design'));
       document.getElementById('platformTabPolicies').addEventListener('click', () => setPlatformTab('policies'));
@@ -2048,8 +2072,8 @@
         document.getElementById('offsiteHistory').textContent = out.ok ? (out.history || 'Offsite sync completed.') : JSON.stringify(out, null, 2);
         await loadAll();
       });
-      document.getElementById('commitsPrev').addEventListener('click', () => { commitsPage = Math.max(1, commitsPage - 1); renderCommitTimeline(cache.commits || { ok:true, rows:[] }); });
-      document.getElementById('commitsNext').addEventListener('click', () => { commitsPage = commitsPage + 1; renderCommitTimeline(cache.commits || { ok:true, rows:[] }); });
+      document.getElementById('commitsPrev').addEventListener('click', async () => { commitsPage = Math.max(1, commitsPage - 1); await ensureDiagnosticsLoaded(); renderCommitTimeline(cache.commits || { ok:true, rows:[] }); });
+      document.getElementById('commitsNext').addEventListener('click', async () => { commitsPage = commitsPage + 1; await ensureDiagnosticsLoaded(); renderCommitTimeline(cache.commits || { ok:true, rows:[] }); });
 
       document.querySelectorAll('button[data-action]').forEach(btn => {
         btn.addEventListener('click', async () => {

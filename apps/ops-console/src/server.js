@@ -2259,51 +2259,53 @@ app.get("/api/backups/status", async (_req, res) => {
   }
 
   const logText = logs.stdout || "";
+  const offsiteHistoryText = offsiteLogs.stdout || "";
   const sourceLogText = `${logText}\n${offsiteHistoryText}`;
+
+  const [srcOpenclaw, srcHA, srcMithril, srcBWShell, srcRailfin, srcObsidian] = await Promise.all([
+    shell("test -d /home/mini-home-lab/.openclaw && echo yes || echo no", 800),
+    shell("test -d /home/mini-home-lab/homelab/homeassistant/config && echo yes || echo no", 800),
+    shell("test -d /mithril-os && echo yes || echo no", 800),
+    shell("test -d '/home/mini-home-lab/.openclaw/workspace/work/bw-shell' && echo yes || echo no", 800),
+    shell("test -d '/home/mini-home-lab/work/railfin.io' && echo yes || echo no", 800),
+    shell("test -d '/home/mini-home-lab/.openclaw/workspace/productivity/Personal Assistant' && echo yes || echo no", 800),
+  ]);
+
+  const sourceExists = {
+    openclaw: srcOpenclaw.stdout.trim() === "yes",
+    homeassistant: srcHA.stdout.trim() === "yes",
+    mithril: srcMithril.stdout.trim() === "yes",
+    bwshell: srcBWShell.stdout.trim() === "yes",
+    railfin: srcRailfin.stdout.trim() === "yes",
+    obsidian: srcObsidian.stdout.trim() === "yes",
+  };
+
+  const statusFrom = (ok, exists) => {
+    if (ok) return { ok: true, detail: "copied" };
+    if (!exists) return { ok: false, detail: "missing source" };
+    return { ok: false, detail: "empty source or not confirmed" };
+  };
+
+  const openclawState = statusFrom(sourceLogText.includes("ok: copied /home/mini-home-lab/.openclaw"), sourceExists.openclaw);
+  const haState = statusFrom(sourceLogText.includes("ok: copied /home/mini-home-lab/homelab/homeassistant/config"), sourceExists.homeassistant);
+  const mithrilState = statusFrom(sourceLogText.includes("ok: copied /mithril-os"), sourceExists.mithril);
+  const bwState = statusFrom(sourceLogText.includes("ok: copied /home/mini-home-lab/.openclaw/workspace/work/bw-shell"), sourceExists.bwshell);
+  const railfinState = statusFrom(sourceLogText.includes("ok: copied /home/mini-home-lab/work/railfin.io"), sourceExists.railfin);
+  const obsidianCopied = /ok:\s+copied\s+obsidian\s+vault/i.test(sourceLogText);
+  const obsidianState = statusFrom(obsidianCopied, sourceExists.obsidian);
+
   const sourceStatus = [
-    {
-      key: "openclaw",
-      name: "OpenClaw",
-      ok: sourceLogText.includes("ok: copied /home/mini-home-lab/.openclaw"),
-      detail: sourceLogText.includes("ok: copied /home/mini-home-lab/.openclaw") ? "copied" : "not confirmed",
-    },
-    {
-      key: "homeassistant",
-      name: "Home Assistant",
-      ok: sourceLogText.includes("ok: copied /home/mini-home-lab/homelab/homeassistant/config"),
-      detail: sourceLogText.includes("ok: copied /home/mini-home-lab/homelab/homeassistant/config") ? "copied" : "not confirmed",
-    },
-    {
-      key: "mithril",
-      name: "Mithril-OS",
-      ok: sourceLogText.includes("ok: copied /mithril-os"),
-      detail: sourceLogText.includes("ok: copied /mithril-os") ? "copied" : "not confirmed",
-    },
-    {
-      key: "bwshell",
-      name: "BW-Shell",
-      ok: sourceLogText.includes("ok: copied /home/mini-home-lab/.openclaw/workspace/work/bw-shell"),
-      detail: sourceLogText.includes("ok: copied /home/mini-home-lab/.openclaw/workspace/work/bw-shell") ? "copied" : "not confirmed",
-    },
-    {
-      key: "railfin",
-      name: "Railfin",
-      ok: sourceLogText.includes("ok: copied /home/mini-home-lab/work/railfin.io"),
-      detail: sourceLogText.includes("ok: copied /home/mini-home-lab/work/railfin.io") ? "copied" : "not confirmed",
-    },
-    {
-      key: "obsidian",
-      name: "Obsidian Vault",
-      ok: /ok:\s+copied\s+obsidian\s+vault/i.test(sourceLogText),
-      detail: /ok:\s+copied\s+obsidian\s+vault/i.test(sourceLogText) ? "copied" : "not confirmed",
-    },
+    { key: "openclaw", name: "OpenClaw", ...openclawState },
+    { key: "homeassistant", name: "Home Assistant", ...haState },
+    { key: "mithril", name: "Mithril-OS", ...mithrilState },
+    { key: "bwshell", name: "BW-Shell", ...bwState },
+    { key: "railfin", name: "Railfin", ...railfinState },
+    { key: "obsidian", name: "Obsidian Vault", ...obsidianState },
   ];
 
   const timerValues = (backupTimerDetail.stdout || "").split("\n").map((x) => x.trim()).filter(Boolean);
   const nextBackupAt = timerValues[0] || null;
   const lastBackupTriggerAt = timerValues[1] || null;
-
-  const offsiteHistoryText = offsiteLogs.stdout || "";
   const offsiteLastStartMatch = offsiteHistoryText.match(/\[(.*?)\]\s+offsite sync start \(smb\):.*$/gm);
   const offsiteLastDoneMatch = offsiteHistoryText.match(/\[(.*?)\]\s+offsite sync done.*$/gm);
   const parseBracketIso = (line) => {
