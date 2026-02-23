@@ -2259,42 +2259,43 @@ app.get("/api/backups/status", async (_req, res) => {
   }
 
   const logText = logs.stdout || "";
+  const sourceLogText = `${logText}\n${offsiteHistoryText}`;
   const sourceStatus = [
     {
       key: "openclaw",
       name: "OpenClaw",
-      ok: logText.includes("ok: copied /home/mini-home-lab/.openclaw"),
-      detail: logText.includes("ok: copied /home/mini-home-lab/.openclaw") ? "copied" : "not confirmed",
+      ok: sourceLogText.includes("ok: copied /home/mini-home-lab/.openclaw"),
+      detail: sourceLogText.includes("ok: copied /home/mini-home-lab/.openclaw") ? "copied" : "not confirmed",
     },
     {
       key: "homeassistant",
       name: "Home Assistant",
-      ok: logText.includes("ok: copied /home/mini-home-lab/homelab/homeassistant/config"),
-      detail: logText.includes("ok: copied /home/mini-home-lab/homelab/homeassistant/config") ? "copied" : "not confirmed",
+      ok: sourceLogText.includes("ok: copied /home/mini-home-lab/homelab/homeassistant/config"),
+      detail: sourceLogText.includes("ok: copied /home/mini-home-lab/homelab/homeassistant/config") ? "copied" : "not confirmed",
     },
     {
       key: "mithril",
       name: "Mithril-OS",
-      ok: logText.includes("ok: copied /mithril-os"),
-      detail: logText.includes("ok: copied /mithril-os") ? "copied" : "not confirmed",
+      ok: sourceLogText.includes("ok: copied /mithril-os"),
+      detail: sourceLogText.includes("ok: copied /mithril-os") ? "copied" : "not confirmed",
     },
     {
       key: "bwshell",
       name: "BW-Shell",
-      ok: logText.includes("ok: copied /home/mini-home-lab/.openclaw/workspace/work/bw-shell"),
-      detail: logText.includes("ok: copied /home/mini-home-lab/.openclaw/workspace/work/bw-shell") ? "copied" : "not confirmed",
+      ok: sourceLogText.includes("ok: copied /home/mini-home-lab/.openclaw/workspace/work/bw-shell"),
+      detail: sourceLogText.includes("ok: copied /home/mini-home-lab/.openclaw/workspace/work/bw-shell") ? "copied" : "not confirmed",
     },
     {
       key: "railfin",
       name: "Railfin",
-      ok: logText.includes("ok: copied /home/mini-home-lab/work/railfin.io"),
-      detail: logText.includes("ok: copied /home/mini-home-lab/work/railfin.io") ? "copied" : "not confirmed",
+      ok: sourceLogText.includes("ok: copied /home/mini-home-lab/work/railfin.io"),
+      detail: sourceLogText.includes("ok: copied /home/mini-home-lab/work/railfin.io") ? "copied" : "not confirmed",
     },
     {
       key: "obsidian",
       name: "Obsidian Vault",
-      ok: /ok:\s+copied\s+obsidian\s+vault/i.test(logText),
-      detail: /ok:\s+copied\s+obsidian\s+vault/i.test(logText) ? "copied" : "not confirmed",
+      ok: /ok:\s+copied\s+obsidian\s+vault/i.test(sourceLogText),
+      detail: /ok:\s+copied\s+obsidian\s+vault/i.test(sourceLogText) ? "copied" : "not confirmed",
     },
   ];
 
