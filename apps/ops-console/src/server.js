@@ -1789,6 +1789,22 @@ app.get("/api/changelog/public", async (_req, res) => {
   return res.status(404).json({ ok: false, error: "Public changelog not found" });
 });
 
+app.get("/api/docs/openclaw-upgrade-checklist", async (_req, res) => {
+  const candidates = [
+    "/mithril-os/docs/OPENCLAW_UPGRADE_CHECKLIST.md",
+    path.join(OPS_REPO_DIR, "docs/OPENCLAW_UPGRADE_CHECKLIST.md"),
+  ];
+  for (const p of candidates) {
+    try {
+      const content = await fs.readFile(p, "utf8");
+      return res.json({ ok: true, source: p, content });
+    } catch {
+      // try next
+    }
+  }
+  return res.status(404).json({ ok: false, error: "OpenClaw upgrade checklist not found" });
+});
+
 async function sendProjectsOverview(res) {
   const cfg = await readProjectsConfig();
   const rows = [];
@@ -2382,6 +2398,14 @@ app.post("/api/actions/:action", async (req, res) => {
     result = { ok: stop.ok && start.ok, stdout: JSON.stringify({ stop, start }), stderr: "" };
   } else if (action === "restart-homeassistant") {
     result = await shell("docker restart homeassistant", 15000);
+  } else if (action === "restart-openclaw-gateway") {
+    result = await shell("cd /home/mini-home-lab/openclaw && docker compose up -d --force-recreate openclaw-gateway socat-proxy", 120000);
+  } else if (action === "update-openclaw-gateway") {
+    result = await shell("/home/mini-home-lab/openclaw/oc-upgrade-safe.sh", 180000);
+  } else if (action === "logs-openclaw-gateway") {
+    result = await shell("docker logs --tail=120 openclaw-gateway", 15000);
+  } else if (action === "postupdate-openclaw-check") {
+    result = await shell("set -e; echo '== Compose working dir =='; docker inspect openclaw-gateway --format '{{ index .Config.Labels \"com.docker.compose.project.working_dir\" }}' || true; echo; echo '== Image =='; docker inspect openclaw-gateway --format '{{.Config.Image}}' || true; echo; echo '== Container status =='; docker ps --filter name=openclaw-gateway --format 'table {{.Names}}\\t{{.Image}}\\t{{.Status}}'; echo; echo '== API status =='; curl -sS http://127.0.0.1:3001/api/status || true", 30000);  
   } else {
     return res.status(404).json({ ok: false, error: `Unknown action: ${action}` });
   }

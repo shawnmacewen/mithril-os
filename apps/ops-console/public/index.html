@@ -835,6 +835,15 @@
 </div>
           <div class="card" style="margin-bottom:12px;"><h3>Action Output</h3><pre id="actionOutput">No action run yet.</pre></div>
 
+          <div class="card" style="margin-bottom:12px;">
+            <h3>OpenClaw Upgrade Checklist</h3>
+            <div class="muted">Loaded from <code>/mithril-os/docs/OPENCLAW_UPGRADE_CHECKLIST.md</code>.</div>
+            <details style="margin-top:8px;">
+              <summary>Show checklist</summary>
+              <pre id="upgradeChecklistMd" style="margin-top:8px; max-height:360px; overflow:auto;">Loading…</pre>
+            </details>
+          </div>
+
           <div class="card">
             <h3>Config Validator</h3>
             <div id="configSummary" class="muted">Loading…</div>
@@ -1714,7 +1723,7 @@
         stamp.textContent = 'Refreshing…';
 
         try {
-          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard] = await Promise.all([
+          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard, upgradeChecklist] = await Promise.all([
             jget('/api/status'),
             jget('/api/openclaw/overview'),
             jget('/api/openclaw/deep'),
@@ -1735,10 +1744,11 @@
             jget('/api/ha/areas'),
             jget('/api/backups/status'),
             jget('/api/scheduled-jobs'),
-            jget('/api/work/overview?limit=300')
+            jget('/api/work/overview?limit=300'),
+            jget('/api/docs/openclaw-upgrade-checklist')
           ]);
 
-          cache = { status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard };
+          cache = { status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard, upgradeChecklist };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
           document.getElementById('currentAgentName').textContent = 'OddEye';
@@ -1786,6 +1796,7 @@
           renderConfigValidator(configDiag);
           renderCommitTimeline(commits);
           renderJobsTable(workBoard);
+          document.getElementById('upgradeChecklistMd').textContent = upgradeChecklist?.ok ? (upgradeChecklist.content || '') : (upgradeChecklist?.error || 'Checklist unavailable');
           document.getElementById('auditRaw').textContent = JSON.stringify(audit, null, 2);
 
           await loadLogs();
