@@ -2486,6 +2486,8 @@ app.post("/api/actions/:action", async (req, res) => {
   let result;
   if (action === "deploy-ops-console") {
     result = await shell("/mithril-os/scripts/deploy-ops-console.sh", 20000);
+  } else if (action === "deploy-ops-console-unlock") {
+    result = await shell("sudo pkill -f '/mithril-os/scripts/deploy-ops-console.sh' || true; sudo pkill -f 'flock.*ops-console' || true; sudo rm -f /tmp/mithril-ops-console-deploy.lock /var/lock/mithril-ops-console-deploy.lock || true; /mithril-os/scripts/deploy-ops-console.sh", 30000);
   } else if (action === "restart-ops-console") {
     result = await shell("pkill -f 'node src/server.js' || true; cd /mithril-os/apps/ops-console && nohup npm run dev >/tmp/mithril-os-ops-console.log 2>&1 &", 8000);
   } else if (action === "restart-watcher") {
