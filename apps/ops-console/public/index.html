@@ -864,6 +864,14 @@
             <div class="card"><h3>Quick Actions</h3><button data-action="deploy-ops-console-unlock">Unlock + Deploy Ops Console</button> <button data-action="deploy-ops-console">Deploy Ops Console</button> <button data-action="restart-ops-console">Restart Ops Console</button></div>
             <div class="card"><h3>Service Actions</h3><button data-action="restart-watcher">Restart Watcher</button> <button class="danger" data-action="restart-homeassistant">Restart Home Assistant</button></div>
           </div>
+
+          <div class="card" style="margin-bottom:12px;">
+            <h3>Deploy Lock Status</h3>
+            <div class="row"><span>Lock present</span><strong id="deployLockPresent">-</strong></div>
+            <div class="row"><span>Active deploy process</span><strong id="deployLockProc">-</strong></div>
+            <pre id="deployLockDetails" style="margin-top:8px;">Loading…</pre>
+            <button id="refreshDeployLockBtn" style="margin-top:8px;">Refresh Lock Status</button>
+          </div>
 <div class="card">
 <h3>OpenClaw Updates</h3>
 <button data-action="update-openclaw-gateway">Update OpenClaw Gateway</button>
@@ -1858,8 +1866,30 @@
         renderJobsTable(workBoard || {});
       }
 
+      async function loadDeployLockStatus(){
+        const data = await jget('/api/deploy/lock-status');
+        if (!data?.ok) {
+          document.getElementById('deployLockPresent').textContent = 'ERROR';
+          document.getElementById('deployLockProc').textContent = '-';
+          document.getElementById('deployLockDetails').textContent = data?.error || 'Unable to load lock status';
+          return;
+        }
+        document.getElementById('deployLockPresent').innerHTML = `<span class='status-pill ${data.lockPresent ? 'warn':'ok'}'>${data.lockPresent ? 'YES' : 'NO'}</span>`;
+        document.getElementById('deployLockProc').textContent = data.activeProcesses ? 'YES' : 'NO';
+        const details = [];
+        for (const l of (data.locks || [])) {
+          details.push(`${l.path} | age=${l.ageSec ?? '-'}s | size=${l.size}`);
+        }
+        if (data.activeProcesses) {
+          details.push('');
+          details.push('Processes:');
+          details.push(data.activeProcesses);
+        }
+        document.getElementById('deployLockDetails').textContent = details.join('\n') || 'No lock files found.';
+      }
+
       async function ensureDiagnosticsLoaded(){
-        if (cache.commits && cache.configDiag && cache.audit && cache.upgradeChecklist && cache.backupRestoreChecklist) return;
+        if (cache.commits && cache.configDiag && cache.audit && cache.upgradeChecklist && cache.backupRestoreChecklist) { await loadDeployLockStatus(); return; }
         const [configDiag, audit, commits, upgradeChecklist, backupRestoreChecklist] = await Promise.all([
           jget('/api/config/diagnostics'),
           jget('/api/audit/trail'),
@@ -1896,6 +1926,8 @@
             document.getElementById('backupRestoreChecklistMd').textContent = backupRestoreChecklist?.error || 'Checklist unavailable';
           }
         }
+
+        await loadDeployLockStatus();
       }
 
       async function loadAll(){
@@ -2051,6 +2083,7 @@
       document.getElementById('platformTabPolicies').addEventListener('click', () => setPlatformTab('policies'));
       document.getElementById('platformTabChangelog').addEventListener('click', () => setPlatformTab('changelog'));
       document.getElementById('loadLogsBtn').addEventListener('click', () => { logsPage = 1; loadLogs(); });
+      document.getElementById('refreshDeployLockBtn').addEventListener('click', loadDeployLockStatus);
       document.getElementById('jobsRefreshBtn').addEventListener('click', loadJobs);
       document.getElementById('jobsKindFilter').addEventListener('change', loadJobs);
       document.getElementById('jobsStatusFilter').addEventListener('change', loadJobs);
@@ -2078,10 +2111,24 @@
       document.querySelectorAll('button[data-action]').forEach(btn => {
         btn.addEventListener('click', async () => {
           const action = btn.dataset.action;
-          if (!confirm(`Run action: ${action}?`)) return;
-          const out = await jpost(`/api/actions/${action}`, { confirm: 'yes' });
-          document.getElementById('actionOutput').textContent = JSON.stringify(out, null, 2);
-          await loadAll();
+          const risky = new Set(['restart-homeassistant','update-openclaw-gateway','restart-openclaw-gateway']);
+          const confirmText = risky.has(action)
+            ? `Run HIGH-IMPACT action: ${action}?`
+            : `Run action: ${action}?`;
+          if (!confirm(confirmText)) return;
+
+          const prevLabel = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = 'Running…';
+          try {
+            const out = await jpost(`/api/actions/${action}`, { confirm: 'yes' });
+            document.getElementById('actionOutput').textContent = JSON.stringify(out, null, 2);
+            await loadAll();
+          } finally {
+            btn.disabled = false;
+            btn.textContent = prevLabel;
+            await loadDeployLockStatus();
+          }
         });
       });
 

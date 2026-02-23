@@ -9,7 +9,10 @@
         "Navigation IA updated: Models moved under Agents, Changelog moved under Platform, and Diagnostics now groups OpenClaw, Backups, Logs, and Audit.",
         "Backups page expanded with offsite sync tracking (last start/done, mount readiness, per-target status) and a one-click 'Run Offsite Sync Now' action.",
         "Backup target coverage expanded to include BW-Shell and Railfin in local snapshot flow, with canonical path discipline aligned in docs/scripts.",
-        "Performance stabilization pass: backup status API now uses short TTL caching and logs load on-demand from Logs view to reduce startup latency."
+        "Performance stabilization pass: backup status API now uses short TTL caching and logs load on-demand from Logs view to reduce startup latency.",
+        "Dashboard refresh kept lean by lazy-loading heavy sections (projects, platform policies/changelog, diagnostics docs/commits/audit, and agent jobs/workboard) only when views are opened.",
+        "Diagnostics action safety improved with high-impact confirmation prompts and running-state button guards to prevent accidental double-trigger.",
+        "Diagnostics now includes Deploy Lock Status (lock-file presence/age + active process visibility) and a manual refresh control."
       ],
       "whyItMatters": "Operators get clearer backup visibility and cleaner navigation while restoring faster perceived load times during day-to-day use.",
       "tags": ["Backups", "Synology", "Navigation", "Performance"]

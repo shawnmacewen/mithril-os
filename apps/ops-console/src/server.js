@@ -2480,6 +2480,33 @@ app.get("/api/work/overview", async (req, res) => {
   res.json({ ok: true, summary, rows: rows.slice(0, limit) });
 });
 
+app.get("/api/deploy/lock-status", async (_req, res) => {
+  const lockPathA = "/tmp/mithril-ops-console-deploy.lock";
+  const lockPathB = "/var/lock/mithril-ops-console-deploy.lock";
+  const [a, b, proc] = await Promise.all([
+    shell(`if [ -e ${JSON.stringify(lockPathA)} ]; then stat -c '%n|%Y|%s' ${JSON.stringify(lockPathA)}; fi`, 1200),
+    shell(`if [ -e ${JSON.stringify(lockPathB)} ]; then stat -c '%n|%Y|%s' ${JSON.stringify(lockPathB)}; fi`, 1200),
+    shell("ps -eo pid,etimes,cmd | grep -E '/mithril-os/scripts/deploy-ops-console.sh|flock.*ops-console' | grep -v grep || true", 1500),
+  ]);
+
+  const nowSec = Math.floor(Date.now() / 1000);
+  const parseLock = (line) => {
+    if (!line) return null;
+    const [path, mtime, size] = String(line).trim().split("|");
+    const mt = Number(mtime || 0);
+    return {
+      path,
+      mtimeSec: mt || null,
+      ageSec: mt ? Math.max(0, nowSec - mt) : null,
+      size: Number(size || 0),
+    };
+  };
+
+  const locks = [parseLock(a.stdout.trim()), parseLock(b.stdout.trim())].filter(Boolean);
+  const lockPresent = locks.length > 0;
+  res.json({ ok: true, lockPresent, locks, activeProcesses: proc.stdout.trim() || "" });
+});
+
 app.post("/api/actions/:action", async (req, res) => {
   const action = req.params.action;
   const confirm = String(req.body?.confirm || "").toLowerCase() === "yes";
