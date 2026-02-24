@@ -1408,7 +1408,6 @@
         document.getElementById('backupStatusRaw').textContent = backups.serviceStatusText || 'No status';
         document.getElementById('backupLogs').textContent = backups.logsText || 'No logs yet';
 
-        const off = backups.offsite || {};
         document.getElementById('offsiteMode').textContent = off.mode || '-';
         document.getElementById('offsiteMount').innerHTML = `<span class='status-pill ${off.mountReady ? 'ok' : 'warn'}'>${off.mountReady ? 'READY' : 'NOT READY'}</span>`;
         document.getElementById('offsiteLastStart').textContent = fmt(off.lastSyncStartAt);
