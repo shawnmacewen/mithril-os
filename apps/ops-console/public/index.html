@@ -210,6 +210,9 @@
       }
       .ha-bulk-actions { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
       .ha-bulk-actions .ha-nav-btn { min-width:92px; }
+      .ha-blind-row { display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center; border:1px solid var(--border); border-radius:10px; padding:8px; margin-bottom:8px; }
+      .ha-blind-meta { display:flex; gap:8px; align-items:center; color:var(--muted); font-size:12px; }
+      .ha-blind-actions { display:flex; gap:6px; }
       .ha-device {
         --ha-power-size: 84px;
         display:grid;
@@ -674,6 +677,16 @@
             <button class="ha-nav-btn" data-ha-group="bedroom" data-ha-group-action="turn_off">Bedroom Off</button>
             <button class="ha-nav-btn" data-ha-group="living_room" data-ha-group-action="turn_off">Living Off</button>
             <button class="ha-nav-btn" data-ha-group="dining_room" data-ha-group-action="turn_off">Dining Off</button>
+          </div>
+
+          <div class="card" style="margin-bottom:12px;">
+            <h3 style="margin-top:0;">Blinds (Bond)</h3>
+            <div class="ha-bulk-actions">
+              <button class="ha-nav-btn" data-ha-cover-group-action="open_cover">All Blinds Open</button>
+              <button class="ha-nav-btn" data-ha-cover-group-action="close_cover">All Blinds Close</button>
+              <button class="ha-nav-btn" data-ha-cover-group-action="stop_cover">All Blinds Stop</button>
+            </div>
+            <div id="haBlindsList" class="muted">Loading blinds…</div>
           </div>
           <div class="cards">
             <div class="card"><h3>Office</h3><div id="haOffice">Loading…</div></div>
@@ -1881,14 +1894,48 @@
         });
       }
 
+      function renderHaBlinds(data){
+        const el = document.getElementById('haBlindsList');
+        const items = data?.items || [];
+        if (!items.length) {
+          el.innerHTML = `<div class='muted'>No blinds/covers found.</div>`;
+          return;
+        }
+        el.innerHTML = items.map((b) => {
+          const state = String(b.state || '-');
+          const pos = Number.isFinite(Number(b.currentPosition)) ? `${Math.round(Number(b.currentPosition))}%` : '-';
+          return `
+            <div class='ha-blind-row'>
+              <div>
+                <strong>${b.name || b.entity_id}</strong>
+                <div class='ha-blind-meta'>
+                  <span class='${state === 'open' ? 'active-badge' : 'inactive-badge'}'>${state}</span>
+                  <span>position: ${pos}</span>
+                  <span class='ha-info'>i<span class='ha-tooltip'>${b.entity_id}</span></span>
+                </div>
+              </div>
+              <div class='ha-blind-actions'>
+                <button class='ha-nav-btn' data-ha-cover-action='open_cover' data-entity='${b.entity_id}'>Open</button>
+                <button class='ha-nav-btn' data-ha-cover-action='stop_cover' data-entity='${b.entity_id}'>Stop</button>
+                <button class='ha-nav-btn' data-ha-cover-action='close_cover' data-entity='${b.entity_id}'>Close</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
       async function refreshHaAreas(){
-        const fresh = await jget('/api/ha/areas');
+        const [fresh, blinds] = await Promise.all([
+          jget('/api/ha/areas'),
+          jget('/api/ha/blinds')
+        ]);
         renderHaArea('haOffice', fresh.grouped?.office || []);
         renderHaArea('haBedroom', fresh.grouped?.bedroom || []);
         renderHaArea('haLivingRoom', fresh.grouped?.living_room || []);
         renderHaArea('haDiningRoom', fresh.grouped?.dining_room || []);
         renderHaArea('haOther', fresh.grouped?.other || []);
-        document.getElementById('haRaw').textContent = JSON.stringify(fresh, null, 2);
+        renderHaBlinds(blinds);
+        document.getElementById('haRaw').textContent = JSON.stringify({ ...fresh, blinds }, null, 2);
       }
 
       async function loadLogs(){
@@ -2038,7 +2085,7 @@
         platformLoaded = false;
 
         try {
-          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, docker, haAreas, backups] = await Promise.all([
+          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, docker, haAreas, haBlinds, backups] = await Promise.all([
             jget('/api/status'),
             jget('/api/openclaw/overview'),
             jget('/api/openclaw/deep'),
@@ -2051,10 +2098,11 @@
             jget('/api/services/health'),
             jget('/api/system/docker'),
             jget('/api/ha/areas'),
+            jget('/api/ha/blinds'),
             jget('/api/backups/status')
           ]);
 
-          cache = { ...cache, status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, docker, haAreas, backups };
+          cache = { ...cache, status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, docker, haAreas, haBlinds, backups };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
           document.getElementById('currentAgentName').textContent = 'OddEye';
@@ -2112,7 +2160,8 @@
           renderHaArea('haLivingRoom', haAreas.grouped?.living_room || []);
           renderHaArea('haDiningRoom', haAreas.grouped?.dining_room || []);
           renderHaArea('haOther', haAreas.grouped?.other || []);
-          document.getElementById('haRaw').textContent = JSON.stringify(haAreas, null, 2);
+          renderHaBlinds(haBlinds || {});
+          document.getElementById('haRaw').textContent = JSON.stringify({ ...haAreas, blinds: haBlinds }, null, 2);
 
           renderBackupsPage(backups);
 
@@ -2186,6 +2235,42 @@
           btn.textContent = 'Running…';
           try {
             await jpost('/api/ha/group/action', { area, action });
+            await refreshHaAreas();
+          } finally {
+            btn.disabled = false;
+            btn.textContent = prev;
+          }
+        });
+      });
+
+      document.addEventListener('click', async (ev) => {
+        const btn = ev.target.closest('button[data-ha-cover-action][data-entity]');
+        if (!btn) return;
+        const entity_id = btn.dataset.entity;
+        const action = btn.dataset.haCoverAction;
+        const prev = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '…';
+        try {
+          await jpost('/api/ha/cover/action', { entity_id, action });
+          await refreshHaAreas();
+        } finally {
+          btn.disabled = false;
+          btn.textContent = prev;
+        }
+      });
+
+      document.querySelectorAll('button[data-ha-cover-group-action]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const action = btn.dataset.haCoverGroupAction;
+          const label = btn.textContent?.trim() || action;
+          const needsConfirm = action === 'close_cover';
+          if (needsConfirm && !confirm(`Run ${label}?`)) return;
+          const prev = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = 'Running…';
+          try {
+            await jpost('/api/ha/cover/group-action', { action });
             await refreshHaAreas();
           } finally {
             btn.disabled = false;

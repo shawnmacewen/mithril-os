@@ -2015,6 +2015,62 @@ app.post("/api/ha/group/action", async (req, res) => {
   res.json({ ok: true, area, action: service, updated: entityIds.length, entityIds });
 });
 
+app.get("/api/ha/blinds", async (_req, res) => {
+  const states = await haRequest("/api/states");
+  if (!states.ok) return res.status(500).json(states);
+
+  const covers = (states.data || [])
+    .filter((s) => s.entity_id?.startsWith("cover."))
+    .map((s) => ({
+      entity_id: s.entity_id,
+      area: inferArea(s),
+      name: s.attributes?.friendly_name || s.entity_id,
+      state: s.state,
+      currentPosition: Number.isFinite(Number(s.attributes?.current_position)) ? Number(s.attributes?.current_position) : null,
+      supportedFeatures: Number(s.attributes?.supported_features || 0),
+    }));
+
+  const blinds = covers.filter((c) => /blind/i.test(c.entity_id) || /blind/i.test(c.name));
+  const selected = blinds.length ? blinds : covers;
+
+  res.json({ ok: true, items: selected, total: selected.length, source: blinds.length ? "blinds-filter" : "all-covers" });
+});
+
+app.post("/api/ha/cover/action", async (req, res) => {
+  const entityId = String(req.body?.entity_id || "");
+  const action = String(req.body?.action || "open_cover").toLowerCase();
+  if (!entityId || !entityId.startsWith("cover.")) return res.status(400).json({ ok: false, error: "cover entity_id required" });
+
+  const allowed = new Set(["open_cover", "close_cover", "stop_cover"]);
+  const service = allowed.has(action) ? action : "stop_cover";
+  const result = await haRequest(`/api/services/cover/${service}`, { method: "POST", body: { entity_id: entityId } });
+  if (!result.ok) return res.status(500).json(result);
+
+  res.json({ ok: true, entity_id: entityId, action: service, result: result.data || null });
+});
+
+app.post("/api/ha/cover/group-action", async (req, res) => {
+  const action = String(req.body?.action || "close_cover").toLowerCase();
+  const states = await haRequest("/api/states");
+  if (!states.ok) return res.status(500).json(states);
+
+  const covers = (states.data || [])
+    .filter((s) => s.entity_id?.startsWith("cover."))
+    .map((s) => ({ entity_id: s.entity_id, name: s.attributes?.friendly_name || s.entity_id }));
+  const blinds = covers.filter((c) => /blind/i.test(c.entity_id) || /blind/i.test(c.name));
+  const selected = blinds.length ? blinds : covers;
+
+  const allowed = new Set(["open_cover", "close_cover", "stop_cover"]);
+  const service = allowed.has(action) ? action : "stop_cover";
+  const entityIds = selected.map((c) => c.entity_id);
+  if (!entityIds.length) return res.json({ ok: true, updated: 0, note: "No cover entities matched selection." });
+
+  const result = await haRequest(`/api/services/cover/${service}`, { method: "POST", body: { entity_id: entityIds } });
+  if (!result.ok) return res.status(500).json(result);
+
+  res.json({ ok: true, action: service, updated: entityIds.length, entityIds });
+});
+
 app.get("/api/watchers", async (_req, res) => {
   res.json(await getWatchersStatus());
 });
