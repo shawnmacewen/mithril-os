@@ -1865,30 +1865,38 @@
           btn.addEventListener('click', async () => {
             const entity_id = btn.dataset.entity;
             const action = btn.dataset.haAction;
-            if (action === 'toggle') {
-              await jpost('/api/ha/entity/action', { entity_id, action: 'toggle' });
-            } else {
-              const b = el.querySelector(`input[type='range'][data-entity='${entity_id}'][data-kind='brightness']`);
-              const h = el.querySelector(`input[type='range'][data-entity='${entity_id}'][data-kind='hue']`);
-              const s = el.querySelector(`input[type='range'][data-entity='${entity_id}'][data-kind='sat']`);
-              const brightnessPct = Number(b?.value || 100);
-              const hue = Number(h?.value || 0);
-              const saturation = Number(s?.value || 100);
+            try {
               btn.disabled = true;
-              btn.classList.add('is-active');
-              await jpost('/api/ha/entity/action', { entity_id, action: 'turn_on', brightnessPct, hue, saturation });
-            }
-            const refreshAfterMs = action === 'apply-lighting' ? 900 : 0;
-            if (refreshAfterMs) await new Promise((resolve) => setTimeout(resolve, refreshAfterMs));
-            await refreshHaAreas();
-            if (action !== 'toggle') {
-              const freshBtn = document.querySelector(`button[data-ha-action='apply-lighting'][data-entity='${entity_id}']`);
-              if (freshBtn) {
-                freshBtn.classList.remove('flash-once');
-                void freshBtn.offsetWidth;
-                freshBtn.classList.add('flash-once');
-                setTimeout(() => freshBtn.classList.remove('flash-once'), 360);
+              if (action === 'toggle') {
+                await jpost('/api/ha/entity/action', { entity_id, action: 'toggle' });
+              } else {
+                const b = el.querySelector(`input[type='range'][data-entity='${entity_id}'][data-kind='brightness']`);
+                const h = el.querySelector(`input[type='range'][data-entity='${entity_id}'][data-kind='hue']`);
+                const s = el.querySelector(`input[type='range'][data-entity='${entity_id}'][data-kind='sat']`);
+                const brightnessPct = Number(b?.value || 100);
+                const hue = Number(h?.value || 0);
+                const saturation = Number(s?.value || 100);
+                btn.classList.add('is-active');
+                await jpost('/api/ha/entity/action', { entity_id, action: 'turn_on', brightnessPct, hue, saturation });
               }
+
+              // HA service calls can take a moment to settle state. Refresh with a short delay
+              // to avoid stale UI (especially noticeable on toggle actions).
+              const refreshAfterMs = action === 'apply-lighting' ? 900 : 700;
+              await new Promise((resolve) => setTimeout(resolve, refreshAfterMs));
+              await refreshHaAreas();
+
+              if (action !== 'toggle') {
+                const freshBtn = document.querySelector(`button[data-ha-action='apply-lighting'][data-entity='${entity_id}']`);
+                if (freshBtn) {
+                  freshBtn.classList.remove('flash-once');
+                  void freshBtn.offsetWidth;
+                  freshBtn.classList.add('flash-once');
+                  setTimeout(() => freshBtn.classList.remove('flash-once'), 360);
+                }
+              }
+            } finally {
+              btn.disabled = false;
             }
           });
         });
