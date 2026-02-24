@@ -208,6 +208,8 @@
         border-color: color-mix(in srgb, var(--highlight) 70%, var(--border));
         box-shadow: 0 0 0 1px color-mix(in srgb, var(--highlight) 45%, transparent);
       }
+      .ha-bulk-actions { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
+      .ha-bulk-actions .ha-nav-btn { min-width:92px; }
       .ha-device {
         --ha-power-size: 84px;
         display:grid;
@@ -664,6 +666,14 @@
               <button id="toggleHaOtherBtn" class="ha-nav-btn">Other</button>
               <button id="toggleHaRawBtn" class="ha-nav-btn">Raw JSON</button>
             </div>
+          </div>
+          <div class="ha-bulk-actions">
+            <button class="ha-nav-btn" data-ha-group="all" data-ha-group-action="turn_on">All Lights On</button>
+            <button class="ha-nav-btn" data-ha-group="all" data-ha-group-action="turn_off">All Lights Off</button>
+            <button class="ha-nav-btn" data-ha-group="office" data-ha-group-action="turn_off">Office Off</button>
+            <button class="ha-nav-btn" data-ha-group="bedroom" data-ha-group-action="turn_off">Bedroom Off</button>
+            <button class="ha-nav-btn" data-ha-group="living_room" data-ha-group-action="turn_off">Living Off</button>
+            <button class="ha-nav-btn" data-ha-group="dining_room" data-ha-group-action="turn_off">Dining Off</button>
           </div>
           <div class="cards">
             <div class="card"><h3>Office</h3><div id="haOffice">Loading…</div></div>
@@ -1857,13 +1867,7 @@
             }
             const refreshAfterMs = action === 'apply-lighting' ? 900 : 0;
             if (refreshAfterMs) await new Promise((resolve) => setTimeout(resolve, refreshAfterMs));
-            const fresh = await jget('/api/ha/areas');
-            renderHaArea('haOffice', fresh.grouped?.office || []);
-            renderHaArea('haBedroom', fresh.grouped?.bedroom || []);
-            renderHaArea('haLivingRoom', fresh.grouped?.living_room || []);
-            renderHaArea('haDiningRoom', fresh.grouped?.dining_room || []);
-            renderHaArea('haOther', fresh.grouped?.other || []);
-            document.getElementById('haRaw').textContent = JSON.stringify(fresh, null, 2);
+            await refreshHaAreas();
             if (action !== 'toggle') {
               const freshBtn = document.querySelector(`button[data-ha-action='apply-lighting'][data-entity='${entity_id}']`);
               if (freshBtn) {
@@ -1875,6 +1879,16 @@
             }
           });
         });
+      }
+
+      async function refreshHaAreas(){
+        const fresh = await jget('/api/ha/areas');
+        renderHaArea('haOffice', fresh.grouped?.office || []);
+        renderHaArea('haBedroom', fresh.grouped?.bedroom || []);
+        renderHaArea('haLivingRoom', fresh.grouped?.living_room || []);
+        renderHaArea('haDiningRoom', fresh.grouped?.dining_room || []);
+        renderHaArea('haOther', fresh.grouped?.other || []);
+        document.getElementById('haRaw').textContent = JSON.stringify(fresh, null, 2);
       }
 
       async function loadLogs(){
@@ -2159,6 +2173,26 @@
       };
       toggleHaCard('toggleHaOtherBtn', 'haOtherCard');
       toggleHaCard('toggleHaRawBtn', 'haRawCard');
+
+      document.querySelectorAll('button[data-ha-group][data-ha-group-action]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const area = btn.dataset.haGroup;
+          const action = btn.dataset.haGroupAction;
+          const label = btn.textContent?.trim() || `${area} ${action}`;
+          const needsConfirm = area === 'all' && action === 'turn_off';
+          if (needsConfirm && !confirm(`Run ${label}?`)) return;
+          const prev = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = 'Running…';
+          try {
+            await jpost('/api/ha/group/action', { area, action });
+            await refreshHaAreas();
+          } finally {
+            btn.disabled = false;
+            btn.textContent = prev;
+          }
+        });
+      });
 
       document.getElementById('refreshBtn').addEventListener('click', loadAll);
       document.getElementById('logsTabGateway').addEventListener('click', () => setLogsTab('gateway'));

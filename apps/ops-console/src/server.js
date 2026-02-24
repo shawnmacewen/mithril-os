@@ -1993,6 +1993,28 @@ app.post("/api/ha/entity/action", async (req, res) => {
   res.json({ ok: true, result: result.data || null });
 });
 
+app.post("/api/ha/group/action", async (req, res) => {
+  const area = String(req.body?.area || "all").toLowerCase();
+  const action = String(req.body?.action || "turn_off").toLowerCase();
+  const service = action === "turn_on" ? "turn_on" : "turn_off";
+
+  const states = await haRequest("/api/states");
+  if (!states.ok) return res.status(500).json(states);
+
+  const lights = (states.data || [])
+    .filter((s) => s.entity_id?.startsWith("light."))
+    .map((s) => ({ entity_id: s.entity_id, area: inferArea(s) }));
+
+  const selected = area === "all" ? lights : lights.filter((e) => e.area === area);
+  const entityIds = selected.map((e) => e.entity_id);
+  if (!entityIds.length) return res.json({ ok: true, updated: 0, note: "No light entities matched selection." });
+
+  const result = await haRequest(`/api/services/light/${service}`, { method: "POST", body: { entity_id: entityIds } });
+  if (!result.ok) return res.status(500).json(result);
+
+  res.json({ ok: true, area, action: service, updated: entityIds.length, entityIds });
+});
+
 app.get("/api/watchers", async (_req, res) => {
   res.json(await getWatchersStatus());
 });
