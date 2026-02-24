@@ -758,6 +758,7 @@
             <div class="card">
               <h3>Backup Health</h3>
               <div class="row"><span>Status</span><strong id="backupHealth">-</strong></div>
+              <div class="row"><span>Confidence</span><strong id="backupConfidence">-</strong></div>
               <div class="muted" id="backupHealthReason">-</div>
               <div class="row"><span>Latest snapshot</span><strong id="backupLatest">-</strong></div>
               <div class="row"><span>Snapshots</span><strong id="backupCount">-</strong></div>
@@ -903,6 +904,15 @@
             <div class="row"><span>Active deploy process</span><strong id="deployLockProc">-</strong></div>
             <pre id="deployLockDetails" style="margin-top:8px;">Loading…</pre>
             <button id="refreshDeployLockBtn" style="margin-top:8px;">Refresh Lock Status</button>
+          </div>
+
+          <div class="card" style="margin-bottom:12px;">
+            <h3>Deploy Center</h3>
+            <div class="row"><span>Latest commit</span><strong id="deployLatestCommit">-</strong></div>
+            <div class="row"><span>Latest commit time</span><strong id="deployLatestCommitTime">-</strong></div>
+            <div class="row"><span>Ops process running</span><strong id="deployOpsRunning">-</strong></div>
+            <pre id="deployCenterDetails" style="margin-top:8px;">Loading…</pre>
+            <button id="refreshDeployCenterBtn" style="margin-top:8px;">Refresh Deploy Center</button>
           </div>
 <div class="card">
 <h3>OpenClaw Updates</h3>
@@ -1379,6 +1389,15 @@
         };
 
         document.getElementById('backupHealth').innerHTML = `<span class='status-pill ${healthCls}'>${health.toUpperCase()}</span>`;
+        const localOk = backups.backupHealth === 'healthy';
+        const off = backups.offsite || {};
+        const offsiteOk = Boolean(off.mountReady && off.lastSyncDoneAt);
+        const targetRows = backups.sourceStatus || [];
+        const targetOkCount = targetRows.filter(t => t.ok).length;
+        const targetTotal = targetRows.length || 1;
+        const confidenceScore = Math.round(((localOk ? 45 : 0) + (offsiteOk ? 35 : 0) + (20 * (targetOkCount / targetTotal))));
+        const confCls = confidenceScore >= 85 ? 'ok' : (confidenceScore >= 60 ? 'warn' : 'bad');
+        document.getElementById('backupConfidence').innerHTML = `<span class='status-pill ${confCls}'>${confidenceScore}%</span>`;
         document.getElementById('backupHealthReason').textContent = backups.backupHealthReason || '';
         document.getElementById('backupLatest').textContent = backups.latestSnapshot || '-';
         document.getElementById('backupCount').textContent = String(backups.snapshotCount ?? '-');
@@ -1928,8 +1947,36 @@
         document.getElementById('deployLockDetails').textContent = details.join('\n') || 'No lock files found.';
       }
 
+      async function loadDeployCenter(){
+        const data = await jget('/api/deploy/center');
+        if (!data?.ok) {
+          document.getElementById('deployLatestCommit').textContent = 'ERROR';
+          document.getElementById('deployLatestCommitTime').textContent = '-';
+          document.getElementById('deployOpsRunning').textContent = '-';
+          document.getElementById('deployCenterDetails').textContent = data?.error || 'Unable to load deploy center';
+          return;
+        }
+        document.getElementById('deployLatestCommit').textContent = data.latestCommit?.hash || '-';
+        document.getElementById('deployLatestCommitTime').textContent = data.latestCommit?.time ? new Date(data.latestCommit.time).toLocaleString() : '-';
+        document.getElementById('deployOpsRunning').innerHTML = `<span class='status-pill ${data.opsRunning ? 'ok':'warn'}'>${data.opsRunning ? 'YES' : 'NO'}</span>`;
+        const lines = [];
+        if (data.latestCommit?.subject) lines.push(`Commit: ${data.latestCommit.subject}`);
+        if (data.deployLogMtime) lines.push(`Deploy log updated: ${new Date(data.deployLogMtime).toLocaleString()}`);
+        if (data.activeDeployProcesses) {
+          lines.push('');
+          lines.push('Active deploy-related processes:');
+          lines.push(data.activeDeployProcesses);
+        }
+        if (data.deployLogTail) {
+          lines.push('');
+          lines.push('Deploy log tail:');
+          lines.push(data.deployLogTail);
+        }
+        document.getElementById('deployCenterDetails').textContent = lines.join('\n') || 'No deploy metadata available.';
+      }
+
       async function ensureDiagnosticsLoaded(){
-        if (cache.commits && cache.configDiag && cache.audit && cache.upgradeChecklist && cache.backupRestoreChecklist) { await loadDeployLockStatus(); return; }
+        if (cache.commits && cache.configDiag && cache.audit && cache.upgradeChecklist && cache.backupRestoreChecklist) { await loadDeployLockStatus(); await loadDeployCenter(); return; }
         const [configDiag, audit, commits, upgradeChecklist, backupRestoreChecklist] = await Promise.all([
           jget('/api/config/diagnostics'),
           jget('/api/audit/trail'),
@@ -1968,6 +2015,7 @@
         }
 
         await loadDeployLockStatus();
+        await loadDeployCenter();
       }
 
       async function loadAll(){
@@ -2124,6 +2172,7 @@
       document.getElementById('platformTabChangelog').addEventListener('click', () => setPlatformTab('changelog'));
       document.getElementById('loadLogsBtn').addEventListener('click', () => { logsPage = 1; loadLogs(); });
       document.getElementById('refreshDeployLockBtn').addEventListener('click', loadDeployLockStatus);
+      document.getElementById('refreshDeployCenterBtn').addEventListener('click', loadDeployCenter);
       document.getElementById('jobsRefreshBtn').addEventListener('click', loadJobs);
       document.getElementById('jobsKindFilter').addEventListener('change', loadJobs);
       document.getElementById('jobsStatusFilter').addEventListener('change', loadJobs);

@@ -2480,6 +2480,28 @@ app.get("/api/work/overview", async (req, res) => {
   res.json({ ok: true, summary, rows: rows.slice(0, limit) });
 });
 
+app.get("/api/deploy/center", async (_req, res) => {
+  const [latestCommit, deployLogStat, procOps, procDeploy, deployLogTail] = await Promise.all([
+    shell("git -C /mithril-os log -1 --pretty=format:'%h|%cI|%s'", 1500),
+    shell("if [ -f /tmp/mithril-os-ops-console.log ]; then stat -c '%Y' /tmp/mithril-os-ops-console.log; fi", 1200),
+    shell("ps -eo pid,etimes,cmd | grep -E 'node .*ops-console|npm run dev' | grep -v grep || true", 1500),
+    shell("ps -eo pid,etimes,cmd | grep -E '/mithril-os/scripts/deploy-ops-console.sh|flock.*ops-console' | grep -v grep || true", 1500),
+    shell("tail -n 30 /tmp/mithril-os-ops-console.log 2>/dev/null || true", 1200),
+  ]);
+
+  const [hash, time, subject] = String(latestCommit.stdout || "").split("|");
+  const mtimeSec = Number((deployLogStat.stdout || "").trim() || 0);
+
+  res.json({
+    ok: true,
+    latestCommit: hash ? { hash, time, subject } : null,
+    deployLogMtime: mtimeSec ? new Date(mtimeSec * 1000).toISOString() : null,
+    opsRunning: Boolean((procOps.stdout || "").trim()),
+    activeDeployProcesses: (procDeploy.stdout || "").trim(),
+    deployLogTail: (deployLogTail.stdout || "").trim(),
+  });
+});
+
 app.get("/api/deploy/lock-status", async (_req, res) => {
   const lockPathA = "/tmp/mithril-ops-console-deploy.lock";
   const lockPathB = "/var/lock/mithril-ops-console-deploy.lock";
