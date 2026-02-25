@@ -802,7 +802,26 @@
               </div>
             </div>
             <div class="card" style="margin-top:10px;">
+              <h4 style="margin-top:0;">Task Summary</h4>
+              <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));">
+                <div class="card"><div class="muted">Total</div><strong id="railfinSumTotal">-</strong></div>
+                <div class="card"><div class="muted">Ready</div><strong id="railfinSumReady">-</strong></div>
+                <div class="card"><div class="muted">In Progress</div><strong id="railfinSumInProgress">-</strong></div>
+                <div class="card"><div class="muted">Review</div><strong id="railfinSumReview">-</strong></div>
+                <div class="card"><div class="muted">Blocked</div><strong id="railfinSumBlocked">-</strong></div>
+                <div class="card"><div class="muted">Done</div><strong id="railfinSumDone">-</strong></div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:10px;">
               <h4 style="margin-top:0;">Tasks</h4>
+              <div class="toolbar" style="margin:0 0 8px;">
+                <button class="ha-nav-btn" data-railfin-quick="all">All</button>
+                <button class="ha-nav-btn" data-railfin-quick="mine-dev">Dev lane</button>
+                <button class="ha-nav-btn" data-railfin-quick="mine-ui">UI lane</button>
+                <button class="ha-nav-btn" data-railfin-quick="mine-sec">Sec lane</button>
+                <button class="ha-nav-btn" data-railfin-quick="blocked">Blocked</button>
+                <button class="ha-nav-btn" data-railfin-quick="merge">Ready to Merge</button>
+              </div>
               <div class="toolbar" style="margin:0 0 8px;">
                 <select id="railfinFilterOwner"><option value="">owner: all</option><option>railfin-coo</option><option>railfin-dev</option><option>railfin-ui</option><option>railfin-sec</option></select>
                 <select id="railfinFilterLane"><option value="">lane: all</option><option value="coo">coo</option><option value="dev">dev</option><option value="ui">ui</option><option value="sec">sec</option></select>
@@ -813,6 +832,16 @@
                 <thead><tr><th>Task</th><th>Owner</th><th>Lane</th><th>Priority</th><th>Status</th><th>Branch/PR/Commit</th><th>Update</th></tr></thead>
                 <tbody><tr><td colspan="7" class="muted">Loading…</td></tr></tbody>
               </table>
+            </div>
+            <div class="grid2" style="margin-top:10px;">
+              <div class="card" style="margin-top:0;">
+                <h4 style="margin-top:0;">Merge Queue (review + PR)</h4>
+                <pre id="railfinMergeQueue">Loading…</pre>
+              </div>
+              <div class="card" style="margin-top:0;">
+                <h4 style="margin-top:0;">Blocked Tasks</h4>
+                <pre id="railfinBlockedList">Loading…</pre>
+              </div>
             </div>
             <div class="card" style="margin-top:10px;">
               <h4 style="margin-top:0;">Activity</h4>
@@ -1669,6 +1698,29 @@
         fillList('railfinRoadmapLater', roadmap.later || []);
 
         const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+
+        const count = (s) => tasks.filter((t) => t.status === s).length;
+        document.getElementById('railfinSumTotal').textContent = String(tasks.length);
+        document.getElementById('railfinSumReady').textContent = String(count('ready'));
+        document.getElementById('railfinSumInProgress').textContent = String(count('in_progress'));
+        document.getElementById('railfinSumReview').textContent = String(count('review'));
+        document.getElementById('railfinSumBlocked').textContent = String(count('blocked'));
+        document.getElementById('railfinSumDone').textContent = String(count('done'));
+
+        const mergeQueue = tasks
+          .filter((t) => t.status === 'review' && (t.pr || '').trim())
+          .slice(0, 30)
+          .map((t) => `${t.priority || '-'} | ${t.owner || '-'} | ${t.title || '-'} | PR ${t.pr}${t.branch ? ` | ${t.branch}` : ''}`)
+          .join('\n');
+        document.getElementById('railfinMergeQueue').textContent = mergeQueue || 'No review tasks with PR refs yet.';
+
+        const blockedList = tasks
+          .filter((t) => t.status === 'blocked')
+          .slice(0, 30)
+          .map((t) => `${t.priority || '-'} | ${t.owner || '-'} | ${t.title || '-'}${t.branch ? ` | ${t.branch}` : ''}`)
+          .join('\n');
+        document.getElementById('railfinBlockedList').textContent = blockedList || 'No blocked tasks.';
+
         const fOwner = document.getElementById('railfinFilterOwner')?.value || '';
         const fLane = document.getElementById('railfinFilterLane')?.value || '';
         const fStatus = document.getElementById('railfinFilterStatus')?.value || '';
@@ -2469,6 +2521,23 @@
       });
 
       document.addEventListener('click', async (ev) => {
+        const quick = ev.target.closest('button[data-railfin-quick]');
+        if (quick) {
+          const mode = quick.dataset.railfinQuick;
+          const ownerEl = document.getElementById('railfinFilterOwner');
+          const laneEl = document.getElementById('railfinFilterLane');
+          const statusEl = document.getElementById('railfinFilterStatus');
+          const priEl = document.getElementById('railfinFilterPriority');
+          ownerEl.value = ''; laneEl.value = ''; statusEl.value = ''; priEl.value = '';
+          if (mode === 'mine-dev') laneEl.value = 'dev';
+          if (mode === 'mine-ui') laneEl.value = 'ui';
+          if (mode === 'mine-sec') laneEl.value = 'sec';
+          if (mode === 'blocked') statusEl.value = 'blocked';
+          if (mode === 'merge') statusEl.value = 'review';
+          renderRailfinWork(cache.railfinWork || {});
+          return;
+        }
+
         const btn = ev.target.closest('button[data-railfin-save-refs]');
         if (!btn) return;
         const taskId = btn.dataset.railfinSaveRefs;
