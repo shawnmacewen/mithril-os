@@ -1916,6 +1916,9 @@ app.post("/api/project-work/:projectId/task", async (req, res) => {
   const owner = String(req.body?.owner || "railfin-coo").trim();
   const lane = String(req.body?.lane || "dev").trim();
   const priority = String(req.body?.priority || "p2").trim();
+  const branch = String(req.body?.branch || "").trim();
+  const pr = String(req.body?.pr || "").trim();
+  const commit = String(req.body?.commit || "").trim();
   if (!title) return res.status(400).json({ ok: false, error: "title required" });
 
   const out = await readProjectWork(projectId);
@@ -1927,6 +1930,9 @@ app.post("/api/project-work/:projectId/task", async (req, res) => {
     owner,
     lane,
     priority,
+    branch,
+    pr,
+    commit,
     status: "ready",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -1955,6 +1961,31 @@ app.post("/api/project-work/:projectId/task/:taskId/status", async (req, res) =>
   doc.tasks[idx].status = status;
   doc.tasks[idx].updatedAt = new Date().toISOString();
   doc.activity.unshift({ ts: new Date().toISOString(), type: "task_status", by, taskId, note: `status → ${status}` });
+  await writeProjectWork(projectId, doc);
+  return res.json({ ok: true, task: doc.tasks[idx] });
+});
+
+app.post("/api/project-work/:projectId/task/:taskId/refs", async (req, res) => {
+  const projectId = String(req.params.projectId || "railfin");
+  const taskId = String(req.params.taskId || "");
+  const by = String(req.body?.by || "main").trim();
+  const branch = String(req.body?.branch || "").trim();
+  const pr = String(req.body?.pr || "").trim();
+  const commit = String(req.body?.commit || "").trim();
+  if (!taskId) return res.status(400).json({ ok: false, error: "taskId required" });
+
+  const out = await readProjectWork(projectId);
+  const doc = out.data;
+  doc.tasks = Array.isArray(doc.tasks) ? doc.tasks : [];
+  doc.activity = Array.isArray(doc.activity) ? doc.activity : [];
+  const idx = doc.tasks.findIndex((t) => t.id === taskId);
+  if (idx === -1) return res.status(404).json({ ok: false, error: "task not found" });
+
+  doc.tasks[idx].branch = branch;
+  doc.tasks[idx].pr = pr;
+  doc.tasks[idx].commit = commit;
+  doc.tasks[idx].updatedAt = new Date().toISOString();
+  doc.activity.unshift({ ts: new Date().toISOString(), type: "task_refs", by, taskId, note: `refs updated (branch=${branch || '-'}, pr=${pr || '-'}, commit=${commit || '-'})` });
   await writeProjectWork(projectId, doc);
   return res.json({ ok: true, task: doc.tasks[idx] });
 });
