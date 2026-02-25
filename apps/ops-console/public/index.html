@@ -760,6 +760,44 @@
           <div class="card">
             <table id="projectsTable"><thead><tr><th>Project</th><th>Branch</th><th>Working tree</th><th>Latest commits</th></tr></thead><tbody><tr><td colspan="4" class="muted">Loading…</td></tr></tbody></table>
           </div>
+          <div class="card" style="margin-top:12px;">
+            <h3>Railfin Command Center</h3>
+            <div class="grid2">
+              <div>
+                <h4 style="margin:6px 0;">Roadmap</h4>
+                <div class="muted">Now</div><ul id="railfinRoadmapNow"></ul>
+                <div class="muted">Next</div><ul id="railfinRoadmapNext"></ul>
+                <div class="muted">Later</div><ul id="railfinRoadmapLater"></ul>
+              </div>
+              <div>
+                <h4 style="margin:6px 0;">Add Task</h4>
+                <input id="railfinTaskTitle" placeholder="Task title" style="width:100%; margin-bottom:8px;" />
+                <div class="toolbar" style="margin:0 0 8px;">
+                  <select id="railfinTaskOwner"><option>railfin-coo</option><option>railfin-dev</option><option>railfin-ui</option><option>railfin-sec</option></select>
+                  <select id="railfinTaskLane"><option value="coo">coo</option><option value="dev">dev</option><option value="ui">ui</option><option value="sec">sec</option></select>
+                  <select id="railfinTaskPriority"><option value="p1">p1</option><option value="p2" selected>p2</option><option value="p3">p3</option></select>
+                  <button id="railfinAddTaskBtn">Add</button>
+                </div>
+                <h4 style="margin:6px 0;">Log Note</h4>
+                <input id="railfinLogNote" placeholder="What happened?" style="width:100%; margin-bottom:8px;" />
+                <div class="toolbar" style="margin:0;">
+                  <select id="railfinLogBy"><option>railfin-coo</option><option>railfin-dev</option><option>railfin-ui</option><option>railfin-sec</option><option>main</option></select>
+                  <button id="railfinAddLogBtn">Log</button>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:10px;">
+              <h4 style="margin-top:0;">Tasks</h4>
+              <table id="railfinTasksTable">
+                <thead><tr><th>Task</th><th>Owner</th><th>Lane</th><th>Priority</th><th>Status</th><th>Update</th></tr></thead>
+                <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+              </table>
+            </div>
+            <div class="card" style="margin-top:10px;">
+              <h4 style="margin-top:0;">Activity</h4>
+              <pre id="railfinActivity">Loading…</pre>
+            </div>
+          </div>
           <div class="card" style="margin-top:12px;"><details><summary>Projects Raw JSON</summary><pre id="projectsRaw">Loading…</pre></details></div>
         </section>
 
@@ -1585,6 +1623,36 @@
         }).join('');
       }
 
+      function renderRailfinWork(payload){
+        const data = payload?.data || {};
+        const roadmap = data.roadmap || {};
+        const fillList = (id, rows=[]) => {
+          const el = document.getElementById(id);
+          el.innerHTML = (rows || []).length ? rows.map((x)=>`<li>${x}</li>`).join('') : '<li class="muted">None</li>';
+        };
+        fillList('railfinRoadmapNow', roadmap.now || []);
+        fillList('railfinRoadmapNext', roadmap.next || []);
+        fillList('railfinRoadmapLater', roadmap.later || []);
+
+        const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+        const tbody = document.querySelector('#railfinTasksTable tbody');
+        tbody.innerHTML = tasks.length ? tasks.slice(0, 60).map((t) => {
+          const opts = ['backlog','ready','in_progress','review','done','blocked','cancelled']
+            .map((s)=>`<option value='${s}' ${t.status===s?'selected':''}>${s}</option>`).join('');
+          return `<tr>
+            <td><strong>${t.title || '-'}</strong><div class='muted'>${t.id || ''}</div></td>
+            <td>${t.owner || '-'}</td>
+            <td>${t.lane || '-'}</td>
+            <td>${t.priority || '-'}</td>
+            <td><span class='status-pill ${t.status==='done'?'ok':(t.status==='blocked'?'bad':'warn')}'><span>${t.status || '-'}</span></span></td>
+            <td><select data-railfin-task-status='${t.id}' style='min-width:130px;'>${opts}</select></td>
+          </tr>`;
+        }).join('') : `<tr><td colspan='6' class='muted'>No tasks yet.</td></tr>`;
+
+        const activity = Array.isArray(data.activity) ? data.activity : [];
+        document.getElementById('railfinActivity').textContent = activity.slice(0, 80).map((a) => `${a.ts || '-'} | ${a.by || '-'} | ${a.type || '-'} | ${a.note || ''}${a.taskId ? ` (${a.taskId})` : ''}`).join('\n') || 'No activity yet.';
+      }
+
       function renderPoliciesOverview(data){
         document.getElementById('policiesRaw').textContent = JSON.stringify(data || {}, null, 2);
         if (!data?.ok) {
@@ -1962,9 +2030,14 @@
 
       async function ensureProjectsLoaded(){
         if (projectsLoaded) return;
-        const projects = await jget('/api/project-monitor/overview');
+        const [projects, railfinWork] = await Promise.all([
+          jget('/api/project-monitor/overview'),
+          jget('/api/project-work/railfin')
+        ]);
         cache.projects = projects;
+        cache.railfinWork = railfinWork;
         renderProjectsOverview(projects || {});
+        renderRailfinWork(railfinWork || {});
         projectsLoaded = true;
       }
 
@@ -2288,6 +2361,39 @@
       });
 
       document.getElementById('refreshBtn').addEventListener('click', loadAll);
+
+      document.getElementById('railfinAddTaskBtn').addEventListener('click', async () => {
+        const title = document.getElementById('railfinTaskTitle').value.trim();
+        const owner = document.getElementById('railfinTaskOwner').value;
+        const lane = document.getElementById('railfinTaskLane').value;
+        const priority = document.getElementById('railfinTaskPriority').value;
+        if (!title) return;
+        await jpost('/api/project-work/railfin/task', { title, owner, lane, priority });
+        document.getElementById('railfinTaskTitle').value = '';
+        projectsLoaded = false;
+        await ensureProjectsLoaded();
+      });
+
+      document.getElementById('railfinAddLogBtn').addEventListener('click', async () => {
+        const note = document.getElementById('railfinLogNote').value.trim();
+        const by = document.getElementById('railfinLogBy').value;
+        if (!note) return;
+        await jpost('/api/project-work/railfin/activity', { note, by, type: 'note' });
+        document.getElementById('railfinLogNote').value = '';
+        projectsLoaded = false;
+        await ensureProjectsLoaded();
+      });
+
+      document.addEventListener('change', async (ev) => {
+        const sel = ev.target.closest('select[data-railfin-task-status]');
+        if (!sel) return;
+        const taskId = sel.dataset.railfinTaskStatus;
+        const status = sel.value;
+        await jpost(`/api/project-work/railfin/task/${encodeURIComponent(taskId)}/status`, { status, by: 'railfin-coo' });
+        projectsLoaded = false;
+        await ensureProjectsLoaded();
+      });
+
       document.getElementById('logsTabGateway').addEventListener('click', () => setLogsTab('gateway'));
       document.getElementById('logsTabAudit').addEventListener('click', () => setLogsTab('audit'));
       document.getElementById('agentsTabOverview').addEventListener('click', () => setAgentsTab('overview'));

@@ -37,6 +37,7 @@ const REVIEW_LOG_FILE = process.env.REVIEW_LOG_FILE || "/mithril-os/ops-artifact
 const ROUTING_INSIGHTS_FILE = process.env.ROUTING_INSIGHTS_FILE || "/mithril-os/ops-artifacts/routing-insights.json";
 const PROJECTS_CONFIG_FILE = process.env.PROJECTS_CONFIG_FILE || "/mithril-os/config/projects-monitor.json";
 const POLICIES_CONFIG_FILE = process.env.POLICIES_CONFIG_FILE || "/mithril-os/config/policies.json";
+const PROJECT_WORK_DIR = process.env.PROJECT_WORK_DIR || "/mithril-os/config/project-work";
 
 app.use((req, res, next) => {
   // Internal ops UI: prefer freshness over asset caching to avoid stale frontend state.
@@ -260,6 +261,44 @@ async function readPoliciesConfig() {
   } catch {
     return { ok: true, source: "default", policies: [] };
   }
+}
+
+function defaultProjectWork(projectId) {
+  const now = new Date().toISOString();
+  return {
+    projectId,
+    updatedAt: now,
+    roadmap: {
+      now: ["Stabilize multi-agent lanes (coo/dev/ui/sec)", "Track work with explicit status + ownership"],
+      next: ["Build release readiness checklist", "Automate merge queue visibility"],
+      later: ["Cross-project reusable project tooling templates"],
+    },
+    tasks: [],
+    activity: [
+      { ts: now, type: "bootstrap", by: "main", note: `Initialized project work tracker for ${projectId}` },
+    ],
+  };
+}
+
+async function readProjectWork(projectId) {
+  const safeId = String(projectId || "").toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+  const file = path.join(PROJECT_WORK_DIR, `${safeId}.json`);
+  try {
+    const raw = await fs.readFile(file, "utf8");
+    const parsed = JSON.parse(raw);
+    return { ok: true, source: file, data: parsed };
+  } catch {
+    const seed = defaultProjectWork(safeId);
+    return { ok: true, source: "default", data: seed, file };
+  }
+}
+
+async function writeProjectWork(projectId, data) {
+  const safeId = String(projectId || "").toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+  const file = path.join(PROJECT_WORK_DIR, `${safeId}.json`);
+  await fs.mkdir(PROJECT_WORK_DIR, { recursive: true });
+  await fs.writeFile(file, `${JSON.stringify({ ...data, projectId: safeId, updatedAt: new Date().toISOString() }, null, 2)}\n`, "utf8");
+  return { ok: true, file };
 }
 
 async function getPolicyRowStatus(policy) {
@@ -1862,6 +1901,77 @@ app.get("/api/project-monitor/overview", async (_req, res) => {
 // Backward compatibility for previously shipped frontend path
 app.get("/api/projects/overview", async (_req, res) => {
   await sendProjectsOverview(res);
+});
+
+app.get("/api/project-work/:projectId", async (req, res) => {
+  const projectId = String(req.params.projectId || "railfin");
+  const out = await readProjectWork(projectId);
+  if (!out.ok) return res.status(500).json(out);
+  return res.json({ ok: true, source: out.source, data: out.data });
+});
+
+app.post("/api/project-work/:projectId/task", async (req, res) => {
+  const projectId = String(req.params.projectId || "railfin");
+  const title = String(req.body?.title || "").trim();
+  const owner = String(req.body?.owner || "railfin-coo").trim();
+  const lane = String(req.body?.lane || "dev").trim();
+  const priority = String(req.body?.priority || "p2").trim();
+  if (!title) return res.status(400).json({ ok: false, error: "title required" });
+
+  const out = await readProjectWork(projectId);
+  const doc = out.data;
+  const id = `tsk_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  const task = {
+    id,
+    title,
+    owner,
+    lane,
+    priority,
+    status: "ready",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  doc.tasks = Array.isArray(doc.tasks) ? doc.tasks : [];
+  doc.activity = Array.isArray(doc.activity) ? doc.activity : [];
+  doc.tasks.unshift(task);
+  doc.activity.unshift({ ts: new Date().toISOString(), type: "task_created", by: "main", taskId: id, note: `${title} → ${owner}` });
+  await writeProjectWork(projectId, doc);
+  return res.json({ ok: true, task });
+});
+
+app.post("/api/project-work/:projectId/task/:taskId/status", async (req, res) => {
+  const projectId = String(req.params.projectId || "railfin");
+  const taskId = String(req.params.taskId || "");
+  const status = String(req.body?.status || "").trim();
+  const by = String(req.body?.by || "main").trim();
+  if (!taskId || !status) return res.status(400).json({ ok: false, error: "taskId and status required" });
+
+  const out = await readProjectWork(projectId);
+  const doc = out.data;
+  doc.tasks = Array.isArray(doc.tasks) ? doc.tasks : [];
+  doc.activity = Array.isArray(doc.activity) ? doc.activity : [];
+  const idx = doc.tasks.findIndex((t) => t.id === taskId);
+  if (idx === -1) return res.status(404).json({ ok: false, error: "task not found" });
+  doc.tasks[idx].status = status;
+  doc.tasks[idx].updatedAt = new Date().toISOString();
+  doc.activity.unshift({ ts: new Date().toISOString(), type: "task_status", by, taskId, note: `status → ${status}` });
+  await writeProjectWork(projectId, doc);
+  return res.json({ ok: true, task: doc.tasks[idx] });
+});
+
+app.post("/api/project-work/:projectId/activity", async (req, res) => {
+  const projectId = String(req.params.projectId || "railfin");
+  const by = String(req.body?.by || "main").trim();
+  const note = String(req.body?.note || "").trim();
+  const type = String(req.body?.type || "note").trim();
+  if (!note) return res.status(400).json({ ok: false, error: "note required" });
+
+  const out = await readProjectWork(projectId);
+  const doc = out.data;
+  doc.activity = Array.isArray(doc.activity) ? doc.activity : [];
+  doc.activity.unshift({ ts: new Date().toISOString(), type, by, note });
+  await writeProjectWork(projectId, doc);
+  return res.json({ ok: true });
 });
 
 app.get("/api/policies/overview", async (_req, res) => {
