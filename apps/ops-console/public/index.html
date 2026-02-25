@@ -213,6 +213,11 @@
       .ha-blind-row { display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center; border:1px solid var(--border); border-radius:10px; padding:8px; margin-bottom:8px; }
       .ha-blind-meta { display:flex; gap:8px; align-items:center; color:var(--muted); font-size:12px; }
       .ha-blind-actions { display:flex; gap:6px; }
+      .railfin-k-col { min-height: 220px; }
+      .railfin-k-dropzone { min-height: 150px; }
+      .railfin-k-card { cursor: grab; }
+      .railfin-k-card.is-dragging { opacity: .55; }
+      .railfin-k-col.is-drop-target { outline: 1px dashed color-mix(in srgb, var(--highlight) 65%, var(--border)); border-radius: 10px; }
       .ha-device {
         --ha-power-size: 84px;
         display:grid;
@@ -1745,7 +1750,7 @@
         kanbanEl.innerHTML = columns.map((c) => {
           const colTasks = tasks.filter((t) => t.status === c.key).slice(0, 30);
           const cards = colTasks.length ? colTasks.map((t) => `
-            <div class='card' style='margin:0 0 8px; padding:8px;'>
+            <div class='card railfin-k-card' draggable='true' data-railfin-task-id='${t.id}' data-railfin-status='${t.status}' style='margin:0 0 8px; padding:8px;'>
               <div style='font-weight:600; margin-bottom:4px;'>${t.title || '-'}</div>
               <div class='muted' style='font-size:12px;'>${t.owner || '-'} · ${t.lane || '-'} · ${t.priority || '-'}</div>
               <div class='muted' style='font-size:12px; margin-top:4px;'>${t.pr ? `PR ${t.pr}` : (t.branch || t.id || '')}</div>
@@ -1756,7 +1761,7 @@
               </div>
             </div>
           `).join('') : `<div class='muted'>No tasks</div>`;
-          return `<div class='card'><h4 style='margin-top:0;'>${c.label} (${colTasks.length})</h4>${cards}</div>`;
+          return `<div class='card railfin-k-col' data-railfin-col='${c.key}'><h4 style='margin-top:0;'>${c.label} (${colTasks.length})</h4><div class='railfin-k-dropzone'>${cards}</div></div>`;
         }).join('');
 
         const fOwner = document.getElementById('railfinFilterOwner')?.value || '';
