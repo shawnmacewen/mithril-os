@@ -18,6 +18,9 @@
     { "category": "architecture", "preferredAgentId": "koda", "fallbackAgentId": "main" },
     { "category": "ops", "preferredAgentId": "main", "fallbackAgentId": "main" },
     { "category": "coding", "preferredAgentId": "main", "fallbackAgentId": "koda" },
+    { "category": "railfin", "preferredAgentId": "railfin-coo", "fallbackAgentId": "main" },
+    { "category": "ui", "preferredAgentId": "railfin-ui", "fallbackAgentId": "railfin-coo" },
+    { "category": "security", "preferredAgentId": "railfin-sec", "fallbackAgentId": "railfin-coo" },
     { "category": "research", "preferredAgentId": "main", "fallbackAgentId": "main" }
   ]
 }
