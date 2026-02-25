@@ -751,17 +751,27 @@
 
         <section id="view-projects" class="hidden">
           <h2>Project Area</h2>
-          <div class="card" style="margin-bottom:12px;">
-            <div class="row"><span>Total projects</span><strong id="projectsTotal">-</strong></div>
-            <div class="row"><span>Healthy repos</span><strong id="projectsHealthy">-</strong></div>
-            <div class="row"><span>Repos with local changes</span><strong id="projectsDirty">-</strong></div>
-            <div class="muted" id="projectsSource">-</div>
+          <div class="toolbar ds-tabs" style="margin:0 0 8px;">
+            <button id="projectsTabOverview" class="ds-tab is-active">Overview</button>
+            <button id="projectsTabRailfin" class="ds-tab">Railfin</button>
           </div>
-          <div class="card">
-            <table id="projectsTable"><thead><tr><th>Project</th><th>Branch</th><th>Working tree</th><th>Latest commits</th></tr></thead><tbody><tr><td colspan="4" class="muted">Loading…</td></tr></tbody></table>
+
+          <div id="projectsOverviewPane">
+            <div class="card" style="margin-bottom:12px;">
+              <div class="row"><span>Total projects</span><strong id="projectsTotal">-</strong></div>
+              <div class="row"><span>Healthy repos</span><strong id="projectsHealthy">-</strong></div>
+              <div class="row"><span>Repos with local changes</span><strong id="projectsDirty">-</strong></div>
+              <div class="muted" id="projectsSource">-</div>
+            </div>
+            <div class="card">
+              <table id="projectsTable"><thead><tr><th>Project</th><th>Branch</th><th>Working tree</th><th>Latest commits</th></tr></thead><tbody><tr><td colspan="4" class="muted">Loading…</td></tr></tbody></table>
+            </div>
+            <div class="card" style="margin-top:12px;"><details><summary>Projects Raw JSON</summary><pre id="projectsRaw">Loading…</pre></details></div>
           </div>
-          <div class="card" style="margin-top:12px;">
-            <h3>Railfin Command Center</h3>
+
+          <div id="projectsRailfinPane" class="hidden">
+            <div class="card" style="margin-top:12px;">
+              <h3>Railfin Command Center</h3>
             <div class="grid2">
               <div>
                 <h4 style="margin:6px 0;">Roadmap</h4>
@@ -798,7 +808,6 @@
               <pre id="railfinActivity">Loading…</pre>
             </div>
           </div>
-          <div class="card" style="margin-top:12px;"><details><summary>Projects Raw JSON</summary><pre id="projectsRaw">Loading…</pre></details></div>
         </section>
 
 
@@ -1180,6 +1189,20 @@
         designBtn.classList.toggle('active', active === 'design');
         policiesBtn.classList.toggle('active', active === 'policies');
         changelogBtn.classList.toggle('active', active === 'changelog');
+      }
+
+      function setProjectsTab(tab){
+        const active = tab === 'railfin' ? 'railfin' : 'overview';
+        const overviewPane = document.getElementById('projectsOverviewPane');
+        const railfinPane = document.getElementById('projectsRailfinPane');
+        const overviewBtn = document.getElementById('projectsTabOverview');
+        const railfinBtn = document.getElementById('projectsTabRailfin');
+        overviewPane.classList.toggle('hidden', active !== 'overview');
+        railfinPane.classList.toggle('hidden', active !== 'railfin');
+        overviewBtn.classList.toggle('is-active', active === 'overview');
+        railfinBtn.classList.toggle('is-active', active === 'railfin');
+        overviewBtn.classList.toggle('active', active === 'overview');
+        railfinBtn.classList.toggle('active', active === 'railfin');
       }
 
       async function jget(url){
@@ -2288,6 +2311,12 @@
             h = 'designsystem';
             setTimeout(() => setPlatformTab('changelog'), 0);
           }
+          if (h === 'railfin') {
+            h = 'projects';
+            setTimeout(() => setProjectsTab('railfin'), 0);
+          } else if (h === 'projects') {
+            setTimeout(() => setProjectsTab('overview'), 0);
+          }
           showView(views.includes(h) ? h : 'dashboard');
         }
         window.addEventListener('hashchange', route); route();
@@ -2402,6 +2431,8 @@
       document.getElementById('platformTabDesign').addEventListener('click', () => setPlatformTab('design'));
       document.getElementById('platformTabPolicies').addEventListener('click', () => setPlatformTab('policies'));
       document.getElementById('platformTabChangelog').addEventListener('click', () => setPlatformTab('changelog'));
+      document.getElementById('projectsTabOverview').addEventListener('click', () => setProjectsTab('overview'));
+      document.getElementById('projectsTabRailfin').addEventListener('click', () => setProjectsTab('railfin'));
       document.getElementById('loadLogsBtn').addEventListener('click', () => { logsPage = 1; loadLogs(); });
       document.getElementById('refreshDeployLockBtn').addEventListener('click', loadDeployLockStatus);
       document.getElementById('refreshDeployCenterBtn').addEventListener('click', loadDeployCenter);
