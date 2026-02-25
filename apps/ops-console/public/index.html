@@ -843,6 +843,12 @@
                 <pre id="railfinBlockedList">Loading…</pre>
               </div>
             </div>
+
+            <div class="card" style="margin-top:10px;">
+              <h4 style="margin-top:0;">Kanban Board</h4>
+              <div id="railfinKanban" class="cards" style="grid-template-columns:repeat(5,minmax(180px,1fr)); gap:10px;"></div>
+            </div>
+
             <div class="card" style="margin-top:10px;">
               <h4 style="margin-top:0;">Activity</h4>
               <pre id="railfinActivity">Loading…</pre>
@@ -1721,6 +1727,38 @@
           .join('\n');
         document.getElementById('railfinBlockedList').textContent = blockedList || 'No blocked tasks.';
 
+        const columns = [
+          { key:'backlog', label:'Backlog' },
+          { key:'ready', label:'Ready' },
+          { key:'in_progress', label:'In Progress' },
+          { key:'review', label:'Review' },
+          { key:'done', label:'Done' }
+        ];
+        const nextStatus = (s, dir) => {
+          const order = ['backlog','ready','in_progress','review','done'];
+          const i = order.indexOf(s);
+          if (i < 0) return s;
+          const n = Math.max(0, Math.min(order.length-1, i + dir));
+          return order[n];
+        };
+        const kanbanEl = document.getElementById('railfinKanban');
+        kanbanEl.innerHTML = columns.map((c) => {
+          const colTasks = tasks.filter((t) => t.status === c.key).slice(0, 30);
+          const cards = colTasks.length ? colTasks.map((t) => `
+            <div class='card' style='margin:0 0 8px; padding:8px;'>
+              <div style='font-weight:600; margin-bottom:4px;'>${t.title || '-'}</div>
+              <div class='muted' style='font-size:12px;'>${t.owner || '-'} · ${t.lane || '-'} · ${t.priority || '-'}</div>
+              <div class='muted' style='font-size:12px; margin-top:4px;'>${t.pr ? `PR ${t.pr}` : (t.branch || t.id || '')}</div>
+              <div class='toolbar' style='margin-top:6px;'>
+                <button data-railfin-move='${t.id}' data-dir='-1' ${c.key==='backlog'?'disabled':''}>←</button>
+                <button data-railfin-move='${t.id}' data-dir='1' ${c.key==='done'?'disabled':''}>→</button>
+                <button data-railfin-set='${t.id}' data-status='blocked'>Block</button>
+              </div>
+            </div>
+          `).join('') : `<div class='muted'>No tasks</div>`;
+          return `<div class='card'><h4 style='margin-top:0;'>${c.label} (${colTasks.length})</h4>${cards}</div>`;
+        }).join('');
+
         const fOwner = document.getElementById('railfinFilterOwner')?.value || '';
         const fLane = document.getElementById('railfinFilterLane')?.value || '';
         const fStatus = document.getElementById('railfinFilterStatus')?.value || '';
@@ -2535,6 +2573,33 @@
           if (mode === 'blocked') statusEl.value = 'blocked';
           if (mode === 'merge') statusEl.value = 'review';
           renderRailfinWork(cache.railfinWork || {});
+          return;
+        }
+
+        const moveBtn = ev.target.closest('button[data-railfin-move]');
+        if (moveBtn) {
+          const taskId = moveBtn.dataset.railfinMove;
+          const dir = Number(moveBtn.dataset.dir || 0);
+          const tasks = cache.railfinWork?.data?.tasks || [];
+          const t = tasks.find((x) => x.id === taskId);
+          if (!t) return;
+          const order = ['backlog','ready','in_progress','review','done'];
+          const i = order.indexOf(t.status);
+          const n = Math.max(0, Math.min(order.length - 1, i + dir));
+          const status = order[n];
+          await jpost(`/api/project-work/railfin/task/${encodeURIComponent(taskId)}/status`, { status, by: 'railfin-coo' });
+          projectsLoaded = false;
+          await ensureProjectsLoaded();
+          return;
+        }
+
+        const setBtn = ev.target.closest('button[data-railfin-set]');
+        if (setBtn) {
+          const taskId = setBtn.dataset.railfinSet;
+          const status = setBtn.dataset.status || 'blocked';
+          await jpost(`/api/project-work/railfin/task/${encodeURIComponent(taskId)}/status`, { status, by: 'railfin-coo' });
+          projectsLoaded = false;
+          await ensureProjectsLoaded();
           return;
         }
 
