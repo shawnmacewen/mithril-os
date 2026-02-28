@@ -38,6 +38,7 @@ const ROUTING_INSIGHTS_FILE = process.env.ROUTING_INSIGHTS_FILE || "/mithril-os/
 const PROJECTS_CONFIG_FILE = process.env.PROJECTS_CONFIG_FILE || "/mithril-os/config/projects-monitor.json";
 const POLICIES_CONFIG_FILE = process.env.POLICIES_CONFIG_FILE || "/mithril-os/config/policies.json";
 const PROJECT_WORK_DIR = process.env.PROJECT_WORK_DIR || "/mithril-os/config/project-work";
+const EXEC_SUMMARIES_FILE = process.env.EXEC_SUMMARIES_FILE || "/mithril-os/config/executive-summaries.json";
 
 app.use((req, res, next) => {
   // Internal ops UI: prefer freshness over asset caching to avoid stale frontend state.
@@ -299,6 +300,50 @@ async function writeProjectWork(projectId, data) {
   await fs.mkdir(PROJECT_WORK_DIR, { recursive: true });
   await fs.writeFile(file, `${JSON.stringify({ ...data, projectId: safeId, updatedAt: new Date().toISOString() }, null, 2)}\n`, "utf8");
   return { ok: true, file };
+}
+
+function defaultExecutiveSummaries() {
+  return {
+    updatedAt: new Date().toISOString(),
+    summaries: [],
+  };
+}
+
+async function readExecutiveSummaries() {
+  try {
+    const raw = await fs.readFile(EXEC_SUMMARIES_FILE, "utf8");
+    const parsed = JSON.parse(raw);
+    return { ok: true, source: EXEC_SUMMARIES_FILE, data: parsed };
+  } catch {
+    return { ok: true, source: "default", data: defaultExecutiveSummaries() };
+  }
+}
+
+async function writeExecutiveSummaries(data) {
+  await fs.mkdir(path.dirname(EXEC_SUMMARIES_FILE), { recursive: true });
+  await fs.writeFile(EXEC_SUMMARIES_FILE, `${JSON.stringify({ ...data, updatedAt: new Date().toISOString() }, null, 2)}\n`, "utf8");
+  return { ok: true, file: EXEC_SUMMARIES_FILE };
+}
+
+async function readAllProjectTasks() {
+  await fs.mkdir(PROJECT_WORK_DIR, { recursive: true });
+  const entries = await fs.readdir(PROJECT_WORK_DIR, { withFileTypes: true });
+  const out = [];
+  for (const e of entries) {
+    if (!e.isFile() || !e.name.endsWith(".json")) continue;
+    try {
+      const file = path.join(PROJECT_WORK_DIR, e.name);
+      const raw = await fs.readFile(file, "utf8");
+      const parsed = JSON.parse(raw);
+      const projectId = String(parsed.projectId || e.name.replace(/\.json$/i, ""));
+      for (const t of (Array.isArray(parsed.tasks) ? parsed.tasks : [])) {
+        out.push({ projectId, ...t });
+      }
+    } catch {
+      // keep going
+    }
+  }
+  return out;
 }
 
 async function getPolicyRowStatus(policy) {
@@ -2003,6 +2048,72 @@ app.post("/api/project-work/:projectId/activity", async (req, res) => {
   doc.activity.unshift({ ts: new Date().toISOString(), type, by, note });
   await writeProjectWork(projectId, doc);
   return res.json({ ok: true });
+});
+
+app.get("/api/tasks/calendar", async (req, res) => {
+  const mode = String(req.query?.mode || "updated").toLowerCase();
+  const field = mode === "created" ? "createdAt" : "updatedAt";
+  const tasks = await readAllProjectTasks();
+  const rows = tasks
+    .map((t) => {
+      const ts = t[field] || t.updatedAt || t.createdAt || null;
+      if (!ts) return null;
+      const d = new Date(ts);
+      if (Number.isNaN(d.getTime())) return null;
+      return {
+        projectId: String(t.projectId || "-"),
+        id: String(t.id || ""),
+        title: String(t.title || "Untitled task"),
+        owner: String(t.owner || "-"),
+        lane: String(t.lane || "-"),
+        priority: String(t.priority || "-"),
+        status: String(t.status || "-"),
+        at: d.toISOString(),
+        dateKey: d.toISOString().slice(0, 10),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.at.localeCompare(a.at));
+
+  const byDate = {};
+  for (const r of rows) {
+    if (!byDate[r.dateKey]) byDate[r.dateKey] = [];
+    byDate[r.dateKey].push(r);
+  }
+
+  return res.json({
+    ok: true,
+    mode,
+    summary: { totalTasks: tasks.length, calendarItems: rows.length, days: Object.keys(byDate).length },
+    days: Object.entries(byDate).map(([date, items]) => ({ date, count: items.length, items })),
+  });
+});
+
+app.get("/api/executive-summaries", async (_req, res) => {
+  const out = await readExecutiveSummaries();
+  const data = out.data || defaultExecutiveSummaries();
+  data.summaries = Array.isArray(data.summaries) ? data.summaries : [];
+  return res.json({ ok: true, source: out.source, data });
+});
+
+app.post("/api/executive-summaries", async (req, res) => {
+  const title = String(req.body?.title || "").trim();
+  const summary = String(req.body?.summary || "").trim();
+  const by = String(req.body?.by || "main").trim();
+  if (!title || !summary) return res.status(400).json({ ok: false, error: "title and summary required" });
+
+  const out = await readExecutiveSummaries();
+  const doc = out.data || defaultExecutiveSummaries();
+  doc.summaries = Array.isArray(doc.summaries) ? doc.summaries : [];
+  doc.summaries.unshift({
+    id: `exec_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+    ts: new Date().toISOString(),
+    title,
+    summary,
+    by,
+  });
+  await writeExecutiveSummaries(doc);
+  return res.json({ ok: true, item: doc.summaries[0] });
 });
 
 app.get("/api/policies/overview", async (_req, res) => {

@@ -218,6 +218,13 @@
       .railfin-k-card { cursor: grab; }
       .railfin-k-card.is-dragging { opacity: .55; }
       .railfin-k-col.is-drop-target { outline: 1px dashed color-mix(in srgb, var(--highlight) 65%, var(--border)); border-radius: 10px; }
+      .exec-tile { border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:12px;
+        background:linear-gradient(135deg, color-mix(in srgb, var(--card) 86%, #5ea1ff 14%), color-mix(in srgb, var(--card) 90%, #8ef5d6 10%));
+        box-shadow: 0 10px 24px rgba(0,0,0,.16); }
+      .exec-tile h4 { margin:0 0 6px; font-size:1.05rem; }
+      .exec-meta { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:8px; color:var(--muted); font-size:12px; }
+      .calendar-day { border:1px solid var(--border); border-radius:12px; padding:10px; margin-bottom:10px; }
+      .calendar-item { border-left:3px solid var(--accent); padding:6px 8px; margin:6px 0; background:color-mix(in srgb, var(--card) 92%, var(--accent) 8%); border-radius:6px; }
       .ha-device {
         --ha-power-size: 84px;
         display:grid;
@@ -759,6 +766,8 @@
           <div class="toolbar ds-tabs" style="margin:0 0 8px;">
             <button id="projectsTabOverview" class="ds-tab is-active">Overview</button>
             <button id="projectsTabRailfin" class="ds-tab">Railfin</button>
+            <button id="projectsTabCalendar" class="ds-tab">Work Calendar</button>
+            <button id="projectsTabExecutive" class="ds-tab">Executive Summaries</button>
           </div>
 
           <div id="projectsOverviewPane">
@@ -857,6 +866,45 @@
             <div class="card" style="margin-top:10px;">
               <h4 style="margin-top:0;">Activity</h4>
               <pre id="railfinActivity">Loading…</pre>
+            </div>
+          </div>
+
+          <div id="projectsCalendarPane" class="hidden">
+            <div class="card" style="margin-top:12px;">
+              <h3>Work Calendar (Combined Task Timeline)</h3>
+              <div class="muted">Productivity-linked view across tracked project tasks. Groups tasks by day from project trackers.</div>
+              <div class="toolbar" style="margin-top:8px;">
+                <select id="calendarMode"><option value="updated" selected>Use last updated date</option><option value="created">Use created date</option></select>
+                <button id="calendarRefreshBtn">Refresh Calendar</button>
+              </div>
+            </div>
+            <div class="card" style="margin-top:10px;">
+              <div class="row"><span>Total mapped items</span><strong id="calendarTotalItems">-</strong></div>
+              <div class="row"><span>Days with activity</span><strong id="calendarTotalDays">-</strong></div>
+              <div class="row"><span>Mode</span><strong id="calendarModeLabel">-</strong></div>
+            </div>
+            <div class="card" style="margin-top:10px;">
+              <div id="calendarDays">Loading…</div>
+            </div>
+          </div>
+
+          <div id="projectsExecutivePane" class="hidden">
+            <div class="card" style="margin-top:12px;">
+              <h3>Executive Summary Studio</h3>
+              <div class="muted">Curated executive updates in wide visual tiles, organized by day for quick leadership scan.</div>
+            </div>
+            <div class="card" style="margin-top:10px;">
+              <h4 style="margin-top:0;">Add Executive Summary</h4>
+              <input id="execTitle" placeholder="Title (ex: Weekly Product + Ops Summary)" style="width:100%; margin-bottom:8px;" />
+              <textarea id="execSummary" placeholder="Concise executive summary..." style="width:100%; min-height:110px; margin-bottom:8px;"></textarea>
+              <div class="toolbar" style="margin:0;">
+                <input id="execBy" placeholder="author" value="main" />
+                <button id="execAddBtn">Save Summary Tile</button>
+              </div>
+            </div>
+            <div class="card" style="margin-top:10px;">
+              <h4 style="margin-top:0;">Summary Archive</h4>
+              <div id="execTiles">Loading…</div>
             </div>
           </div>
         </section>
@@ -1243,17 +1291,28 @@
       }
 
       function setProjectsTab(tab){
-        const active = tab === 'railfin' ? 'railfin' : 'overview';
+        const allowed = new Set(['overview','railfin','calendar','executive']);
+        const active = allowed.has(tab) ? tab : 'overview';
         const overviewPane = document.getElementById('projectsOverviewPane');
         const railfinPane = document.getElementById('projectsRailfinPane');
+        const calendarPane = document.getElementById('projectsCalendarPane');
+        const executivePane = document.getElementById('projectsExecutivePane');
         const overviewBtn = document.getElementById('projectsTabOverview');
         const railfinBtn = document.getElementById('projectsTabRailfin');
+        const calendarBtn = document.getElementById('projectsTabCalendar');
+        const executiveBtn = document.getElementById('projectsTabExecutive');
         overviewPane.classList.toggle('hidden', active !== 'overview');
         railfinPane.classList.toggle('hidden', active !== 'railfin');
+        calendarPane.classList.toggle('hidden', active !== 'calendar');
+        executivePane.classList.toggle('hidden', active !== 'executive');
         overviewBtn.classList.toggle('is-active', active === 'overview');
         railfinBtn.classList.toggle('is-active', active === 'railfin');
+        calendarBtn.classList.toggle('is-active', active === 'calendar');
+        executiveBtn.classList.toggle('is-active', active === 'executive');
         overviewBtn.classList.toggle('active', active === 'overview');
         railfinBtn.classList.toggle('active', active === 'railfin');
+        calendarBtn.classList.toggle('active', active === 'calendar');
+        executiveBtn.classList.toggle('active', active === 'executive');
       }
 
       async function jget(url){
@@ -1804,6 +1863,34 @@
         document.getElementById('railfinActivity').textContent = activity.slice(0, 80).map((a) => `${a.ts || '-'} | ${a.by || '-'} | ${a.type || '-'} | ${a.note || ''}${a.taskId ? ` (${a.taskId})` : ''}`).join('\n') || 'No activity yet.';
       }
 
+      function renderTaskCalendar(payload){
+        const summary = payload?.summary || {};
+        document.getElementById('calendarTotalItems').textContent = String(summary.calendarItems ?? 0);
+        document.getElementById('calendarTotalDays').textContent = String(summary.days ?? 0);
+        document.getElementById('calendarModeLabel').textContent = String(payload?.mode || '-');
+        const host = document.getElementById('calendarDays');
+        const days = Array.isArray(payload?.days) ? payload.days : [];
+        host.innerHTML = days.length ? days.slice(0, 40).map((d) => {
+          const items = (d.items || []).slice(0, 20).map((it) =>
+            `<div class='calendar-item'><strong>${it.projectId}</strong> · ${it.title}<div class='muted'>${it.owner} · ${it.lane} · ${it.priority} · ${it.status} · ${new Date(it.at).toLocaleString()}</div></div>`
+          ).join('');
+          return `<div class='calendar-day'><h4 style='margin:0 0 6px;'>${d.date} <span class='muted'>(${d.count})</span></h4>${items}</div>`;
+        }).join('') : `<div class='muted'>No calendar items found.</div>`;
+      }
+
+      function renderExecutiveSummaries(payload){
+        const rows = Array.isArray(payload?.data?.summaries) ? payload.data.summaries : [];
+        const host = document.getElementById('execTiles');
+        host.innerHTML = rows.length ? rows.slice(0, 60).map((r) => {
+          const day = (r.ts || '').slice(0, 10) || '-';
+          return `<article class='exec-tile'>
+            <div class='exec-meta'><span>📅 ${day}</span><span>👤 ${r.by || '-'}</span><span>🆔 ${r.id || '-'}</span></div>
+            <h4>${r.title || '-'}</h4>
+            <div>${(r.summary || '').replace(/</g,'&lt;')}</div>
+          </article>`;
+        }).join('') : `<div class='muted'>No executive summaries yet.</div>`;
+      }
+
       function renderPoliciesOverview(data){
         document.getElementById('policiesRaw').textContent = JSON.stringify(data || {}, null, 2);
         if (!data?.ok) {
@@ -2181,14 +2268,21 @@
 
       async function ensureProjectsLoaded(){
         if (projectsLoaded) return;
-        const [projects, railfinWork] = await Promise.all([
+        const mode = document.getElementById('calendarMode')?.value || 'updated';
+        const [projects, railfinWork, calendar, executive] = await Promise.all([
           jget('/api/project-monitor/overview'),
-          jget('/api/project-work/railfin')
+          jget('/api/project-work/railfin'),
+          jget(`/api/tasks/calendar?mode=${encodeURIComponent(mode)}`),
+          jget('/api/executive-summaries')
         ]);
         cache.projects = projects;
         cache.railfinWork = railfinWork;
+        cache.calendar = calendar;
+        cache.executive = executive;
         renderProjectsOverview(projects || {});
         renderRailfinWork(railfinWork || {});
+        renderTaskCalendar(calendar || {});
+        renderExecutiveSummaries(executive || {});
         projectsLoaded = true;
       }
 
@@ -2442,6 +2536,12 @@
           if (h === 'railfin') {
             h = 'projects';
             setTimeout(() => setProjectsTab('railfin'), 0);
+          } else if (h === 'project-calendar') {
+            h = 'projects';
+            setTimeout(() => setProjectsTab('calendar'), 0);
+          } else if (h === 'executive') {
+            h = 'projects';
+            setTimeout(() => setProjectsTab('executive'), 0);
           } else if (h === 'projects') {
             setTimeout(() => setProjectsTab('overview'), 0);
           }
@@ -2547,6 +2647,26 @@
         await ensureProjectsLoaded();
       });
 
+      document.getElementById('calendarRefreshBtn').addEventListener('click', async () => {
+        const mode = document.getElementById('calendarMode').value || 'updated';
+        const out = await jget(`/api/tasks/calendar?mode=${encodeURIComponent(mode)}`);
+        cache.calendar = out;
+        renderTaskCalendar(out || {});
+      });
+
+      document.getElementById('execAddBtn').addEventListener('click', async () => {
+        const title = document.getElementById('execTitle').value.trim();
+        const summary = document.getElementById('execSummary').value.trim();
+        const by = document.getElementById('execBy').value.trim() || 'main';
+        if (!title || !summary) return;
+        await jpost('/api/executive-summaries', { title, summary, by });
+        document.getElementById('execTitle').value = '';
+        document.getElementById('execSummary').value = '';
+        const out = await jget('/api/executive-summaries');
+        cache.executive = out;
+        renderExecutiveSummaries(out || {});
+      });
+
       document.addEventListener('change', async (ev) => {
         const filterSel = ev.target.closest('#railfinFilterOwner,#railfinFilterLane,#railfinFilterStatus,#railfinFilterPriority');
         if (filterSel) {
@@ -2637,6 +2757,14 @@
       document.getElementById('platformTabChangelog').addEventListener('click', () => setPlatformTab('changelog'));
       document.getElementById('projectsTabOverview').addEventListener('click', () => setProjectsTab('overview'));
       document.getElementById('projectsTabRailfin').addEventListener('click', () => setProjectsTab('railfin'));
+      document.getElementById('projectsTabCalendar').addEventListener('click', () => setProjectsTab('calendar'));
+      document.getElementById('projectsTabExecutive').addEventListener('click', () => setProjectsTab('executive'));
+      document.getElementById('calendarMode').addEventListener('change', async () => {
+        const mode = document.getElementById('calendarMode').value || 'updated';
+        const out = await jget(`/api/tasks/calendar?mode=${encodeURIComponent(mode)}`);
+        cache.calendar = out;
+        renderTaskCalendar(out || {});
+      });
       document.getElementById('loadLogsBtn').addEventListener('click', () => { logsPage = 1; loadLogs(); });
       document.getElementById('refreshDeployLockBtn').addEventListener('click', loadDeployLockStatus);
       document.getElementById('refreshDeployCenterBtn').addEventListener('click', loadDeployCenter);
