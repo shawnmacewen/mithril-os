@@ -1160,6 +1160,7 @@
       let logsPage = 1;
       let logsRows = [];
       let logsTab = 'gateway';
+      let railfinLiveTimer = null;
       let railfinTasksPage = 1;
       const railfinTasksPageSize = 10;
       const queueHistory = [];
@@ -1237,6 +1238,9 @@
 
         if (name === 'projects') {
           ensureProjectsLoaded().catch((e) => showUiBootError(`Projects load failed: ${e.message || e}`));
+        } else if (railfinLiveTimer) {
+          clearInterval(railfinLiveTimer);
+          railfinLiveTimer = null;
         }
         if (name === 'designsystem') {
           ensurePlatformLoaded().catch((e) => showUiBootError(`Platform load failed: ${e.message || e}`));
@@ -1301,6 +1305,14 @@
         changelogBtn.classList.toggle('active', active === 'changelog');
       }
 
+      async function refreshRailfinLive(){
+        const out = await jget('/api/project-work/railfin');
+        if (out?.ok) {
+          cache.railfinWork = out;
+          renderRailfinWork(out || {});
+        }
+      }
+
       function setProjectsTab(tab){
         const allowed = new Set(['overview','railfin','calendar','executive']);
         const active = allowed.has(tab) ? tab : 'overview';
@@ -1324,6 +1336,15 @@
         railfinBtn.classList.toggle('active', active === 'railfin');
         calendarBtn.classList.toggle('active', active === 'calendar');
         executiveBtn.classList.toggle('active', active === 'executive');
+
+        if (active === 'railfin') {
+          refreshRailfinLive().catch(() => {});
+          if (railfinLiveTimer) clearInterval(railfinLiveTimer);
+          railfinLiveTimer = setInterval(() => { refreshRailfinLive().catch(() => {}); }, 20000);
+        } else if (railfinLiveTimer) {
+          clearInterval(railfinLiveTimer);
+          railfinLiveTimer = null;
+        }
       }
 
       async function jget(url){
