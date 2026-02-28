@@ -786,6 +786,7 @@
           <div id="projectsRailfinPane" class="hidden">
             <div class="card" style="margin-top:12px;">
               <h3>Railfin Command Center</h3>
+              <div id="railfinSyncBadge" class="muted" style="margin-bottom:8px;">Sync: loading…</div>
             <div class="grid2">
               <div>
                 <h4 style="margin:6px 0;">Roadmap</h4>
@@ -1800,6 +1801,18 @@
         fillList('railfinRoadmapLater', roadmap.later || []);
 
         const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+        const maxTaskId = tasks.reduce((mx, t) => {
+          const m = `${t?.id || ''} ${t?.title || ''}`.match(/task-(\d+)/i);
+          const n = m ? Number(m[1]) : -1;
+          return Math.max(mx, n);
+        }, -1);
+        const syncBadge = document.getElementById('railfinSyncBadge');
+        if (syncBadge) {
+          const source = payload?.source || 'unknown-source';
+          const ts = data?.updatedAt ? new Date(data.updatedAt).toLocaleString() : '-';
+          const maxLabel = maxTaskId >= 0 ? `task-${String(maxTaskId).padStart(5,'0')}` : 'n/a';
+          syncBadge.textContent = `Sync source: ${source} · Last board update: ${ts} · Max task ID: ${maxLabel}`;
+        }
 
         const count = (s) => tasks.filter((t) => t.status === s).length;
         document.getElementById('railfinSumTotal').textContent = String(tasks.length);
