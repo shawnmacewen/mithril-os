@@ -283,17 +283,92 @@ function defaultProjectWork(projectId) {
   };
 }
 
+async function findRailfinTasksDoc() {
+  const candidates = [
+    "/home/mini-home-lab/work/railfin.io/docs/tasks.md",
+    "/work/railfin.io/docs/tasks.md",
+  ];
+  for (const p of candidates) {
+    try {
+      await fs.access(p);
+      return p;
+    } catch {
+      // next
+    }
+  }
+  return null;
+}
+
+function parseRailfinTasksMarkdown(mdText) {
+  const lines = String(mdText || "").split(/\r?\n/);
+  const out = [];
+  for (const line of lines) {
+    const m = line.match(/^\s*[-*]\s+\[( |x|X)\]\s+(.+)$/);
+    if (!m) continue;
+    const checked = m[1].toLowerCase() === "x";
+    let title = m[2].trim();
+    let lane = "coo";
+    let owner = "railfin-coo";
+    const lower = title.toLowerCase();
+    if (lower.includes("[dev]") || lower.includes("(dev)")) { lane = "dev"; owner = "railfin-dev"; }
+    if (lower.includes("[ui]") || lower.includes("(ui)")) { lane = "ui"; owner = "railfin-ui"; }
+    if (lower.includes("[sec]") || lower.includes("(sec)")) { lane = "sec"; owner = "railfin-sec"; }
+    if (lower.includes("[coo]") || lower.includes("(coo)")) { lane = "coo"; owner = "railfin-coo"; }
+    title = title.replace(/\[(dev|ui|sec|coo)\]/ig, "").replace(/\((dev|ui|sec|coo)\)/ig, "").trim();
+    const id = `tsk_sync_${createHash("sha1").update(title).digest("hex").slice(0, 10)}`;
+    out.push({
+      id,
+      title,
+      owner,
+      lane,
+      priority: "p2",
+      branch: "",
+      pr: "",
+      commit: "",
+      status: checked ? "done" : "ready",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      source: "docs/tasks.md",
+    });
+  }
+  return out;
+}
+
+async function syncRailfinFromTasksDoc(doc) {
+  const tasksDoc = await findRailfinTasksDoc();
+  if (!tasksDoc) return { synced: false, reason: "missing-tasks-doc" };
+  const raw = await fs.readFile(tasksDoc, "utf8");
+  const tasks = parseRailfinTasksMarkdown(raw);
+  doc.tasks = tasks;
+  doc.activity = Array.isArray(doc.activity) ? doc.activity : [];
+  doc.activity.unshift({ ts: new Date().toISOString(), type: "sync", by: "main", note: `Synced ${tasks.length} tasks from docs/tasks.md` });
+  return { synced: true, tasksDoc, count: tasks.length };
+}
+
 async function readProjectWork(projectId) {
   const safeId = String(projectId || "").toLowerCase().replace(/[^a-z0-9_-]/g, "-");
   const file = path.join(PROJECT_WORK_DIR, `${safeId}.json`);
+  let parsed = null;
   try {
     const raw = await fs.readFile(file, "utf8");
-    const parsed = JSON.parse(raw);
-    return { ok: true, source: file, data: parsed };
+    parsed = JSON.parse(raw);
   } catch {
-    const seed = defaultProjectWork(safeId);
-    return { ok: true, source: "default", data: seed, file };
+    parsed = defaultProjectWork(safeId);
   }
+
+  if (safeId === "railfin") {
+    try {
+      const sync = await syncRailfinFromTasksDoc(parsed);
+      if (sync.synced) {
+        await writeProjectWork(safeId, parsed);
+        return { ok: true, source: `${file} (synced from docs/tasks.md)`, data: parsed };
+      }
+    } catch {
+      // return existing state if sync fails
+    }
+  }
+
+  return { ok: true, source: parsed?.projectId ? file : "default", data: parsed, file };
 }
 
 async function writeProjectWork(projectId, data) {

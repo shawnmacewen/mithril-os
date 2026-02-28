@@ -15,126 +15,14 @@
       "Automate release-readiness summary and merge sequencing"
     ]
   },
-  "tasks": [
-    {
-      "id": "tsk_mm57fffv_lurq",
-      "title": "Draft PRD to be completed with cco and shawn",
-      "owner": "railfin-coo",
-      "lane": "coo",
-      "priority": "p2",
-      "branch": "",
-      "pr": "",
-      "commit": "",
-      "status": "done",
-      "createdAt": "2026-02-27T18:07:09.547Z",
-      "updatedAt": "2026-02-28T03:31:14.231Z"
-    },
-    {
-      "id": "tsk_0228033828_2",
-      "title": "Convert PRD into execution task list (8-15 tasks)",
-      "owner": "railfin-coo",
-      "lane": "coo",
-      "priority": "p1",
-      "branch": "",
-      "pr": "",
-      "commit": "",
-      "status": "ready",
-      "createdAt": "2026-02-28T03:38:28Z",
-      "updatedAt": "2026-02-28T03:38:28Z"
-    },
-    {
-      "id": "tsk_0228033828_3",
-      "title": "Define merge order and dependency notes for initial scope",
-      "owner": "railfin-coo",
-      "lane": "coo",
-      "priority": "p1",
-      "branch": "",
-      "pr": "",
-      "commit": "",
-      "status": "ready",
-      "createdAt": "2026-02-28T03:38:28Z",
-      "updatedAt": "2026-02-28T03:38:28Z"
-    },
-    {
-      "id": "tsk_0228033828_4",
-      "title": "Implement API contract skeleton for core PRD flows",
-      "owner": "railfin-dev",
-      "lane": "dev",
-      "priority": "p1",
-      "branch": "",
-      "pr": "",
-      "commit": "",
-      "status": "ready",
-      "createdAt": "2026-02-28T03:38:28Z",
-      "updatedAt": "2026-02-28T03:38:28Z"
-    },
-    {
-      "id": "tsk_0228033828_5",
-      "title": "Implement validation and error handling for core endpoints",
-      "owner": "railfin-dev",
-      "lane": "dev",
-      "priority": "p1",
-      "branch": "",
-      "pr": "",
-      "commit": "",
-      "status": "backlog",
-      "createdAt": "2026-02-28T03:38:28Z",
-      "updatedAt": "2026-02-28T03:38:28Z"
-    },
-    {
-      "id": "tsk_0228033828_6",
-      "title": "Build UI wire-up for MVP primary flow",
-      "owner": "railfin-ui",
-      "lane": "ui",
-      "priority": "p1",
-      "branch": "",
-      "pr": "",
-      "commit": "",
-      "status": "ready",
-      "createdAt": "2026-02-28T03:38:28Z",
-      "updatedAt": "2026-02-28T03:38:28Z"
-    },
-    {
-      "id": "tsk_0228033828_7",
-      "title": "Polish UX states (loading/empty/error) for MVP screens",
-      "owner": "railfin-ui",
-      "lane": "ui",
-      "priority": "p2",
-      "branch": "",
-      "pr": "",
-      "commit": "",
-      "status": "backlog",
-      "createdAt": "2026-02-28T03:38:28Z",
-      "updatedAt": "2026-02-28T03:38:28Z"
-    },
-    {
-      "id": "tsk_0228033828_8",
-      "title": "Security pass: authz checks for role-sensitive operations",
-      "owner": "railfin-sec",
-      "lane": "sec",
-      "priority": "p1",
-      "branch": "",
-      "pr": "",
-      "commit": "",
-      "status": "ready",
-      "createdAt": "2026-02-28T03:38:28Z",
-      "updatedAt": "2026-02-28T03:38:28Z"
-    },
-    {
-      "id": "tsk_0228033828_9",
-      "title": "Security pass: input validation + dependency risk review",
-      "owner": "railfin-sec",
-      "lane": "sec",
-      "priority": "p2",
-      "branch": "",
-      "pr": "",
-      "commit": "",
-      "status": "backlog",
-      "createdAt": "2026-02-28T03:38:28Z",
-      "updatedAt": "2026-02-28T03:38:28Z"
-    }
-  ],
+  "tasks": [],
   "activity": [
+    {
+      "ts": "2026-02-28T05:11:25Z",
+      "type": "note",
+      "by": "main",
+      "note": "One-time cleanup: cleared 9 legacy board tasks pending docs/tasks.md sync source."
+    },
     {
       "ts": "2026-02-28T03:38:28Z",
       "type": "note",

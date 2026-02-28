@@ -859,11 +859,6 @@
             </div>
 
             <div class="card" style="margin-top:10px;">
-              <h4 style="margin-top:0;">Kanban Board</h4>
-              <div id="railfinKanban" class="cards" style="grid-template-columns:repeat(5,minmax(180px,1fr)); gap:10px;"></div>
-            </div>
-
-            <div class="card" style="margin-top:10px;">
               <h4 style="margin-top:0;">Activity</h4>
               <pre id="railfinActivity">Loading…</pre>
             </div>
@@ -1807,30 +1802,25 @@
           { key:'review', label:'Review' },
           { key:'done', label:'Done' }
         ];
-        const nextStatus = (s, dir) => {
-          const order = ['backlog','ready','in_progress','review','done'];
-          const i = order.indexOf(s);
-          if (i < 0) return s;
-          const n = Math.max(0, Math.min(order.length-1, i + dir));
-          return order[n];
-        };
         const kanbanEl = document.getElementById('railfinKanban');
-        kanbanEl.innerHTML = columns.map((c) => {
-          const colTasks = tasks.filter((t) => t.status === c.key).slice(0, 30);
-          const cards = colTasks.length ? colTasks.map((t) => `
-            <div class='card railfin-k-card' draggable='true' data-railfin-task-id='${t.id}' data-railfin-status='${t.status}' style='margin:0 0 8px; padding:8px;'>
-              <div style='font-weight:600; margin-bottom:4px;'>${t.title || '-'}</div>
-              <div class='muted' style='font-size:12px;'>${t.owner || '-'} · ${t.lane || '-'} · ${t.priority || '-'}</div>
-              <div class='muted' style='font-size:12px; margin-top:4px;'>${t.pr ? `PR ${t.pr}` : (t.branch || t.id || '')}</div>
-              <div class='toolbar' style='margin-top:6px;'>
-                <button data-railfin-move='${t.id}' data-dir='-1' ${c.key==='backlog'?'disabled':''}>←</button>
-                <button data-railfin-move='${t.id}' data-dir='1' ${c.key==='done'?'disabled':''}>→</button>
-                <button data-railfin-set='${t.id}' data-status='blocked'>Block</button>
+        if (kanbanEl) {
+          kanbanEl.innerHTML = columns.map((c) => {
+            const colTasks = tasks.filter((t) => t.status === c.key).slice(0, 30);
+            const cards = colTasks.length ? colTasks.map((t) => `
+              <div class='card railfin-k-card' draggable='true' data-railfin-task-id='${t.id}' data-railfin-status='${t.status}' style='margin:0 0 8px; padding:8px;'>
+                <div style='font-weight:600; margin-bottom:4px;'>${t.title || '-'}</div>
+                <div class='muted' style='font-size:12px;'>${t.owner || '-'} · ${t.lane || '-'} · ${t.priority || '-'}</div>
+                <div class='muted' style='font-size:12px; margin-top:4px;'>${t.pr ? `PR ${t.pr}` : (t.branch || t.id || '')}</div>
+                <div class='toolbar' style='margin-top:6px;'>
+                  <button data-railfin-move='${t.id}' data-dir='-1' ${c.key==='backlog'?'disabled':''}>←</button>
+                  <button data-railfin-move='${t.id}' data-dir='1' ${c.key==='done'?'disabled':''}>→</button>
+                  <button data-railfin-set='${t.id}' data-status='blocked'>Block</button>
+                </div>
               </div>
-            </div>
-          `).join('') : `<div class='muted'>No tasks</div>`;
-          return `<div class='card railfin-k-col' data-railfin-col='${c.key}'><h4 style='margin-top:0;'>${c.label} (${colTasks.length})</h4><div class='railfin-k-dropzone'>${cards}</div></div>`;
-        }).join('');
+            `).join('') : `<div class='muted'>No tasks</div>`;
+            return `<div class='card railfin-k-col' data-railfin-col='${c.key}'><h4 style='margin-top:0;'>${c.label} (${colTasks.length})</h4><div class='railfin-k-dropzone'>${cards}</div></div>`;
+          }).join('');
+        }
 
         const fOwner = document.getElementById('railfinFilterOwner')?.value || '';
         const fLane = document.getElementById('railfinFilterLane')?.value || '';
