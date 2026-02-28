@@ -39,6 +39,8 @@ const PROJECTS_CONFIG_FILE = process.env.PROJECTS_CONFIG_FILE || "/mithril-os/co
 const POLICIES_CONFIG_FILE = process.env.POLICIES_CONFIG_FILE || "/mithril-os/config/policies.json";
 const PROJECT_WORK_DIR = process.env.PROJECT_WORK_DIR || "/mithril-os/config/project-work";
 const EXEC_SUMMARIES_FILE = process.env.EXEC_SUMMARIES_FILE || "/mithril-os/config/executive-summaries.json";
+const PRODUCTIVITY_VAULT_DIR = process.env.PRODUCTIVITY_VAULT_DIR || "/home/node/.openclaw/workspace/productivity/Personal Assistant";
+const CRON_JOBS_FILE = process.env.CRON_JOBS_FILE || "/home/node/.openclaw/cron/jobs.json";
 
 app.use((req, res, next) => {
   // Internal ops UI: prefer freshness over asset caching to avoid stale frontend state.
@@ -344,6 +346,98 @@ async function readAllProjectTasks() {
     }
   }
   return out;
+}
+
+async function listMarkdownFiles(rootDir, maxFiles = 400) {
+  const out = [];
+  async function walk(dir) {
+    if (out.length >= maxFiles) return;
+    let entries = [];
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      if (out.length >= maxFiles) break;
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        if (e.name.startsWith('.')) continue;
+        await walk(p);
+      } else if (e.isFile() && e.name.toLowerCase().endsWith('.md')) {
+        out.push(p);
+      }
+    }
+  }
+  await walk(rootDir);
+  return out;
+}
+
+function parseTasksFromMarkdown(content, source) {
+  const rows = [];
+  const lines = String(content || '').split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const m = line.match(/^\s*[-*]\s+\[( |x|X)\]\s+(.+)$/);
+    if (m) {
+      rows.push({
+        title: m[2].trim(),
+        status: m[1].trim().toLowerCase() === 'x' ? 'done' : 'open',
+        source,
+        line: i + 1,
+      });
+      continue;
+    }
+    if (line.includes('|') && /^\s*\|/.test(line)) {
+      const parts = line.split('|').map((x) => x.trim()).filter(Boolean);
+      if (!parts.length) continue;
+      const first = (parts[0] || '').toLowerCase();
+      if (!first || first === 'task' || first.startsWith('---')) continue;
+      if (/^[-:]+$/.test(parts[0])) continue;
+      rows.push({ title: parts[0], status: 'open', source, line: i + 1 });
+    }
+  }
+  return rows;
+}
+
+async function readProductivityTasks() {
+  const files = await listMarkdownFiles(PRODUCTIVITY_VAULT_DIR, 500);
+  const tasks = [];
+  for (const file of files) {
+    try {
+      const text = await fs.readFile(file, 'utf8');
+      const rel = file.startsWith(PRODUCTIVITY_VAULT_DIR) ? file.slice(PRODUCTIVITY_VAULT_DIR.length + 1) : file;
+      tasks.push(...parseTasksFromMarkdown(text, rel));
+    } catch {
+      // continue
+    }
+  }
+  return tasks;
+}
+
+async function readCronReminderRows() {
+  try {
+    const raw = await fs.readFile(CRON_JOBS_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    const jobs = Array.isArray(parsed?.jobs) ? parsed.jobs : [];
+    return jobs
+      .filter((j) => j && j.enabled !== false)
+      .map((j) => {
+        const nextMs = Number(j?.state?.nextRunAtMs || 0);
+        const at = Number.isFinite(nextMs) && nextMs > 0 ? new Date(nextMs).toISOString() : null;
+        const text = String(j?.payload?.text || j?.payload?.message || j?.name || '').trim();
+        return {
+          id: String(j.id || ''),
+          name: String(j.name || ''),
+          at,
+          dateKey: at ? at.slice(0, 10) : null,
+          text,
+        };
+      })
+      .filter((r) => r.at);
+  } catch {
+    return [];
+  }
 }
 
 async function getPolicyRowStatus(policy) {
@@ -2054,6 +2148,7 @@ app.get("/api/tasks/calendar", async (req, res) => {
   const mode = String(req.query?.mode || "updated").toLowerCase();
   const field = mode === "created" ? "createdAt" : "updatedAt";
   const tasks = await readAllProjectTasks();
+  const reminderRows = await readCronReminderRows();
   const rows = tasks
     .map((t) => {
       const ts = t[field] || t.updatedAt || t.createdAt || null;
@@ -2061,6 +2156,7 @@ app.get("/api/tasks/calendar", async (req, res) => {
       const d = new Date(ts);
       if (Number.isNaN(d.getTime())) return null;
       return {
+        kind: "task",
         projectId: String(t.projectId || "-"),
         id: String(t.id || ""),
         title: String(t.title || "Untitled task"),
@@ -2072,11 +2168,21 @@ app.get("/api/tasks/calendar", async (req, res) => {
         dateKey: d.toISOString().slice(0, 10),
       };
     })
-    .filter(Boolean)
-    .sort((a, b) => b.at.localeCompare(a.at));
+    .filter(Boolean);
 
+  const reminderItems = reminderRows.map((r) => ({
+    kind: "reminder",
+    id: r.id,
+    title: r.name || "Reminder",
+    note: r.text || "",
+    at: r.at,
+    dateKey: r.dateKey,
+  }));
+
+  const all = [...reminderItems, ...rows].sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
   const byDate = {};
-  for (const r of rows) {
+  for (const r of all) {
+    if (!r?.dateKey) continue;
     if (!byDate[r.dateKey]) byDate[r.dateKey] = [];
     byDate[r.dateKey].push(r);
   }
@@ -2084,8 +2190,29 @@ app.get("/api/tasks/calendar", async (req, res) => {
   return res.json({
     ok: true,
     mode,
-    summary: { totalTasks: tasks.length, calendarItems: rows.length, days: Object.keys(byDate).length },
+    summary: {
+      totalTasks: tasks.length,
+      reminders: reminderItems.length,
+      calendarItems: all.length,
+      days: Object.keys(byDate).length,
+    },
     days: Object.entries(byDate).map(([date, items]) => ({ date, count: items.length, items })),
+  });
+});
+
+app.get("/api/productivity/tasks", async (req, res) => {
+  const includeDone = String(req.query?.includeDone || "false").toLowerCase() === "true";
+  const tasks = await readProductivityTasks();
+  const rows = includeDone ? tasks : tasks.filter((t) => t.status !== 'done');
+  return res.json({
+    ok: true,
+    source: PRODUCTIVITY_VAULT_DIR,
+    summary: {
+      total: tasks.length,
+      open: tasks.filter((t) => t.status !== 'done').length,
+      done: tasks.filter((t) => t.status === 'done').length,
+    },
+    rows: rows.slice(0, 500),
   });
 });
 

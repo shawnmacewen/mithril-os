@@ -766,7 +766,7 @@
           <div class="toolbar ds-tabs" style="margin:0 0 8px;">
             <button id="projectsTabOverview" class="ds-tab is-active">Overview</button>
             <button id="projectsTabRailfin" class="ds-tab">Railfin</button>
-            <button id="projectsTabCalendar" class="ds-tab">Work Calendar</button>
+            <button id="projectsTabCalendar" class="ds-tab">Calendar</button>
             <button id="projectsTabExecutive" class="ds-tab">Executive Summaries</button>
           </div>
 
@@ -871,8 +871,8 @@
 
           <div id="projectsCalendarPane" class="hidden">
             <div class="card" style="margin-top:12px;">
-              <h3>Work Calendar (Combined Task Timeline)</h3>
-              <div class="muted">Productivity-linked view across tracked project tasks. Groups tasks by day from project trackers.</div>
+              <h3>Calendar</h3>
+              <div class="muted">Unified view of tracked tasks + reminders, aligned to your productivity system.</div>
               <div class="toolbar" style="margin-top:8px;">
                 <select id="calendarMode"><option value="updated" selected>Use last updated date</option><option value="created">Use created date</option></select>
                 <button id="calendarRefreshBtn">Refresh Calendar</button>
@@ -880,11 +880,19 @@
             </div>
             <div class="card" style="margin-top:10px;">
               <div class="row"><span>Total mapped items</span><strong id="calendarTotalItems">-</strong></div>
+              <div class="row"><span>Reminder items</span><strong id="calendarReminderItems">-</strong></div>
               <div class="row"><span>Days with activity</span><strong id="calendarTotalDays">-</strong></div>
               <div class="row"><span>Mode</span><strong id="calendarModeLabel">-</strong></div>
             </div>
-            <div class="card" style="margin-top:10px;">
-              <div id="calendarDays">Loading…</div>
+            <div class="grid2" style="margin-top:10px;">
+              <div class="card" style="margin-top:0;">
+                <h4 style="margin-top:0;">Tracked Tasks (Productivity)</h4>
+                <div id="productivityTasksList">Loading…</div>
+              </div>
+              <div class="card" style="margin-top:0;">
+                <h4 style="margin-top:0;">Task + Reminder Timeline</h4>
+                <div id="calendarDays">Loading…</div>
+              </div>
             </div>
           </div>
 
@@ -1866,16 +1874,28 @@
       function renderTaskCalendar(payload){
         const summary = payload?.summary || {};
         document.getElementById('calendarTotalItems').textContent = String(summary.calendarItems ?? 0);
+        document.getElementById('calendarReminderItems').textContent = String(summary.reminders ?? 0);
         document.getElementById('calendarTotalDays').textContent = String(summary.days ?? 0);
         document.getElementById('calendarModeLabel').textContent = String(payload?.mode || '-');
         const host = document.getElementById('calendarDays');
         const days = Array.isArray(payload?.days) ? payload.days : [];
         host.innerHTML = days.length ? days.slice(0, 40).map((d) => {
-          const items = (d.items || []).slice(0, 20).map((it) =>
-            `<div class='calendar-item'><strong>${it.projectId}</strong> · ${it.title}<div class='muted'>${it.owner} · ${it.lane} · ${it.priority} · ${it.status} · ${new Date(it.at).toLocaleString()}</div></div>`
-          ).join('');
+          const items = (d.items || []).slice(0, 30).map((it) => {
+            if (it.kind === 'reminder') {
+              return `<div class='calendar-item'><strong>⏰ Reminder</strong> · ${it.title || '-'}<div class='muted'>${it.note || ''} · ${new Date(it.at).toLocaleString()}</div></div>`;
+            }
+            return `<div class='calendar-item'><strong>${it.projectId || 'project'}</strong> · ${it.title}<div class='muted'>${it.owner || '-'} · ${it.lane || '-'} · ${it.priority || '-'} · ${it.status || '-'} · ${new Date(it.at).toLocaleString()}</div></div>`;
+          }).join('');
           return `<div class='calendar-day'><h4 style='margin:0 0 6px;'>${d.date} <span class='muted'>(${d.count})</span></h4>${items}</div>`;
         }).join('') : `<div class='muted'>No calendar items found.</div>`;
+      }
+
+      function renderProductivityTasks(payload){
+        const host = document.getElementById('productivityTasksList');
+        const rows = Array.isArray(payload?.rows) ? payload.rows : [];
+        host.innerHTML = rows.length ? rows.slice(0, 120).map((r) =>
+          `<div class='calendar-item'><strong>${r.title || '-'}</strong><div class='muted'>${r.source || '-'}#L${r.line || '-'} · ${r.status || 'open'}</div></div>`
+        ).join('') : `<div class='muted'>No tracked tasks found in productivity vault.</div>`;
       }
 
       function renderExecutiveSummaries(payload){
@@ -2269,20 +2289,23 @@
       async function ensureProjectsLoaded(){
         if (projectsLoaded) return;
         const mode = document.getElementById('calendarMode')?.value || 'updated';
-        const [projects, railfinWork, calendar, executive] = await Promise.all([
+        const [projects, railfinWork, calendar, executive, productivityTasks] = await Promise.all([
           jget('/api/project-monitor/overview'),
           jget('/api/project-work/railfin'),
           jget(`/api/tasks/calendar?mode=${encodeURIComponent(mode)}`),
-          jget('/api/executive-summaries')
+          jget('/api/executive-summaries'),
+          jget('/api/productivity/tasks')
         ]);
         cache.projects = projects;
         cache.railfinWork = railfinWork;
         cache.calendar = calendar;
         cache.executive = executive;
+        cache.productivityTasks = productivityTasks;
         renderProjectsOverview(projects || {});
         renderRailfinWork(railfinWork || {});
         renderTaskCalendar(calendar || {});
         renderExecutiveSummaries(executive || {});
+        renderProductivityTasks(productivityTasks || {});
         projectsLoaded = true;
       }
 
