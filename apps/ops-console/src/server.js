@@ -418,6 +418,11 @@ function taskSeqFromAny(task) {
   return m ? Number(m[1]) : -1;
 }
 
+function taskKeyFromAny(task) {
+  const seq = taskSeqFromAny(task);
+  return seq >= 0 ? `task-${String(seq).padStart(5, "0")}` : String(task?.id || "task-00000");
+}
+
 function laneTokenFromTask(task) {
   const lane = String(task?.lane || "").toLowerCase();
   if (lane === "dev") return "DEV";
@@ -439,7 +444,18 @@ function statusLabelFromTask(task) {
 async function writeRailfinTasksDocFromBoard(doc) {
   const tasksDoc = await findRailfinTasksDoc();
   if (!tasksDoc) return { ok: false, reason: "missing-tasks-doc" };
-  const tasks = Array.isArray(doc?.tasks) ? doc.tasks.slice() : [];
+
+  // Merge strategy: never drop tasks that already exist in docs/tasks.md.
+  // Board updates should patch matching task IDs, while preserving externally added/newer tasks.
+  const existingRaw = await fs.readFile(tasksDoc, "utf8");
+  const existing = parseRailfinTasksMarkdown(existingRaw);
+  const merged = new Map();
+  for (const t of existing) merged.set(taskKeyFromAny(t), t);
+
+  const boardTasks = Array.isArray(doc?.tasks) ? doc.tasks.slice() : [];
+  for (const t of boardTasks) merged.set(taskKeyFromAny(t), t);
+
+  const tasks = Array.from(merged.values());
   tasks.sort((a, b) => {
     const sa = taskSeqFromAny(a);
     const sb = taskSeqFromAny(b);
@@ -451,8 +467,7 @@ async function writeRailfinTasksDocFromBoard(doc) {
 
   const lines = ["# Tasks", ""];
   for (const t of tasks) {
-    const seq = taskSeqFromAny(t);
-    const taskKey = seq >= 0 ? `task-${String(seq).padStart(5, "0")}` : String(t.id || "task-00000");
+    const taskKey = taskKeyFromAny(t);
     lines.push(`## ${taskKey} — ${laneTokenFromTask(t)} — ${String(t.title || "Untitled")}`);
     lines.push("");
     lines.push(`- Status: **${statusLabelFromTask(t)}**`);
