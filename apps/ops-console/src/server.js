@@ -412,6 +412,60 @@ async function syncRailfinFromTasksDoc(doc) {
   return { synced: true, tasksDoc, count: tasks.length };
 }
 
+function taskSeqFromAny(task) {
+  const raw = `${task?.id || ""} ${task?.title || ""}`;
+  const m = raw.match(/task-(\d+)/i);
+  return m ? Number(m[1]) : -1;
+}
+
+function laneTokenFromTask(task) {
+  const lane = String(task?.lane || "").toLowerCase();
+  if (lane === "dev") return "DEV";
+  if (lane === "ui") return "UI";
+  if (lane === "sec") return "SEC";
+  return "COO";
+}
+
+function statusLabelFromTask(task) {
+  const s = String(task?.status || "ready").toLowerCase();
+  if (s === "in_progress") return "In Progress";
+  if (s === "done") return "Done";
+  if (s === "review") return "Review";
+  if (s === "blocked") return "Blocked";
+  if (s === "backlog") return "Backlog";
+  return "Ready";
+}
+
+async function writeRailfinTasksDocFromBoard(doc) {
+  const tasksDoc = await findRailfinTasksDoc();
+  if (!tasksDoc) return { ok: false, reason: "missing-tasks-doc" };
+  const tasks = Array.isArray(doc?.tasks) ? doc.tasks.slice() : [];
+  tasks.sort((a, b) => {
+    const sa = taskSeqFromAny(a);
+    const sb = taskSeqFromAny(b);
+    if (sb !== sa) return sb - sa;
+    const ta = new Date(a.updatedAt || a.createdAt || 0).getTime();
+    const tb = new Date(b.updatedAt || b.createdAt || 0).getTime();
+    return tb - ta;
+  });
+
+  const lines = ["# Tasks", ""];
+  for (const t of tasks) {
+    const seq = taskSeqFromAny(t);
+    const taskKey = seq >= 0 ? `task-${String(seq).padStart(5, "0")}` : String(t.id || "task-00000");
+    lines.push(`## ${taskKey} — ${laneTokenFromTask(t)} — ${String(t.title || "Untitled")}`);
+    lines.push("");
+    lines.push(`- Status: **${statusLabelFromTask(t)}**`);
+    lines.push(`- Branch: \`${String(t.branch || "")}\``);
+    if (String(t.pr || "").trim()) lines.push(`- PR: \`${String(t.pr).trim()}\``);
+    if (String(t.commit || "").trim()) lines.push(`- Commit: \`${String(t.commit).trim()}\``);
+    lines.push("");
+  }
+
+  await fs.writeFile(tasksDoc, `${lines.join("\n")}\n`, "utf8");
+  return { ok: true, tasksDoc, count: tasks.length };
+}
+
 async function readProjectWork(projectId) {
   const safeId = String(projectId || "").toLowerCase().replace(/[^a-z0-9_-]/g, "-");
   const file = path.join(PROJECT_WORK_DIR, `${safeId}.json`);
@@ -2223,6 +2277,7 @@ app.post("/api/project-work/:projectId/task", async (req, res) => {
   doc.tasks.unshift(task);
   doc.activity.unshift({ ts: new Date().toISOString(), type: "task_created", by: "main", taskId: id, note: `${title} → ${owner}` });
   await writeProjectWork(projectId, doc);
+  if (projectId === "railfin") await writeRailfinTasksDocFromBoard(doc);
   return res.json({ ok: true, task });
 });
 
@@ -2243,6 +2298,7 @@ app.post("/api/project-work/:projectId/task/:taskId/status", async (req, res) =>
   doc.tasks[idx].updatedAt = new Date().toISOString();
   doc.activity.unshift({ ts: new Date().toISOString(), type: "task_status", by, taskId, note: `status → ${status}` });
   await writeProjectWork(projectId, doc);
+  if (projectId === "railfin") await writeRailfinTasksDocFromBoard(doc);
   return res.json({ ok: true, task: doc.tasks[idx] });
 });
 
@@ -2268,6 +2324,7 @@ app.post("/api/project-work/:projectId/task/:taskId/refs", async (req, res) => {
   doc.tasks[idx].updatedAt = new Date().toISOString();
   doc.activity.unshift({ ts: new Date().toISOString(), type: "task_refs", by, taskId, note: `refs updated (branch=${branch || '-'}, pr=${pr || '-'}, commit=${commit || '-'})` });
   await writeProjectWork(projectId, doc);
+  if (projectId === "railfin") await writeRailfinTasksDocFromBoard(doc);
   return res.json({ ok: true, task: doc.tasks[idx] });
 });
 
