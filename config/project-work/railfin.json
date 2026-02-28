@@ -1,6 +1,6 @@
 {
   "projectId": "railfin",
-  "updatedAt": "2026-02-28T06:48:39.172901Z",
+  "updatedAt": "2026-02-28T08:07:10.735728Z",
   "roadmap": {
     "now": [
       "Kick off PRD-driven execution plan with lane assignments",
@@ -26,8 +26,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172162Z",
-      "updatedAt": "2026-02-28T06:48:39.172162Z",
+      "createdAt": "2026-02-28T08:07:10.734291Z",
+      "updatedAt": "2026-02-28T08:07:10.734291Z",
       "source": "docs/tasks.md"
     },
     {
@@ -40,8 +40,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172204Z",
-      "updatedAt": "2026-02-28T06:48:39.172204Z",
+      "createdAt": "2026-02-28T08:07:10.734637Z",
+      "updatedAt": "2026-02-28T08:07:10.734637Z",
       "source": "docs/tasks.md"
     },
     {
@@ -54,8 +54,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172225Z",
-      "updatedAt": "2026-02-28T06:48:39.172225Z",
+      "createdAt": "2026-02-28T08:07:10.734657Z",
+      "updatedAt": "2026-02-28T08:07:10.734657Z",
       "source": "docs/tasks.md"
     },
     {
@@ -68,8 +68,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172244Z",
-      "updatedAt": "2026-02-28T06:48:39.172244Z",
+      "createdAt": "2026-02-28T08:07:10.734680Z",
+      "updatedAt": "2026-02-28T08:07:10.734680Z",
       "source": "docs/tasks.md"
     },
     {
@@ -82,8 +82,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172261Z",
-      "updatedAt": "2026-02-28T06:48:39.172261Z",
+      "createdAt": "2026-02-28T08:07:10.734697Z",
+      "updatedAt": "2026-02-28T08:07:10.734697Z",
       "source": "docs/tasks.md"
     },
     {
@@ -96,8 +96,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172280Z",
-      "updatedAt": "2026-02-28T06:48:39.172280Z",
+      "createdAt": "2026-02-28T08:07:10.734714Z",
+      "updatedAt": "2026-02-28T08:07:10.734714Z",
       "source": "docs/tasks.md"
     },
     {
@@ -110,8 +110,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172298Z",
-      "updatedAt": "2026-02-28T06:48:39.172298Z",
+      "createdAt": "2026-02-28T08:07:10.734732Z",
+      "updatedAt": "2026-02-28T08:07:10.734732Z",
       "source": "docs/tasks.md"
     },
     {
@@ -124,8 +124,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172317Z",
-      "updatedAt": "2026-02-28T06:48:39.172317Z",
+      "createdAt": "2026-02-28T08:07:10.734751Z",
+      "updatedAt": "2026-02-28T08:07:10.734751Z",
       "source": "docs/tasks.md"
     },
     {
@@ -138,8 +138,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172336Z",
-      "updatedAt": "2026-02-28T06:48:39.172336Z",
+      "createdAt": "2026-02-28T08:07:10.734769Z",
+      "updatedAt": "2026-02-28T08:07:10.734769Z",
       "source": "docs/tasks.md"
     },
     {
@@ -152,8 +152,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172351Z",
-      "updatedAt": "2026-02-28T06:48:39.172351Z",
+      "createdAt": "2026-02-28T08:07:10.734783Z",
+      "updatedAt": "2026-02-28T08:07:10.734783Z",
       "source": "docs/tasks.md"
     },
     {
@@ -166,8 +166,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172369Z",
-      "updatedAt": "2026-02-28T06:48:39.172369Z",
+      "createdAt": "2026-02-28T08:07:10.734798Z",
+      "updatedAt": "2026-02-28T08:07:10.734798Z",
       "source": "docs/tasks.md"
     },
     {
@@ -180,8 +180,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172384Z",
-      "updatedAt": "2026-02-28T06:48:39.172384Z",
+      "createdAt": "2026-02-28T08:07:10.734812Z",
+      "updatedAt": "2026-02-28T08:07:10.734812Z",
       "source": "docs/tasks.md"
     },
     {
@@ -194,8 +194,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172398Z",
-      "updatedAt": "2026-02-28T06:48:39.172398Z",
+      "createdAt": "2026-02-28T08:07:10.734826Z",
+      "updatedAt": "2026-02-28T08:07:10.734826Z",
       "source": "docs/tasks.md"
     },
     {
@@ -208,8 +208,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172413Z",
-      "updatedAt": "2026-02-28T06:48:39.172413Z",
+      "createdAt": "2026-02-28T08:07:10.734840Z",
+      "updatedAt": "2026-02-28T08:07:10.734840Z",
       "source": "docs/tasks.md"
     },
     {
@@ -222,8 +222,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172427Z",
-      "updatedAt": "2026-02-28T06:48:39.172427Z",
+      "createdAt": "2026-02-28T08:07:10.734854Z",
+      "updatedAt": "2026-02-28T08:07:10.734854Z",
       "source": "docs/tasks.md"
     },
     {
@@ -236,8 +236,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172446Z",
-      "updatedAt": "2026-02-28T06:48:39.172446Z",
+      "createdAt": "2026-02-28T08:07:10.734876Z",
+      "updatedAt": "2026-02-28T08:07:10.734876Z",
       "source": "docs/tasks.md"
     },
     {
@@ -250,8 +250,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172466Z",
-      "updatedAt": "2026-02-28T06:48:39.172466Z",
+      "createdAt": "2026-02-28T08:07:10.734895Z",
+      "updatedAt": "2026-02-28T08:07:10.734895Z",
       "source": "docs/tasks.md"
     },
     {
@@ -264,8 +264,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172485Z",
-      "updatedAt": "2026-02-28T06:48:39.172485Z",
+      "createdAt": "2026-02-28T08:07:10.734915Z",
+      "updatedAt": "2026-02-28T08:07:10.734915Z",
       "source": "docs/tasks.md"
     },
     {
@@ -278,8 +278,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172502Z",
-      "updatedAt": "2026-02-28T06:48:39.172502Z",
+      "createdAt": "2026-02-28T08:07:10.734931Z",
+      "updatedAt": "2026-02-28T08:07:10.734931Z",
       "source": "docs/tasks.md"
     },
     {
@@ -292,8 +292,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172523Z",
-      "updatedAt": "2026-02-28T06:48:39.172523Z",
+      "createdAt": "2026-02-28T08:07:10.734952Z",
+      "updatedAt": "2026-02-28T08:07:10.734952Z",
       "source": "docs/tasks.md"
     },
     {
@@ -306,8 +306,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172547Z",
-      "updatedAt": "2026-02-28T06:48:39.172547Z",
+      "createdAt": "2026-02-28T08:07:10.734973Z",
+      "updatedAt": "2026-02-28T08:07:10.734973Z",
       "source": "docs/tasks.md"
     },
     {
@@ -320,8 +320,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172568Z",
-      "updatedAt": "2026-02-28T06:48:39.172568Z",
+      "createdAt": "2026-02-28T08:07:10.734994Z",
+      "updatedAt": "2026-02-28T08:07:10.734994Z",
       "source": "docs/tasks.md"
     },
     {
@@ -334,8 +334,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172590Z",
-      "updatedAt": "2026-02-28T06:48:39.172590Z",
+      "createdAt": "2026-02-28T08:07:10.735015Z",
+      "updatedAt": "2026-02-28T08:07:10.735015Z",
       "source": "docs/tasks.md"
     },
     {
@@ -348,8 +348,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172611Z",
-      "updatedAt": "2026-02-28T06:48:39.172611Z",
+      "createdAt": "2026-02-28T08:07:10.735039Z",
+      "updatedAt": "2026-02-28T08:07:10.735039Z",
       "source": "docs/tasks.md"
     },
     {
@@ -362,8 +362,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172637Z",
-      "updatedAt": "2026-02-28T06:48:39.172637Z",
+      "createdAt": "2026-02-28T08:07:10.735059Z",
+      "updatedAt": "2026-02-28T08:07:10.735059Z",
       "source": "docs/tasks.md"
     },
     {
@@ -376,8 +376,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172656Z",
-      "updatedAt": "2026-02-28T06:48:39.172656Z",
+      "createdAt": "2026-02-28T08:07:10.735078Z",
+      "updatedAt": "2026-02-28T08:07:10.735078Z",
       "source": "docs/tasks.md"
     },
     {
@@ -390,8 +390,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172677Z",
-      "updatedAt": "2026-02-28T06:48:39.172677Z",
+      "createdAt": "2026-02-28T08:07:10.735099Z",
+      "updatedAt": "2026-02-28T08:07:10.735099Z",
       "source": "docs/tasks.md"
     },
     {
@@ -404,8 +404,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172699Z",
-      "updatedAt": "2026-02-28T06:48:39.172699Z",
+      "createdAt": "2026-02-28T08:07:10.735120Z",
+      "updatedAt": "2026-02-28T08:07:10.735120Z",
       "source": "docs/tasks.md"
     },
     {
@@ -418,8 +418,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172731Z",
-      "updatedAt": "2026-02-28T06:48:39.172731Z",
+      "createdAt": "2026-02-28T08:07:10.735162Z",
+      "updatedAt": "2026-02-28T08:07:10.735162Z",
       "source": "docs/tasks.md"
     },
     {
@@ -432,8 +432,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172753Z",
-      "updatedAt": "2026-02-28T06:48:39.172753Z",
+      "createdAt": "2026-02-28T08:07:10.735189Z",
+      "updatedAt": "2026-02-28T08:07:10.735189Z",
       "source": "docs/tasks.md"
     },
     {
@@ -446,8 +446,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172779Z",
-      "updatedAt": "2026-02-28T06:48:39.172779Z",
+      "createdAt": "2026-02-28T08:07:10.735215Z",
+      "updatedAt": "2026-02-28T08:07:10.735215Z",
       "source": "docs/tasks.md"
     },
     {
@@ -460,8 +460,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172802Z",
-      "updatedAt": "2026-02-28T06:48:39.172802Z",
+      "createdAt": "2026-02-28T08:07:10.735238Z",
+      "updatedAt": "2026-02-28T08:07:10.735238Z",
       "source": "docs/tasks.md"
     },
     {
@@ -474,12 +474,60 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T06:48:39.172821Z",
-      "updatedAt": "2026-02-28T06:48:39.172821Z",
+      "createdAt": "2026-02-28T08:07:10.735259Z",
+      "updatedAt": "2026-02-28T08:07:10.735259Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00043",
+      "title": "AI compliance engine integration (Codex-first, fallback-ready)",
+      "owner": "railfin-dev",
+      "lane": "dev",
+      "priority": "p2",
+      "branch": "feat/dev/task-00043-ai-compliance-engine",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-02-28T08:07:10.735285Z",
+      "updatedAt": "2026-02-28T08:07:10.735285Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00046",
+      "title": "Railfin v1 branding asset + top-left logo + favicon",
+      "owner": "railfin-ui",
+      "lane": "ui",
+      "priority": "p2",
+      "branch": "feat/ui/task-00046-logo-favicon-shell-branding",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-02-28T08:07:10.735308Z",
+      "updatedAt": "2026-02-28T08:07:10.735308Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00047",
+      "title": "Set default app route to Create dashboard",
+      "owner": "railfin-dev",
+      "lane": "dev",
+      "priority": "p2",
+      "branch": "feat/dev/task-00047-default-route-to-create",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-02-28T08:07:10.735326Z",
+      "updatedAt": "2026-02-28T08:07:10.735326Z",
       "source": "docs/tasks.md"
     }
   ],
   "activity": [
+    {
+      "ts": "2026-02-28T08:07:10.735724Z",
+      "type": "sync",
+      "by": "main",
+      "note": "Manual resync from docs/tasks.md (36 tasks, max=47)"
+    },
     {
       "ts": "2026-02-28T06:48:39.172897Z",
       "type": "sync",
