@@ -842,6 +842,11 @@
                 <select id="railfinFilterStatus"><option value="">status: all</option><option>backlog</option><option>ready</option><option>in_progress</option><option>review</option><option>done</option><option>blocked</option><option>cancelled</option></select>
                 <select id="railfinFilterPriority"><option value="">priority: all</option><option>p1</option><option>p2</option><option>p3</option></select>
               </div>
+              <div class="toolbar" style="margin:0 0 8px;">
+                <button id="railfinTasksPrev">Prev</button>
+                <button id="railfinTasksNext">Next</button>
+                <span id="railfinTasksPageLabel" class="muted">Page 1</span>
+              </div>
               <table id="railfinTasksTable">
                 <thead><tr><th>Task</th><th>Owner</th><th>Lane</th><th>Priority</th><th>Status</th><th>Branch/PR/Commit</th><th>Update</th></tr></thead>
                 <tbody><tr><td colspan="7" class="muted">Loading…</td></tr></tbody>
@@ -1155,6 +1160,8 @@
       let logsPage = 1;
       let logsRows = [];
       let logsTab = 'gateway';
+      let railfinTasksPage = 1;
+      const railfinTasksPageSize = 10;
       const queueHistory = [];
 
       function setTheme(theme){
@@ -1833,8 +1840,20 @@
           (!fPriority || t.priority === fPriority)
         );
 
+        const sorted = filtered.slice().sort((a, b) => {
+          const ta = new Date(a.updatedAt || a.createdAt || 0).getTime();
+          const tb = new Date(b.updatedAt || b.createdAt || 0).getTime();
+          return tb - ta;
+        });
+        const totalPages = Math.max(1, Math.ceil(sorted.length / railfinTasksPageSize));
+        railfinTasksPage = Math.min(Math.max(1, railfinTasksPage), totalPages);
+        const start = (railfinTasksPage - 1) * railfinTasksPageSize;
+        const pageRows = sorted.slice(start, start + railfinTasksPageSize);
+        const pageLabel = document.getElementById('railfinTasksPageLabel');
+        if (pageLabel) pageLabel.textContent = `Page ${railfinTasksPage} / ${totalPages} · ${sorted.length} tasks`;
+
         const tbody = document.querySelector('#railfinTasksTable tbody');
-        tbody.innerHTML = filtered.length ? filtered.slice(0, 80).map((t) => {
+        tbody.innerHTML = pageRows.length ? pageRows.map((t) => {
           const opts = ['backlog','ready','in_progress','review','done','blocked','cancelled']
             .map((s)=>`<option value='${s}' ${t.status===s?'selected':''}>${s}</option>`).join('');
           const branch = t.branch || '';
@@ -2684,6 +2703,7 @@
       document.addEventListener('change', async (ev) => {
         const filterSel = ev.target.closest('#railfinFilterOwner,#railfinFilterLane,#railfinFilterStatus,#railfinFilterPriority');
         if (filterSel) {
+          railfinTasksPage = 1;
           renderRailfinWork(cache.railfinWork || {});
           return;
         }
@@ -2711,6 +2731,7 @@
           if (mode === 'mine-sec') laneEl.value = 'sec';
           if (mode === 'blocked') statusEl.value = 'blocked';
           if (mode === 'merge') statusEl.value = 'review';
+          railfinTasksPage = 1;
           renderRailfinWork(cache.railfinWork || {});
           return;
         }
@@ -2773,6 +2794,8 @@
       document.getElementById('projectsTabRailfin').addEventListener('click', () => setProjectsTab('railfin'));
       document.getElementById('projectsTabCalendar').addEventListener('click', () => setProjectsTab('calendar'));
       document.getElementById('projectsTabExecutive').addEventListener('click', () => setProjectsTab('executive'));
+      document.getElementById('railfinTasksPrev').addEventListener('click', () => { railfinTasksPage = Math.max(1, railfinTasksPage - 1); renderRailfinWork(cache.railfinWork || {}); });
+      document.getElementById('railfinTasksNext').addEventListener('click', () => { railfinTasksPage = railfinTasksPage + 1; renderRailfinWork(cache.railfinWork || {}); });
       document.getElementById('calendarMode').addEventListener('change', async () => {
         const mode = document.getElementById('calendarMode').value || 'updated';
         const out = await jget(`/api/tasks/calendar?mode=${encodeURIComponent(mode)}`);
