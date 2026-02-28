@@ -304,35 +304,100 @@ async function findRailfinTasksDoc() {
 function parseRailfinTasksMarkdown(mdText) {
   const lines = String(mdText || "").split(/\r?\n/);
   const out = [];
-  for (const line of lines) {
-    const m = line.match(/^\s*[-*]\s+\[( |x|X)\]\s+(.+)$/);
-    if (!m) continue;
-    const checked = m[1].toLowerCase() === "x";
-    let title = m[2].trim();
-    let lane = "coo";
-    let owner = "railfin-coo";
-    const lower = title.toLowerCase();
-    if (lower.includes("[dev]") || lower.includes("(dev)")) { lane = "dev"; owner = "railfin-dev"; }
-    if (lower.includes("[ui]") || lower.includes("(ui)")) { lane = "ui"; owner = "railfin-ui"; }
-    if (lower.includes("[sec]") || lower.includes("(sec)")) { lane = "sec"; owner = "railfin-sec"; }
-    if (lower.includes("[coo]") || lower.includes("(coo)")) { lane = "coo"; owner = "railfin-coo"; }
-    title = title.replace(/\[(dev|ui|sec|coo)\]/ig, "").replace(/\((dev|ui|sec|coo)\)/ig, "").trim();
-    const id = `tsk_sync_${createHash("sha1").update(title).digest("hex").slice(0, 10)}`;
+
+  // Format A: section headers (current railfin docs style)
+  // ## task-00037 — DEV — Title
+  let cur = null;
+  const pushCur = () => {
+    if (!cur) return;
     out.push({
-      id,
-      title,
-      owner,
-      lane,
-      priority: "p2",
-      branch: "",
-      pr: "",
-      commit: "",
-      status: checked ? "done" : "ready",
+      id: `tsk_sync_${cur.taskKey || createHash("sha1").update(cur.title).digest("hex").slice(0, 10)}`,
+      title: cur.title,
+      owner: cur.owner,
+      lane: cur.lane,
+      priority: cur.priority || "p2",
+      branch: cur.branch || "",
+      pr: cur.pr || "",
+      commit: cur.commit || "",
+      status: cur.status || "ready",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       source: "docs/tasks.md",
     });
+  };
+
+  const laneMap = (raw) => {
+    const k = String(raw || "").trim().toLowerCase();
+    if (k === "dev") return { lane: "dev", owner: "railfin-dev" };
+    if (k === "ui") return { lane: "ui", owner: "railfin-ui" };
+    if (k === "sec") return { lane: "sec", owner: "railfin-sec" };
+    return { lane: "coo", owner: "railfin-coo" };
+  };
+
+  const normalizeStatus = (s) => {
+    const x = String(s || "").toLowerCase();
+    if (x.includes("done")) return "done";
+    if (x.includes("review")) return "review";
+    if (x.includes("progress")) return "in_progress";
+    if (x.includes("block")) return "blocked";
+    if (x.includes("backlog")) return "backlog";
+    return "ready";
+  };
+
+  for (const line of lines) {
+    const head = line.match(/^\s*##\s*(task-[0-9]+)\s*[—-]\s*([A-Za-z]+)\s*[—-]\s*(.+)$/);
+    if (head) {
+      pushCur();
+      const laneOwner = laneMap(head[2]);
+      cur = {
+        taskKey: head[1].toLowerCase(),
+        title: String(head[3] || "").trim(),
+        lane: laneOwner.lane,
+        owner: laneOwner.owner,
+        priority: "p2",
+        status: "ready",
+        branch: "",
+        pr: "",
+        commit: "",
+      };
+      continue;
+    }
+
+    if (cur) {
+      const st = line.match(/^\s*[-*]\s*Status:\s*\*\*(.+?)\*\*/i);
+      if (st) { cur.status = normalizeStatus(st[1]); continue; }
+      const br = line.match(/^\s*[-*]\s*Branch:\s*`([^`]+)`/i);
+      if (br) { cur.branch = br[1].trim(); continue; }
+      const pr = line.match(/^\s*[-*]\s*PR:\s*`?([^`]+)`?/i);
+      if (pr) { cur.pr = pr[1].trim(); continue; }
+      const cm = line.match(/^\s*[-*]\s*Commit:\s*`([^`]+)`/i);
+      if (cm) { cur.commit = cm[1].trim(); continue; }
+      const p1 = line.match(/^\s*[-*]\s*Priority:\s*\*\*(p[123])\*\*/i);
+      if (p1) { cur.priority = p1[1].toLowerCase(); continue; }
+    }
   }
+  pushCur();
+
+  // Format B fallback: markdown checkbox list
+  if (!out.length) {
+    for (const line of lines) {
+      const m = line.match(/^\s*[-*]\s+\[( |x|X)\]\s+(.+)$/);
+      if (!m) continue;
+      const checked = m[1].toLowerCase() === "x";
+      let title = m[2].trim();
+      let lane = "coo";
+      let owner = "railfin-coo";
+      const lower = title.toLowerCase();
+      if (lower.includes("[dev]") || lower.includes("(dev)")) { lane = "dev"; owner = "railfin-dev"; }
+      if (lower.includes("[ui]") || lower.includes("(ui)")) { lane = "ui"; owner = "railfin-ui"; }
+      if (lower.includes("[sec]") || lower.includes("(sec)")) { lane = "sec"; owner = "railfin-sec"; }
+      if (lower.includes("[coo]") || lower.includes("(coo)")) { lane = "coo"; owner = "railfin-coo"; }
+      title = title.replace(/\[(dev|ui|sec|coo)\]/ig, "").replace(/\((dev|ui|sec|coo)\)/ig, "").trim();
+      const id = `tsk_sync_${createHash("sha1").update(title).digest("hex").slice(0, 10)}`;
+      out.push({ id, title, owner, lane, priority: "p2", branch: "", pr: "", commit: "", status: checked ? "done" : "ready", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), source: "docs/tasks.md" });
+    }
+  }
+
   return out;
 }
 
