@@ -1840,7 +1840,15 @@
           (!fPriority || t.priority === fPriority)
         );
 
+        const taskSeq = (t) => {
+          const raw = `${t?.id || ''} ${t?.title || ''}`;
+          const m = raw.match(/task-(\d+)/i);
+          return m ? Number(m[1]) : -1;
+        };
         const sorted = filtered.slice().sort((a, b) => {
+          const sa = taskSeq(a);
+          const sb = taskSeq(b);
+          if (sb !== sa) return sb - sa;
           const ta = new Date(a.updatedAt || a.createdAt || 0).getTime();
           const tb = new Date(b.updatedAt || b.createdAt || 0).getTime();
           return tb - ta;
