@@ -285,6 +285,8 @@ function defaultProjectWork(projectId) {
 
 async function findRailfinTasksDoc() {
   const candidates = [
+    "/home/mini-home-lab/work/railfin/docs/tasks.md",
+    "/work/railfin/docs/tasks.md",
     "/home/mini-home-lab/work/railfin.io/docs/tasks.md",
     "/work/railfin.io/docs/tasks.md",
   ];
