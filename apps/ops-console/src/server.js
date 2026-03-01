@@ -2260,6 +2260,30 @@ app.get("/api/project-work/:projectId", async (req, res) => {
   return res.json({ ok: true, source: out.source, data: out.data });
 });
 
+app.post("/api/project-work/:projectId/sync", async (req, res) => {
+  const projectId = String(req.params.projectId || "railfin");
+  if (projectId !== "railfin") return res.status(400).json({ ok: false, error: "manual sync only supported for railfin" });
+
+  const out = await readProjectWork(projectId);
+  if (!out.ok) return res.status(500).json(out);
+  const doc = out.data || defaultProjectWork("railfin");
+
+  const sync = await syncRailfinFromTasksDoc(doc);
+  if (!sync?.synced) {
+    return res.status(404).json({ ok: false, error: "tasks.md not found", detail: sync?.reason || "missing-tasks-doc" });
+  }
+  await writeProjectWork(projectId, doc);
+
+  const maxTaskId = (Array.isArray(doc.tasks) ? doc.tasks : []).reduce((mx, t) => Math.max(mx, taskSeqFromAny(t)), -1);
+  return res.json({
+    ok: true,
+    synced: true,
+    source: sync.tasksDoc,
+    count: Array.isArray(doc.tasks) ? doc.tasks.length : 0,
+    maxTaskId: maxTaskId >= 0 ? `task-${String(maxTaskId).padStart(5, "0")}` : null,
+  });
+});
+
 app.post("/api/project-work/:projectId/task", async (req, res) => {
   const projectId = String(req.params.projectId || "railfin");
   const title = String(req.body?.title || "").trim();

@@ -786,7 +786,10 @@
           <div id="projectsRailfinPane" class="hidden">
             <div class="card" style="margin-top:12px;">
               <h3>Railfin Command Center</h3>
-              <div id="railfinSyncBadge" class="muted" style="margin-bottom:8px;">Sync: loading…</div>
+              <div class="toolbar" style="margin:0 0 8px;">
+                <div id="railfinSyncBadge" class="muted" style="flex:1;">Sync: loading…</div>
+                <button id="railfinSyncNowBtn">Sync Now</button>
+              </div>
             <div class="grid2">
               <div>
                 <h4 style="margin:6px 0;">Roadmap</h4>
@@ -2720,6 +2723,20 @@
         document.getElementById('railfinLogNote').value = '';
         projectsLoaded = false;
         await ensureProjectsLoaded();
+      });
+
+      document.getElementById('railfinSyncNowBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('railfinSyncNowBtn');
+        const prev = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Syncing…';
+        try {
+          await jpost('/api/project-work/railfin/sync', {});
+          await refreshRailfinLive();
+        } finally {
+          btn.disabled = false;
+          btn.textContent = prev;
+        }
       });
 
       document.getElementById('calendarRefreshBtn').addEventListener('click', async () => {
