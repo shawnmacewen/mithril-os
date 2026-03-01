@@ -1,6 +1,6 @@
 {
   "projectId": "railfin",
-  "updatedAt": "2026-02-28T08:07:10.735728Z",
+  "updatedAt": "2026-03-01T02:24:24.304606Z",
   "roadmap": {
     "now": [
       "Kick off PRD-driven execution plan with lane assignments",
@@ -26,8 +26,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734291Z",
-      "updatedAt": "2026-02-28T08:07:10.734291Z",
+      "createdAt": "2026-03-01T02:24:24.302911Z",
+      "updatedAt": "2026-03-01T02:24:24.302911Z",
       "source": "docs/tasks.md"
     },
     {
@@ -40,8 +40,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734637Z",
-      "updatedAt": "2026-02-28T08:07:10.734637Z",
+      "createdAt": "2026-03-01T02:24:24.302952Z",
+      "updatedAt": "2026-03-01T02:24:24.302952Z",
       "source": "docs/tasks.md"
     },
     {
@@ -54,8 +54,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734657Z",
-      "updatedAt": "2026-02-28T08:07:10.734657Z",
+      "createdAt": "2026-03-01T02:24:24.302974Z",
+      "updatedAt": "2026-03-01T02:24:24.302974Z",
       "source": "docs/tasks.md"
     },
     {
@@ -68,8 +68,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734680Z",
-      "updatedAt": "2026-02-28T08:07:10.734680Z",
+      "createdAt": "2026-03-01T02:24:24.302992Z",
+      "updatedAt": "2026-03-01T02:24:24.302992Z",
       "source": "docs/tasks.md"
     },
     {
@@ -82,8 +82,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734697Z",
-      "updatedAt": "2026-02-28T08:07:10.734697Z",
+      "createdAt": "2026-03-01T02:24:24.303010Z",
+      "updatedAt": "2026-03-01T02:24:24.303010Z",
       "source": "docs/tasks.md"
     },
     {
@@ -96,8 +96,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734714Z",
-      "updatedAt": "2026-02-28T08:07:10.734714Z",
+      "createdAt": "2026-03-01T02:24:24.303028Z",
+      "updatedAt": "2026-03-01T02:24:24.303028Z",
       "source": "docs/tasks.md"
     },
     {
@@ -110,8 +110,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734732Z",
-      "updatedAt": "2026-02-28T08:07:10.734732Z",
+      "createdAt": "2026-03-01T02:24:24.303046Z",
+      "updatedAt": "2026-03-01T02:24:24.303046Z",
       "source": "docs/tasks.md"
     },
     {
@@ -124,8 +124,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734751Z",
-      "updatedAt": "2026-02-28T08:07:10.734751Z",
+      "createdAt": "2026-03-01T02:24:24.303065Z",
+      "updatedAt": "2026-03-01T02:24:24.303065Z",
       "source": "docs/tasks.md"
     },
     {
@@ -138,8 +138,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734769Z",
-      "updatedAt": "2026-02-28T08:07:10.734769Z",
+      "createdAt": "2026-03-01T02:24:24.303083Z",
+      "updatedAt": "2026-03-01T02:24:24.303083Z",
       "source": "docs/tasks.md"
     },
     {
@@ -152,8 +152,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734783Z",
-      "updatedAt": "2026-02-28T08:07:10.734783Z",
+      "createdAt": "2026-03-01T02:24:24.303101Z",
+      "updatedAt": "2026-03-01T02:24:24.303101Z",
       "source": "docs/tasks.md"
     },
     {
@@ -166,8 +166,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734798Z",
-      "updatedAt": "2026-02-28T08:07:10.734798Z",
+      "createdAt": "2026-03-01T02:24:24.303116Z",
+      "updatedAt": "2026-03-01T02:24:24.303116Z",
       "source": "docs/tasks.md"
     },
     {
@@ -180,8 +180,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734812Z",
-      "updatedAt": "2026-02-28T08:07:10.734812Z",
+      "createdAt": "2026-03-01T02:24:24.303130Z",
+      "updatedAt": "2026-03-01T02:24:24.303130Z",
       "source": "docs/tasks.md"
     },
     {
@@ -194,8 +194,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734826Z",
-      "updatedAt": "2026-02-28T08:07:10.734826Z",
+      "createdAt": "2026-03-01T02:24:24.303160Z",
+      "updatedAt": "2026-03-01T02:24:24.303160Z",
       "source": "docs/tasks.md"
     },
     {
@@ -208,8 +208,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734840Z",
-      "updatedAt": "2026-02-28T08:07:10.734840Z",
+      "createdAt": "2026-03-01T02:24:24.303178Z",
+      "updatedAt": "2026-03-01T02:24:24.303178Z",
       "source": "docs/tasks.md"
     },
     {
@@ -222,8 +222,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734854Z",
-      "updatedAt": "2026-02-28T08:07:10.734854Z",
+      "createdAt": "2026-03-01T02:24:24.303193Z",
+      "updatedAt": "2026-03-01T02:24:24.303193Z",
       "source": "docs/tasks.md"
     },
     {
@@ -236,8 +236,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734876Z",
-      "updatedAt": "2026-02-28T08:07:10.734876Z",
+      "createdAt": "2026-03-01T02:24:24.303212Z",
+      "updatedAt": "2026-03-01T02:24:24.303212Z",
       "source": "docs/tasks.md"
     },
     {
@@ -250,8 +250,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734895Z",
-      "updatedAt": "2026-02-28T08:07:10.734895Z",
+      "createdAt": "2026-03-01T02:24:24.303232Z",
+      "updatedAt": "2026-03-01T02:24:24.303232Z",
       "source": "docs/tasks.md"
     },
     {
@@ -264,8 +264,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734915Z",
-      "updatedAt": "2026-02-28T08:07:10.734915Z",
+      "createdAt": "2026-03-01T02:24:24.303251Z",
+      "updatedAt": "2026-03-01T02:24:24.303251Z",
       "source": "docs/tasks.md"
     },
     {
@@ -278,8 +278,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734931Z",
-      "updatedAt": "2026-02-28T08:07:10.734931Z",
+      "createdAt": "2026-03-01T02:24:24.303268Z",
+      "updatedAt": "2026-03-01T02:24:24.303268Z",
       "source": "docs/tasks.md"
     },
     {
@@ -292,8 +292,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734952Z",
-      "updatedAt": "2026-02-28T08:07:10.734952Z",
+      "createdAt": "2026-03-01T02:24:24.303289Z",
+      "updatedAt": "2026-03-01T02:24:24.303289Z",
       "source": "docs/tasks.md"
     },
     {
@@ -306,8 +306,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734973Z",
-      "updatedAt": "2026-02-28T08:07:10.734973Z",
+      "createdAt": "2026-03-01T02:24:24.303311Z",
+      "updatedAt": "2026-03-01T02:24:24.303311Z",
       "source": "docs/tasks.md"
     },
     {
@@ -320,8 +320,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.734994Z",
-      "updatedAt": "2026-02-28T08:07:10.734994Z",
+      "createdAt": "2026-03-01T02:24:24.303333Z",
+      "updatedAt": "2026-03-01T02:24:24.303333Z",
       "source": "docs/tasks.md"
     },
     {
@@ -334,8 +334,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.735015Z",
-      "updatedAt": "2026-02-28T08:07:10.735015Z",
+      "createdAt": "2026-03-01T02:24:24.303357Z",
+      "updatedAt": "2026-03-01T02:24:24.303357Z",
       "source": "docs/tasks.md"
     },
     {
@@ -348,8 +348,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.735039Z",
-      "updatedAt": "2026-02-28T08:07:10.735039Z",
+      "createdAt": "2026-03-01T02:24:24.303378Z",
+      "updatedAt": "2026-03-01T02:24:24.303378Z",
       "source": "docs/tasks.md"
     },
     {
@@ -362,8 +362,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.735059Z",
-      "updatedAt": "2026-02-28T08:07:10.735059Z",
+      "createdAt": "2026-03-01T02:24:24.303400Z",
+      "updatedAt": "2026-03-01T02:24:24.303400Z",
       "source": "docs/tasks.md"
     },
     {
@@ -376,8 +376,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.735078Z",
-      "updatedAt": "2026-02-28T08:07:10.735078Z",
+      "createdAt": "2026-03-01T02:24:24.303419Z",
+      "updatedAt": "2026-03-01T02:24:24.303419Z",
       "source": "docs/tasks.md"
     },
     {
@@ -390,8 +390,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.735099Z",
-      "updatedAt": "2026-02-28T08:07:10.735099Z",
+      "createdAt": "2026-03-01T02:24:24.303440Z",
+      "updatedAt": "2026-03-01T02:24:24.303440Z",
       "source": "docs/tasks.md"
     },
     {
@@ -404,8 +404,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.735120Z",
-      "updatedAt": "2026-02-28T08:07:10.735120Z",
+      "createdAt": "2026-03-01T02:24:24.303462Z",
+      "updatedAt": "2026-03-01T02:24:24.303462Z",
       "source": "docs/tasks.md"
     },
     {
@@ -418,8 +418,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.735162Z",
-      "updatedAt": "2026-02-28T08:07:10.735162Z",
+      "createdAt": "2026-03-01T02:24:24.303496Z",
+      "updatedAt": "2026-03-01T02:24:24.303496Z",
       "source": "docs/tasks.md"
     },
     {
@@ -432,8 +432,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.735189Z",
-      "updatedAt": "2026-02-28T08:07:10.735189Z",
+      "createdAt": "2026-03-01T02:24:24.303518Z",
+      "updatedAt": "2026-03-01T02:24:24.303518Z",
       "source": "docs/tasks.md"
     },
     {
@@ -446,8 +446,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.735215Z",
-      "updatedAt": "2026-02-28T08:07:10.735215Z",
+      "createdAt": "2026-03-01T02:24:24.303541Z",
+      "updatedAt": "2026-03-01T02:24:24.303541Z",
       "source": "docs/tasks.md"
     },
     {
@@ -460,8 +460,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.735238Z",
-      "updatedAt": "2026-02-28T08:07:10.735238Z",
+      "createdAt": "2026-03-01T02:24:24.303565Z",
+      "updatedAt": "2026-03-01T02:24:24.303565Z",
       "source": "docs/tasks.md"
     },
     {
@@ -474,8 +474,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.735259Z",
-      "updatedAt": "2026-02-28T08:07:10.735259Z",
+      "createdAt": "2026-03-01T02:24:24.303589Z",
+      "updatedAt": "2026-03-01T02:24:24.303589Z",
       "source": "docs/tasks.md"
     },
     {
@@ -488,8 +488,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.735285Z",
-      "updatedAt": "2026-02-28T08:07:10.735285Z",
+      "createdAt": "2026-03-01T02:24:24.303614Z",
+      "updatedAt": "2026-03-01T02:24:24.303614Z",
       "source": "docs/tasks.md"
     },
     {
@@ -502,8 +502,8 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.735308Z",
-      "updatedAt": "2026-02-28T08:07:10.735308Z",
+      "createdAt": "2026-03-01T02:24:24.303638Z",
+      "updatedAt": "2026-03-01T02:24:24.303638Z",
       "source": "docs/tasks.md"
     },
     {
@@ -516,12 +516,382 @@
       "pr": "",
       "commit": "",
       "status": "done",
-      "createdAt": "2026-02-28T08:07:10.735326Z",
-      "updatedAt": "2026-02-28T08:07:10.735326Z",
+      "createdAt": "2026-03-01T02:24:24.303659Z",
+      "updatedAt": "2026-03-01T02:24:24.303659Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00055",
+      "title": "Re-run Supabase/Vercel env runtime verification after path repair",
+      "owner": "railfin-dev",
+      "lane": "dev",
+      "priority": "p2",
+      "branch": "fix/dev/task-00055-rerun-supabase-runtime-verify",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.303681Z",
+      "updatedAt": "2026-03-01T02:24:24.303681Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00058",
+      "title": "Unblock Supabase runtime wiring + table-backed drafts",
+      "owner": "railfin-dev",
+      "lane": "dev",
+      "priority": "p2",
+      "branch": "fix/dev/task-00058-unblock-supabase-runtime",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.303704Z",
+      "updatedAt": "2026-03-01T02:24:24.303704Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00059",
+      "title": "Final GO/NO-GO recheck after task-00058 landed on main",
+      "owner": "railfin-sec",
+      "lane": "sec",
+      "priority": "p2",
+      "branch": "chore/sec/task-00059-final-go-recheck",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.303723Z",
+      "updatedAt": "2026-03-01T02:24:24.303723Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00061",
+      "title": "Go/No-Go policy update using evidence model",
+      "owner": "railfin-sec",
+      "lane": "sec",
+      "priority": "p2",
+      "branch": "chore/sec/task-00061-go-nogo-evidence-model",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.303745Z",
+      "updatedAt": "2026-03-01T02:24:24.303745Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00060",
+      "title": "Launch-readiness evidence capture (runtime/env/db)",
+      "owner": "railfin-dev",
+      "lane": "dev",
+      "priority": "p2",
+      "branch": "chore/dev/task-00060-launch-evidence-capture",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.303766Z",
+      "updatedAt": "2026-03-01T02:24:24.303766Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00063",
+      "title": "Library page implementation (from placeholder to usable)",
+      "owner": "railfin-ui",
+      "lane": "ui",
+      "priority": "p2",
+      "branch": "feat/ui/task-00063-library-page-usable",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.303790Z",
+      "updatedAt": "2026-03-01T02:24:24.303790Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00065",
+      "title": "Configure page usable baseline",
+      "owner": "railfin-ui",
+      "lane": "ui",
+      "priority": "p2",
+      "branch": "feat/ui/task-00065-configure-page-usable",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.303815Z",
+      "updatedAt": "2026-03-01T02:24:24.303815Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00066",
+      "title": "Configure policy endpoint contract (internal)",
+      "owner": "railfin-dev",
+      "lane": "dev",
+      "priority": "p2",
+      "branch": "feat/dev/task-00066-configure-policy-contract",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.303837Z",
+      "updatedAt": "2026-03-01T02:24:24.303837Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00067",
+      "title": "Final launch-go recheck against latest main commit",
+      "owner": "railfin-sec",
+      "lane": "sec",
+      "priority": "p2",
+      "branch": "chore/sec/task-00067-final-go-recheck-after-5a90d76",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.303858Z",
+      "updatedAt": "2026-03-01T02:24:24.303858Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00069",
+      "title": "Library to Create handoff (open/edit draft flow)",
+      "owner": "railfin-ui",
+      "lane": "ui",
+      "priority": "p2",
+      "branch": "feat/ui/task-00069-library-open-draft-flow",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.303879Z",
+      "updatedAt": "2026-03-01T02:24:24.303879Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00068",
+      "title": "Persist configure policy beyond placeholder memory",
+      "owner": "railfin-dev",
+      "lane": "dev",
+      "priority": "p2",
+      "branch": "feat/dev/task-00068-configure-policy-persistence",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.303900Z",
+      "updatedAt": "2026-03-01T02:24:24.303900Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00070",
+      "title": "Configure policy persistence + library handoff access check",
+      "owner": "railfin-sec",
+      "lane": "sec",
+      "priority": "p2",
+      "branch": "chore/sec/task-00070-configure-library-access-check",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.303919Z",
+      "updatedAt": "2026-03-01T02:24:24.303919Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00071",
+      "title": "Fix useSearchParams suspense/build issues and stabilize editor routes",
+      "owner": "railfin-dev",
+      "lane": "dev",
+      "priority": "p2",
+      "branch": "fix/dev/task-00071-suspense-route-stability",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.303941Z",
+      "updatedAt": "2026-03-01T02:24:24.303941Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00073",
+      "title": "Final production GO gate after 00071/00072",
+      "owner": "railfin-sec",
+      "lane": "sec",
+      "priority": "p2",
+      "branch": "chore/sec/task-00073-final-production-go-gate",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.303962Z",
+      "updatedAt": "2026-03-01T02:24:24.303962Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00072",
+      "title": "Configure page + create flow UX integration polish",
+      "owner": "railfin-ui",
+      "lane": "ui",
+      "priority": "p2",
+      "branch": "feat/ui/task-00072-configure-create-ux-integration",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.303984Z",
+      "updatedAt": "2026-03-01T02:24:24.303984Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00074",
+      "title": "Connect configure policy to compliance request context",
+      "owner": "railfin-dev",
+      "lane": "dev",
+      "priority": "p2",
+      "branch": "feat/dev/task-00074-policy-to-compliance-context",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.304005Z",
+      "updatedAt": "2026-03-01T02:24:24.304005Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00075",
+      "title": "Surface active policy context in create/compliance UX",
+      "owner": "railfin-ui",
+      "lane": "ui",
+      "priority": "p2",
+      "branch": "feat/ui/task-00075-policy-context-ux",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.304028Z",
+      "updatedAt": "2026-03-01T02:24:24.304028Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00076",
+      "title": "Policy-context privacy/safety review",
+      "owner": "railfin-sec",
+      "lane": "sec",
+      "priority": "p2",
+      "branch": "chore/sec/task-00076-policy-context-safety",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.304048Z",
+      "updatedAt": "2026-03-01T02:24:24.304048Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00078",
+      "title": "MVP RC1 visual consistency pass across Create/Library/Configure",
+      "owner": "railfin-ui",
+      "lane": "ui",
+      "priority": "p2",
+      "branch": "feat/ui/task-00078-mvp-rc1-visual-consistency",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.304069Z",
+      "updatedAt": "2026-03-01T02:24:24.304069Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00077",
+      "title": "MVP RC1 endpoint stabilization + acceptance checklist wiring",
+      "owner": "railfin-dev",
+      "lane": "dev",
+      "priority": "p2",
+      "branch": "feat/dev/task-00077-mvp-rc1-stabilization",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.304090Z",
+      "updatedAt": "2026-03-01T02:24:24.304090Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00079",
+      "title": "MVP RC1 final gate template + residual risks register",
+      "owner": "railfin-sec",
+      "lane": "sec",
+      "priority": "p2",
+      "branch": "chore/sec/task-00079-mvp-rc1-gate-template",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.304114Z",
+      "updatedAt": "2026-03-01T02:24:24.304114Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00080",
+      "title": "Sensitive internal route hardening (cache + validation)",
+      "owner": "railfin-dev",
+      "lane": "dev",
+      "priority": "p2",
+      "branch": "feat/dev/task-00080-sensitive-route-hardening",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.304137Z",
+      "updatedAt": "2026-03-01T02:24:24.304137Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00081",
+      "title": "Production draft persistence fix/verify (diagnostics + operator evidence)",
+      "owner": "railfin-dev",
+      "lane": "dev",
+      "priority": "p2",
+      "branch": "feat/dev/task-00082-save-draft-api-rewire",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.304203Z",
+      "updatedAt": "2026-03-01T02:24:24.304203Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00083",
+      "title": "Launch evidence closeout + GO/NO-GO rerun",
+      "owner": "railfin-sec",
+      "lane": "sec",
+      "priority": "p2",
+      "branch": "chore/dev/task-00087-ai-service-contract-unification",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.304319Z",
+      "updatedAt": "2026-03-01T02:24:24.304319Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00088",
+      "title": "Merge task-00086 + task-00087 into main",
+      "owner": "railfin-dev",
+      "lane": "dev",
+      "priority": "p2",
+      "branch": "chore/sec/task-00089-mvp-gate-closeout",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.304365Z",
+      "updatedAt": "2026-03-01T02:24:24.304365Z",
+      "source": "docs/tasks.md"
+    },
+    {
+      "id": "tsk_sync_task-00090",
+      "title": "Final MVP gate rerun using production evidence",
+      "owner": "railfin-sec",
+      "lane": "sec",
+      "priority": "p2",
+      "branch": "chore/sec/task-00090-final-gate-rerun",
+      "pr": "",
+      "commit": "",
+      "status": "done",
+      "createdAt": "2026-03-01T02:24:24.304384Z",
+      "updatedAt": "2026-03-01T02:24:24.304384Z",
       "source": "docs/tasks.md"
     }
   ],
   "activity": [
+    {
+      "ts": "2026-03-01T02:24:24.304602Z",
+      "type": "sync",
+      "by": "main",
+      "note": "Auto-fix resync after railfin repo pull (62 tasks, max=90)"
+    },
     {
       "ts": "2026-02-28T08:07:10.735724Z",
       "type": "sync",
