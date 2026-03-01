@@ -301,6 +301,25 @@ async function findRailfinTasksDoc() {
   return null;
 }
 
+async function refreshRailfinRepoIfPossible() {
+  const repos = [
+    "/work/railfin",
+    "/home/mini-home-lab/work/railfin",
+    "/work/railfin.io",
+    "/home/mini-home-lab/work/railfin.io",
+  ];
+  for (const repo of repos) {
+    try {
+      await fs.access(path.join(repo, ".git"));
+      await exec(`git -C ${repo} fetch origin --quiet && git -C ${repo} pull --ff-only origin main`, { timeout: 15000 });
+      return { ok: true, repo };
+    } catch {
+      // try next repo or silently continue
+    }
+  }
+  return { ok: false };
+}
+
 function parseRailfinTasksMarkdown(mdText) {
   const lines = String(mdText || "").split(/\r?\n/);
   const out = [];
@@ -402,6 +421,7 @@ function parseRailfinTasksMarkdown(mdText) {
 }
 
 async function syncRailfinFromTasksDoc(doc) {
+  await refreshRailfinRepoIfPossible();
   const tasksDoc = await findRailfinTasksDoc();
   if (!tasksDoc) return { synced: false, reason: "missing-tasks-doc" };
   const raw = await fs.readFile(tasksDoc, "utf8");
