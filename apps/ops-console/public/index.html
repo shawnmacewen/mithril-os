@@ -2545,10 +2545,11 @@
             jget('/api/system/docker'),
             jget('/api/ha/areas'),
             jget('/api/ha/blinds'),
-            jget('/api/backups/status')
+            jget('/api/backups/status'),
+            jget('/api/skills/overview')
           ]);
 
-          cache = { ...cache, status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, docker, haAreas, haBlinds, backups };
+          cache = { ...cache, status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, docker, haAreas, haBlinds, backups, skills };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
           document.getElementById('currentAgentName').textContent = 'OddEye';
