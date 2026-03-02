@@ -85,12 +85,12 @@
       .bg-layer.far { opacity:.55; transform:translateY(var(--parallax-far,0px)); }
       .bg-layer.mid { opacity:.38; transform:translateY(var(--parallax-mid,0px)) scale(1.03); }
       .bg-layer.near { opacity:.24; transform:translateY(var(--parallax-near,0px)) scale(1.06); }
-      .layout { display:grid; grid-template-columns:280px 1fr; min-height:100vh; position:relative; z-index:1; transition:grid-template-columns .2s ease; }
+      .layout { display:grid; grid-template-columns:208px 1fr; min-height:100vh; position:relative; z-index:1; transition:grid-template-columns .2s ease; }
       .layout.nav-collapsed { grid-template-columns:84px 1fr; }
       .nav { background:var(--panel); border-right:1px solid var(--border); padding:16px; display:flex; flex-direction:column; overflow:hidden; position:sticky; top:0; height:100vh; }
       .brand { font-weight:700; margin-bottom:18px; display:flex; align-items:center; gap:10px; }
       .brand small { color:var(--muted); display:block; font-weight:500; margin-top:4px; }
-      .brand .brand-icon { display:block; width:34px; height:34px; border-radius:8px; object-fit:cover; object-position:center; background:#fff; margin-left:-5px; }
+      .brand .brand-icon { display:block; width:34px; height:34px; border-radius:8px; object-fit:cover; object-position:center; background:transparent; margin-left:-5px; }
       .nav-links { flex:1; }
       .nav a { display:flex; align-items:center; gap:10px; color:var(--nav-text); text-decoration:none; padding:10px 12px; border-radius:6px; margin-bottom:6px; white-space:nowrap; }
       .nav a.active,.nav a:hover { background:color-mix(in srgb, var(--highlight) 16%, transparent); }
@@ -98,14 +98,8 @@
       .nav a[data-view='dashboard'] .nav-icon { color:#8b5cf6; }
       .nav a[data-view='homeassistant'] .nav-icon { color:#22c55e; }
       .nav a[data-view='agents'] .nav-icon { color:#06b6d4; }
-      .nav a[data-view='skills'] .nav-icon { color:#22c55e; }
-      .nav a[data-view='watchers'] .nav-icon { color:#f59e0b; }
-      .nav a[data-view='openclaw'] .nav-icon { color:#3b82f6; }
-      .nav a[data-view='models'] .nav-icon { color:#ec4899; }
-      .nav a[data-view='logs'] .nav-icon { color:#ef4444; }
       .nav a[data-view='projects'] .nav-icon { color:#10b981; }
       .nav a[data-view='policies'] .nav-icon { color:#f97316; }
-      .nav a[data-view='changelog'] .nav-icon { color:#a78bfa; }
       .nav a[data-view='config'] .nav-icon { color:#14b8a6; }
       .layout.nav-collapsed .brand .brand-text,
       .layout.nav-collapsed .brand small,
@@ -152,8 +146,8 @@
       .ha-item-top { display:flex; justify-content:space-between; gap:8px; align-items:center; }
       .ha-actions { display:flex; gap:6px; margin-top:6px; align-items:center; flex-wrap:wrap; }
       .ha-set-row { display:flex; justify-content:flex-end; margin-top:6px; }
-      .ha-controls-grid { display:grid; grid-template-columns: minmax(0, 1fr) 50px; gap:8px; align-items:stretch; margin-top:8px; width:100%; }
-      .ha-btn.color-set.square { width:50px; height:100%; min-height:56px; border-radius:8px; display:flex; align-items:center; justify-content:center; padding:0; }
+      .ha-controls-grid { display:grid; grid-template-columns: minmax(0, 1fr) 50px; gap:8px; align-items:center; margin-top:8px; width:100%; }
+      .ha-btn.color-set.square { width:44px; height:44px; min-height:44px; border-radius:8px; display:flex; align-items:center; justify-content:center; padding:0; align-self:center; }
 
 
       .ha-btn.color-set.flash-once {
@@ -214,19 +208,36 @@
         border-color: color-mix(in srgb, var(--highlight) 70%, var(--border));
         box-shadow: 0 0 0 1px color-mix(in srgb, var(--highlight) 45%, transparent);
       }
+      .ha-bulk-actions { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
+      .ha-bulk-actions .ha-nav-btn { min-width:92px; }
+      .ha-blind-row { display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center; border:1px solid var(--border); border-radius:10px; padding:8px; margin-bottom:8px; }
+      .ha-blind-meta { display:flex; gap:8px; align-items:center; color:var(--muted); font-size:12px; }
+      .ha-blind-actions { display:flex; gap:6px; }
+      .railfin-k-col { min-height: 220px; }
+      .railfin-k-dropzone { min-height: 150px; }
+      .railfin-k-card { cursor: grab; }
+      .railfin-k-card.is-dragging { opacity: .55; }
+      .railfin-k-col.is-drop-target { outline: 1px dashed color-mix(in srgb, var(--highlight) 65%, var(--border)); border-radius: 10px; }
+      .exec-tile { border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:12px;
+        background:linear-gradient(135deg, color-mix(in srgb, var(--card) 86%, #5ea1ff 14%), color-mix(in srgb, var(--card) 90%, #8ef5d6 10%));
+        box-shadow: 0 10px 24px rgba(0,0,0,.16); }
+      .exec-tile h4 { margin:0 0 6px; font-size:1.05rem; }
+      .exec-meta { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:8px; color:var(--muted); font-size:12px; }
+      .calendar-day { border:1px solid var(--border); border-radius:12px; padding:10px; margin-bottom:10px; }
+      .calendar-item { border-left:3px solid var(--accent); padding:6px 8px; margin:6px 0; background:color-mix(in srgb, var(--card) 92%, var(--accent) 8%); border-radius:6px; }
       .ha-device {
+        --ha-power-size: 84px;
         display:grid;
-        grid-template-columns: minmax(72px, max-content) minmax(0, 1fr);
+        grid-template-columns: var(--ha-power-size) minmax(0, 1fr);
         gap:10px;
-        align-items:stretch;
+        align-items:start;
       }
       .ha-device-main { min-height: 0; min-width:0; overflow:hidden; }
       .ha-power-btn {
-        width:auto;
-        height:100%;
-        min-height:100%;
-        align-self:stretch;
-        aspect-ratio:1 / 1;
+        width:var(--ha-power-size);
+        height:var(--ha-power-size);
+        min-height:var(--ha-power-size);
+        align-self:start;
         border-radius:10px;
         border:1px solid var(--border);
         background:var(--panel-2);
@@ -261,8 +272,8 @@
       .ha-device-meta { display:flex; gap:6px; align-items:center; }
       /* HA compact density mode */
       .ha-compact .ha-item { padding:6px; margin-bottom:6px; }
-      .ha-compact .ha-device { grid-template-columns: minmax(56px, max-content) 1fr; gap:8px; }
-      .ha-compact .ha-power-btn { width:auto; height:100%; min-height:100%; aspect-ratio:1 / 1; border-radius:8px; }
+      .ha-compact .ha-device { --ha-power-size: 84px; grid-template-columns: var(--ha-power-size) 1fr; gap:8px; }
+      .ha-compact .ha-power-btn { width:var(--ha-power-size); height:var(--ha-power-size); min-height:var(--ha-power-size); border-radius:8px; }
       .ha-compact .ha-power-btn svg { width:28px; height:28px; }
       .ha-compact .ha-item-top strong { font-size:14px; }
       .ha-compact .ha-device-meta { gap:5px; }
@@ -271,12 +282,12 @@
       .ha-compact .ha-controls-grid { grid-template-columns: minmax(0, 1fr) 46px; gap:6px; margin-top:6px; }
       .ha-compact .ha-sliders-stack { gap:3px; margin-top:4px; }
       .ha-compact .ha-slider-row { gap:6px; }
-      .ha-compact .ha-slider-row input[type="range"] { width:50%; justify-self:start; }
+      .ha-compact .ha-slider-row input[type="range"] { width:100%; justify-self:stretch; }
       .ha-compact .ha-actions input[type="range"],
       .ha-compact .ha-sliders-stack input[type="range"] { height:2px; }
       .ha-compact .ha-sliders-stack input[type="range"]::-webkit-slider-thumb,
       .ha-compact .ha-sliders-stack input[type="range"]::-moz-range-thumb { width:7px; height:7px; border-width:1px; }
-      .ha-compact .ha-btn.color-set.square { width:46px; min-height:48px; border-radius:7px; font-size:11px; }
+      .ha-compact .ha-btn.color-set.square { width:44px; height:44px; min-height:44px; border-radius:7px; font-size:11px; }
       .ha-info {
         position:relative;
         display:inline-flex; align-items:center; justify-content:center;
@@ -384,7 +395,18 @@
       .switch input:checked + .slider:before { transform:translateX(20px); }
       .layout.nav-collapsed .switch-row .label-text,
       .layout.nav-collapsed #navToggleLabel { display:none; }
-      .layout.nav-collapsed .theme-wrap { justify-items:center; }
+      .layout.nav-collapsed .theme-wrap { justify-items:center; gap:8px; }
+      .layout.nav-collapsed .switch-row { display:none; }
+      #navToggle {
+        width:36px;
+        height:32px;
+        min-width:36px;
+        padding:0;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+      }
+      #navToggleIcon { font-size:14px; line-height:1; }
 
     </style>
   </head>
@@ -396,27 +418,21 @@
     </div>
     <div class="layout" id="layoutRoot">
       <aside class="nav">
-        <div class="brand"><img class="brand-icon" src="/assets/mithril-os-nav-crystal.png" alt="mirthril-os" /><span class="brand-text">mirthril-os<small>Ops Console · v1.4</small></span></div>
+        <div class="brand"><img class="brand-icon" src="/assets/mithril-nav-icon-v2-crystal.svg" alt="mirthril-os" /><span class="brand-text">mirthril-os<small>Ops Console · v2.1</small></span></div>
 
         <div class="nav-links">
           <a data-view="homeassistant" href="#homeassistant"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M6 10v11h12V10"/><path d="M10 21v-5h4v5"/></svg>Home Assistant</a>
           <a class="active" data-view="dashboard" href="#dashboard"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Dashboard</a>
           <a data-view="agents" href="#agents"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><path d="M12 6V3"/></svg>Agents</a>
-          <a data-view="skills" href="#skills"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/></svg>Skills</a>
-          <a data-view="watchers" href="#watchers"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/></svg>Watchers</a>
-          <a data-view="openclaw" href="#openclaw"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.7.5 1 1.1 1 1.8V18h6v-1.5c0-.7.3-1.3 1-1.8A7 7 0 0 0 12 2Z"/></svg>OpenClaw</a>
-          <a data-view="models" href="#models"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="6" cy="7" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="12" cy="17" r="2"/><path d="M8 8.5l2.8 6"/><path d="M16 8.5l-2.8 6"/><path d="M8 7h8"/></svg>Models</a>
-          <a data-view="logs" href="#logs"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M16 3v4h4"/><path d="M8 11h8"/><path d="M8 15h8"/></svg>Logs</a>
           <a data-view="projects" href="#projects"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h18"/></svg>Projects</a>
-          <a data-view="changelog" href="#changelog"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M6 4h12"/><path d="M6 12h12"/><path d="M6 20h12"/><circle cx="4" cy="4" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="20" r="1"/></svg>Changelog</a>
           <a data-view="designsystem" href="#designsystem"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Platform</a>
           <a data-view="config" href="#config"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z"/></svg>Diagnostics</a>
         </div>
 
         <div class="theme-wrap">
-          <button id="navToggle"><span id="navToggleLabel">Minimize Nav</span></button>
+          <button id="navToggle" title="Minimize Nav" aria-label="Minimize Nav"><span id="navToggleIcon">◀</span><span id="navToggleLabel" class="hidden">Minimize Nav</span></button>
           <div class="switch-row">
-            <span class="label-text muted">Theme</span>
+            <span class="label-text muted"></span>
             <select id="themePicker" title="Select theme" style="min-width:140px;">
               <option value="dark">Dark</option>
               <option value="light">Light</option>
@@ -447,6 +463,7 @@
             <section class="card"><h3>OpenClaw</h3><div id="openclawBlock" class="muted">Loading…</div></section>
             <section class="card"><h3>Home Assistant</h3><div id="haBlock" class="muted">Loading…</div></section>
             <section class="card"><h3>Docker</h3><div id="dockerBlock" class="muted">Loading…</div></section>
+            <section class="card"><h3>Backups</h3><div id="backupsBlock" class="muted">Loading…</div></section>
           </div>
         </section>
 
@@ -455,6 +472,7 @@
           <div class="toolbar ds-tabs" style="margin:0 0 8px;">
             <button id="agentsTabOverview" class="ds-tab is-active">Overview</button>
             <button id="agentsTabJobs" class="ds-tab">Jobs</button>
+            <button id="agentsTabModels" class="ds-tab">Models</button>
           </div>
 
           <div id="agentsOverviewPane">
@@ -574,40 +592,35 @@
               <div class="row"><span>Healthy/running</span><strong id="scheduledJobsHealthy">-</strong></div>
               <div class="row"><span>Needs attention</span><strong id="scheduledJobsAttention">-</strong></div>
             </div>
+            <div class="card" style="margin-top:12px;">
+              <h3>Watchers</h3>
+              <table id="watchersTable">
+                <thead><tr><th>Name</th><th>Running</th><th>Systemd</th><th>Interval</th><th>Last Update</th><th>Actions</th></tr></thead>
+                <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+              </table>
+            </div>
+            <div class="card" style="margin-top:12px;"><h3>Watchers Raw</h3><pre id="watchersRaw">Loading…</pre></div>
+          </div>
+
+          <div id="agentsModelsPane" class="hidden">
+            <h3>Models</h3>
+            <div id="modelsGrid" class="cards"></div>
+            <div class="card" style="margin-top:12px;"><details><summary>Show raw models JSON</summary><pre id="modelsRaw">Loading…</pre></details></div>
           </div>
         </section>
 
-        <section id="view-skills" class="hidden">
-          <h2>Agent Skills</h2>
-          <div class="card" style="margin-bottom:12px;">
-            <div class="row"><span>Total skills</span><strong id="skillsTotal">-</strong></div>
-            <div class="row"><span>Active</span><strong id="skillsActive">-</strong></div>
-            <div class="row"><span>Inactive</span><strong id="skillsInactive">-</strong></div>
-            <div class="muted">Synced from OpenClaw config + skill directories.</div>
-          </div>
-          <div class="card">
-            <table id="skillsTable">
-              <thead><tr><th>Skill</th><th>Description</th><th>Active</th><th>Source</th></tr></thead>
-              <tbody><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
-            </table>
-          </div>
-          <div class="card" style="margin-top:12px;"><details><summary>Skills Raw JSON</summary><pre id="skillsRaw">Loading…</pre></details></div>
-        </section>
-
-
-        <section id="view-watchers" class="hidden">
-          <h2>Watchers</h2>
-          <div class="card">
-            <table id="watchersTable">
-              <thead><tr><th>Name</th><th>Running</th><th>Systemd</th><th>Interval</th><th>Last Update</th><th>Actions</th></tr></thead>
-              <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
-            </table>
-          </div>
-          <div class="card" style="margin-top:12px;"><h3>Watchers Raw</h3><pre id="watchersRaw">Loading…</pre></div>
-        </section>
+        
 
         <section id="view-openclaw" class="hidden">
-          <h2>OpenClaw</h2>
+          <h2>Diagnostics</h2>
+          <div class="toolbar" style="margin:0 0 10px;">
+            <button onclick="location.hash='config'">Overview</button>
+            <button onclick="location.hash='openclaw'">OpenClaw</button>
+            <button onclick="location.hash='backups'">Backups</button>
+            <button onclick="location.hash='logs'">Gateway Logs</button>
+            <button onclick="location.hash='audit'">Audit Trail</button>
+          </div>
+          <h3>OpenClaw</h3>
           <div class="cards">
             <div class="card">
               <h3>Gateway Health</h3>
@@ -661,11 +674,6 @@
 
           <div class="card" style="margin-top:12px;"><details><summary>OpenClaw Raw JSON</summary><pre id="openclawRaw">Loading…</pre></details></div>
         </section>
-        <section id="view-models" class="hidden">
-          <h2>Models</h2>
-          <div id="modelsGrid" class="cards"></div>
-          <div class="card" style="margin-top:12px;"><details><summary>Show raw models JSON</summary><pre id="modelsRaw">Loading…</pre></details></div>
-        </section>
         <section id="view-homeassistant" class="hidden ha-compact">
           <div class="ha-header-row">
             <h2>Home Assistant Controls</h2>
@@ -673,6 +681,24 @@
               <button id="toggleHaOtherBtn" class="ha-nav-btn">Other</button>
               <button id="toggleHaRawBtn" class="ha-nav-btn">Raw JSON</button>
             </div>
+          </div>
+          <div class="ha-bulk-actions">
+            <button class="ha-nav-btn" data-ha-group="all" data-ha-group-action="turn_on">All Lights On</button>
+            <button class="ha-nav-btn" data-ha-group="all" data-ha-group-action="turn_off">All Lights Off</button>
+            <button class="ha-nav-btn" data-ha-group="office" data-ha-group-action="turn_off">Office Off</button>
+            <button class="ha-nav-btn" data-ha-group="bedroom" data-ha-group-action="turn_off">Bedroom Off</button>
+            <button class="ha-nav-btn" data-ha-group="living_room" data-ha-group-action="turn_off">Living Off</button>
+            <button class="ha-nav-btn" data-ha-group="dining_room" data-ha-group-action="turn_off">Dining Off</button>
+          </div>
+
+          <div class="card" style="margin-bottom:12px;">
+            <h3 style="margin-top:0;">Blinds (Bond)</h3>
+            <div class="ha-bulk-actions">
+              <button class="ha-nav-btn" data-ha-cover-group-action="open_cover">All Blinds Open</button>
+              <button class="ha-nav-btn" data-ha-cover-group-action="close_cover">All Blinds Close</button>
+              <button class="ha-nav-btn" data-ha-cover-group-action="stop_cover">All Blinds Stop</button>
+            </div>
+            <div id="haBlindsList" class="muted">Loading blinds…</div>
           </div>
           <div class="cards">
             <div class="card"><h3>Office</h3><div id="haOffice">Loading…</div></div>
@@ -685,7 +711,15 @@
         </section>
 
         <section id="view-logs" class="hidden">
-          <h2>Logs</h2>
+          <h2>Diagnostics</h2>
+          <div class="toolbar" style="margin:0 0 10px;">
+            <button onclick="location.hash='config'">Overview</button>
+            <button onclick="location.hash='openclaw'">OpenClaw</button>
+            <button onclick="location.hash='backups'">Backups</button>
+            <button onclick="location.hash='logs'">Gateway Logs</button>
+            <button onclick="location.hash='audit'">Audit Trail</button>
+          </div>
+          <h3>Logs</h3>
           <div class="toolbar ds-tabs" style="margin:0 0 8px;">
             <button id="logsTabGateway" class="ds-tab is-active">Gateway Logs</button>
             <button id="logsTabAudit" class="ds-tab">Audit Trail</button>
@@ -729,34 +763,176 @@
 
         <section id="view-projects" class="hidden">
           <h2>Project Area</h2>
-          <div class="card" style="margin-bottom:12px;">
-            <div class="row"><span>Total projects</span><strong id="projectsTotal">-</strong></div>
-            <div class="row"><span>Healthy repos</span><strong id="projectsHealthy">-</strong></div>
-            <div class="row"><span>Repos with local changes</span><strong id="projectsDirty">-</strong></div>
-            <div class="muted" id="projectsSource">-</div>
+          <div class="toolbar ds-tabs" style="margin:0 0 8px;">
+            <button id="projectsTabOverview" class="ds-tab is-active">Overview</button>
+            <button id="projectsTabRailfin" class="ds-tab">Railfin</button>
+            <button id="projectsTabCalendar" class="ds-tab">Calendar</button>
+            <button id="projectsTabExecutive" class="ds-tab">Executive Summaries</button>
           </div>
-          <div class="card">
-            <table id="projectsTable"><thead><tr><th>Project</th><th>Branch</th><th>Working tree</th><th>Latest commits</th></tr></thead><tbody><tr><td colspan="4" class="muted">Loading…</td></tr></tbody></table>
+
+          <div id="projectsOverviewPane">
+            <div class="card" style="margin-bottom:12px;">
+              <div class="row"><span>Total projects</span><strong id="projectsTotal">-</strong></div>
+              <div class="row"><span>Healthy repos</span><strong id="projectsHealthy">-</strong></div>
+              <div class="row"><span>Repos with local changes</span><strong id="projectsDirty">-</strong></div>
+              <div class="muted" id="projectsSource">-</div>
+            </div>
+            <div class="card">
+              <table id="projectsTable"><thead><tr><th>Project</th><th>Branch</th><th>Working tree</th><th>Latest commits</th></tr></thead><tbody><tr><td colspan="4" class="muted">Loading…</td></tr></tbody></table>
+            </div>
+            <div class="card" style="margin-top:12px;"><details><summary>Projects Raw JSON</summary><pre id="projectsRaw">Loading…</pre></details></div>
           </div>
-          <div class="card" style="margin-top:12px;"><details><summary>Projects Raw JSON</summary><pre id="projectsRaw">Loading…</pre></details></div>
+
+          <div id="projectsRailfinPane" class="hidden">
+            <div class="card" style="margin-top:12px;">
+              <h3>Railfin Command Center</h3>
+              <div class="toolbar" style="margin:0 0 8px;">
+                <div id="railfinSyncBadge" class="muted" style="flex:1;">Sync: loading…</div>
+                <button id="railfinSyncNowBtn">Sync Now</button>
+              </div>
+            <div class="grid2">
+              <div>
+                <h4 style="margin:6px 0;">Roadmap</h4>
+                <div class="muted">Now</div><ul id="railfinRoadmapNow"></ul>
+                <div class="muted">Next</div><ul id="railfinRoadmapNext"></ul>
+                <div class="muted">Later</div><ul id="railfinRoadmapLater"></ul>
+              </div>
+              <div>
+                <h4 style="margin:6px 0;">Add Task</h4>
+                <input id="railfinTaskTitle" placeholder="Task title" style="width:100%; margin-bottom:8px;" />
+                <div class="toolbar" style="margin:0 0 8px;">
+                  <select id="railfinTaskOwner"><option>railfin-coo</option><option>railfin-dev</option><option>railfin-ui</option><option>railfin-sec</option></select>
+                  <select id="railfinTaskLane"><option value="coo">coo</option><option value="dev">dev</option><option value="ui">ui</option><option value="sec">sec</option></select>
+                  <select id="railfinTaskPriority"><option value="p1">p1</option><option value="p2" selected>p2</option><option value="p3">p3</option></select>
+                </div>
+                <div class="toolbar" style="margin:0 0 8px;">
+                  <input id="railfinTaskBranch" placeholder="branch (optional)" />
+                  <input id="railfinTaskPr" placeholder="PR # (optional)" />
+                  <input id="railfinTaskCommit" placeholder="commit (optional)" />
+                  <button id="railfinAddTaskBtn">Add</button>
+                </div>
+                <h4 style="margin:6px 0;">Log Note</h4>
+                <input id="railfinLogNote" placeholder="What happened?" style="width:100%; margin-bottom:8px;" />
+                <div class="toolbar" style="margin:0;">
+                  <select id="railfinLogBy"><option>railfin-coo</option><option>railfin-dev</option><option>railfin-ui</option><option>railfin-sec</option><option>main</option></select>
+                  <button id="railfinAddLogBtn">Log</button>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:10px;">
+              <h4 style="margin-top:0;">Task Summary</h4>
+              <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));">
+                <div class="card"><div class="muted">Total</div><strong id="railfinSumTotal">-</strong></div>
+                <div class="card"><div class="muted">Ready</div><strong id="railfinSumReady">-</strong></div>
+                <div class="card"><div class="muted">In Progress</div><strong id="railfinSumInProgress">-</strong></div>
+                <div class="card"><div class="muted">Review</div><strong id="railfinSumReview">-</strong></div>
+                <div class="card"><div class="muted">Blocked</div><strong id="railfinSumBlocked">-</strong></div>
+                <div class="card"><div class="muted">Done</div><strong id="railfinSumDone">-</strong></div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:10px;">
+              <h4 style="margin-top:0;">Tasks</h4>
+              <div class="toolbar" style="margin:0 0 8px;">
+                <button class="ha-nav-btn" data-railfin-quick="all">All</button>
+                <button class="ha-nav-btn" data-railfin-quick="mine-dev">Dev lane</button>
+                <button class="ha-nav-btn" data-railfin-quick="mine-ui">UI lane</button>
+                <button class="ha-nav-btn" data-railfin-quick="mine-sec">Sec lane</button>
+                <button class="ha-nav-btn" data-railfin-quick="blocked">Blocked</button>
+                <button class="ha-nav-btn" data-railfin-quick="merge">Ready to Merge</button>
+              </div>
+              <div class="toolbar" style="margin:0 0 8px;">
+                <select id="railfinFilterOwner"><option value="">owner: all</option><option>railfin-coo</option><option>railfin-dev</option><option>railfin-ui</option><option>railfin-sec</option></select>
+                <select id="railfinFilterLane"><option value="">lane: all</option><option value="coo">coo</option><option value="dev">dev</option><option value="ui">ui</option><option value="sec">sec</option></select>
+                <select id="railfinFilterStatus"><option value="">status: all</option><option>backlog</option><option>ready</option><option>in_progress</option><option>review</option><option>done</option><option>blocked</option><option>cancelled</option></select>
+                <select id="railfinFilterPriority"><option value="">priority: all</option><option>p1</option><option>p2</option><option>p3</option></select>
+              </div>
+              <div class="toolbar" style="margin:0 0 8px;">
+                <button id="railfinTasksPrev">Prev</button>
+                <button id="railfinTasksNext">Next</button>
+                <span id="railfinTasksPageLabel" class="muted">Page 1</span>
+              </div>
+              <table id="railfinTasksTable">
+                <thead><tr><th>Task</th><th>Owner</th><th>Lane</th><th>Priority</th><th>Status</th><th>Branch/PR/Commit</th><th>Update</th></tr></thead>
+                <tbody><tr><td colspan="7" class="muted">Loading…</td></tr></tbody>
+              </table>
+            </div>
+            <div class="grid2" style="margin-top:10px;">
+              <div class="card" style="margin-top:0;">
+                <h4 style="margin-top:0;">Merge Queue (review + PR)</h4>
+                <pre id="railfinMergeQueue">Loading…</pre>
+              </div>
+              <div class="card" style="margin-top:0;">
+                <h4 style="margin-top:0;">Blocked Tasks</h4>
+                <pre id="railfinBlockedList">Loading…</pre>
+              </div>
+            </div>
+
+            <div class="card" style="margin-top:10px;">
+              <h4 style="margin-top:0;">Activity</h4>
+              <pre id="railfinActivity">Loading…</pre>
+            </div>
+          </div>
+          </div>
+
+          <div id="projectsCalendarPane" class="hidden">
+            <div class="card" style="margin-top:12px;">
+              <h3>Calendar</h3>
+              <div class="muted">Unified view of tracked tasks + reminders, aligned to your productivity system.</div>
+              <div class="toolbar" style="margin-top:8px;">
+                <select id="calendarMode"><option value="updated" selected>Use last updated date</option><option value="created">Use created date</option></select>
+                <button id="calendarRefreshBtn">Refresh Calendar</button>
+              </div>
+            </div>
+            <div class="card" style="margin-top:10px;">
+              <div class="row"><span>Total mapped items</span><strong id="calendarTotalItems">-</strong></div>
+              <div class="row"><span>Reminder items</span><strong id="calendarReminderItems">-</strong></div>
+              <div class="row"><span>Days with activity</span><strong id="calendarTotalDays">-</strong></div>
+              <div class="row"><span>Mode</span><strong id="calendarModeLabel">-</strong></div>
+            </div>
+            <div class="grid2" style="margin-top:10px;">
+              <div class="card" style="margin-top:0;">
+                <h4 style="margin-top:0;">Tracked Tasks (Productivity)</h4>
+                <div id="productivityTasksList">Loading…</div>
+              </div>
+              <div class="card" style="margin-top:0;">
+                <h4 style="margin-top:0;">Task + Reminder Timeline</h4>
+                <div id="calendarDays">Loading…</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="projectsExecutivePane" class="hidden">
+            <div class="card" style="margin-top:12px;">
+              <h3>Executive Summary Studio</h3>
+              <div class="muted">Curated executive updates in wide visual tiles, organized by day for quick leadership scan.</div>
+            </div>
+            <div class="card" style="margin-top:10px;">
+              <h4 style="margin-top:0;">Add Executive Summary</h4>
+              <input id="execTitle" placeholder="Title (ex: Weekly Product + Ops Summary)" style="width:100%; margin-bottom:8px;" />
+              <textarea id="execSummary" placeholder="Concise executive summary..." style="width:100%; min-height:110px; margin-bottom:8px;"></textarea>
+              <div class="toolbar" style="margin:0;">
+                <input id="execBy" placeholder="author" value="main" />
+                <button id="execAddBtn">Save Summary Tile</button>
+              </div>
+            </div>
+            <div class="card" style="margin-top:10px;">
+              <h4 style="margin-top:0;">Summary Archive</h4>
+              <div id="execTiles">Loading…</div>
+            </div>
+          </div>
         </section>
 
 
-        <section id="view-changelog" class="hidden">
-          <h2>Public Changelog</h2>
-          <div class="card" style="margin-bottom:12px;">
-            <div id="changelogHeader" class="muted">Loading changelog…</div>
-          </div>
-          <div id="changelogCards" class="cards"></div>
-          <div class="card" style="margin-top:12px;"><details><summary>Changelog Raw JSON</summary><pre id="changelogRaw">Loading…</pre></details></div>
-        </section>
+        
 
         <section id="view-backups" class="hidden">
           <h2>Diagnostics</h2>
           <div class="toolbar" style="margin:0 0 10px;">
             <button onclick="location.hash='config'">Overview</button>
-            <button onclick="location.hash='agents'; setTimeout(() => document.getElementById('agentsTabJobs')?.click(), 0);">Agent Jobs</button>
+            <button onclick="location.hash='openclaw'">OpenClaw</button>
             <button onclick="location.hash='backups'">Backups</button>
+            <button onclick="location.hash='logs'">Gateway Logs</button>
+            <button onclick="location.hash='audit'">Audit Trail</button>
           </div>
           <h3>Backups</h3>
 
@@ -764,12 +940,18 @@
             <div class="card">
               <h3>Backup Health</h3>
               <div class="row"><span>Status</span><strong id="backupHealth">-</strong></div>
+              <div class="row"><span>Confidence</span><strong id="backupConfidence">-</strong></div>
               <div class="muted" id="backupHealthReason">-</div>
               <div class="row"><span>Latest snapshot</span><strong id="backupLatest">-</strong></div>
               <div class="row"><span>Snapshots</span><strong id="backupCount">-</strong></div>
               <div class="row"><span>Storage used</span><strong id="backupUsage">-</strong></div>
               <div class="row"><span>Timer</span><strong id="backupTimer">-</strong></div>
-              <button id="runBackupBtn">Run Backup Now</button>
+              <div class="row"><span>Last backup trigger</span><strong id="backupLastTrigger">-</strong></div>
+              <div class="row"><span>Next backup trigger</span><strong id="backupNextTrigger">-</strong></div>
+              <div class="toolbar" style="margin-top:8px;">
+                <button id="runBackupBtn">Run Backup Now</button>
+                <button id="runOffsiteBtn">Run Offsite Sync Now</button>
+              </div>
             </div>
             <div class="card">
               <h3>Retention Policy</h3>
@@ -789,6 +971,18 @@
           </div>
 
           <div class="card" style="margin-top:12px;">
+            <h3>Offsite Sync (Synology)</h3>
+            <div class="row"><span>Mode</span><strong id="offsiteMode">-</strong></div>
+            <div class="row"><span>Mount ready</span><strong id="offsiteMount">-</strong></div>
+            <div class="row"><span>Last sync start</span><strong id="offsiteLastStart">-</strong></div>
+            <div class="row"><span>Last sync done</span><strong id="offsiteLastDone">-</strong></div>
+            <table id="offsiteTargetsTable" style="margin-top:8px;">
+              <thead><tr><th>Target</th><th>Status</th><th>Last file sync</th></tr></thead>
+              <tbody><tr><td colspan="3" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
             <h3>Snapshots</h3>
             <table id="snapshotsTable">
               <thead><tr><th>Name</th><th>Size</th><th>Files</th><th>Checksum</th><th>Path</th><th>Taken (Local)</th></tr></thead>
@@ -797,6 +991,7 @@
           </div>
 
           <div class="card" style="margin-top:12px;"><h3>Run Logs</h3><pre id="backupLogs">Loading…</pre></div>
+          <div class="card" style="margin-top:12px;"><h3>Offsite Sync History</h3><pre id="offsiteHistory">Loading…</pre></div>
           <div class="card" style="margin-top:12px;"><h3>Service status</h3><pre id="backupStatusRaw">Loading…</pre></div>
         </section>
 
@@ -805,12 +1000,34 @@
           <div class="toolbar ds-tabs" style="margin:0 0 8px;">
             <button id="platformTabDesign" class="ds-tab is-active">Design System</button>
             <button id="platformTabPolicies" class="ds-tab">Policies</button>
+            <button id="platformTabChangelog" class="ds-tab">Changelog</button>
           </div>
 
           <div id="platformDesignPane">
             <div class="card ds-state ds-state-empty" style="margin-bottom:12px; border-style:solid;">
               <div class="row"><span>Embedded UI Kit (v2.0 foundation)</span><a href="/design-system.html" target="_blank" rel="noreferrer">Open in new tab</a></div>
               <div class="muted">Reusable tokens and component primitives for Mithril-OS.</div>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+              <h3 style="margin-top:0;">Nav Icon Variants</h3>
+              <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
+                <a class="card" href="/assets/mithril-nav-icon-v2.svg" target="_blank" rel="noreferrer" style="text-decoration:none; color:inherit; text-align:center;">
+                  <div class="muted" style="margin-bottom:8px;">Current v2</div>
+                  <img src="/assets/mithril-nav-icon-v2.svg" alt="Current v2 icon" style="width:72px; height:72px; border-radius:12px;"/>
+                </a>
+                <a class="card" href="/assets/mithril-nav-icon-v2-minimal.svg" target="_blank" rel="noreferrer" style="text-decoration:none; color:inherit; text-align:center;">
+                  <div class="muted" style="margin-bottom:8px;">Minimal</div>
+                  <img src="/assets/mithril-nav-icon-v2-minimal.svg" alt="Minimal icon" style="width:72px; height:72px; border-radius:12px;"/>
+                </a>
+                <a class="card" href="/assets/mithril-nav-icon-v2-eye.svg" target="_blank" rel="noreferrer" style="text-decoration:none; color:inherit; text-align:center;">
+                  <div class="muted" style="margin-bottom:8px;">Eye</div>
+                  <img src="/assets/mithril-nav-icon-v2-eye.svg" alt="Eye icon" style="width:72px; height:72px; border-radius:12px;"/>
+                </a>
+                <a class="card" href="/assets/mithril-nav-icon-v2-crystal.svg" target="_blank" rel="noreferrer" style="text-decoration:none; color:inherit; text-align:center;">
+                  <div class="muted" style="margin-bottom:8px;">Crystal</div>
+                  <img src="/assets/mithril-nav-icon-v2-crystal.svg" alt="Crystal icon" style="width:72px; height:72px; border-radius:12px;"/>
+                </a>
+              </div>
             </div>
             <div class="card" style="padding:0; overflow:hidden;">
               <iframe src="/design-system.html" title="Mithril-OS Design System" style="width:100%; height:78vh; border:0;"></iframe>
@@ -829,14 +1046,24 @@
             </div>
             <div class="card" style="margin-top:12px;"><details><summary>Policies Raw JSON</summary><pre id="policiesRaw">Loading…</pre></details></div>
           </div>
+
+          <div id="platformChangelogPane" class="hidden">
+            <div class="card" style="margin-bottom:12px;">
+              <div id="changelogHeader" class="muted">Loading changelog…</div>
+            </div>
+            <div id="changelogCards" class="cards"></div>
+            <div class="card" style="margin-top:12px;"><details><summary>Changelog Raw JSON</summary><pre id="changelogRaw">Loading…</pre></details></div>
+          </div>
         </section>
 
         <section id="view-config" class="hidden">
           <h2>Diagnostics</h2>
           <div class="toolbar" style="margin:0 0 10px;">
             <button onclick="location.hash='config'">Overview</button>
-            <button onclick="location.hash='agents'; setTimeout(() => document.getElementById('agentsTabJobs')?.click(), 0);">Agent Jobs</button>
+            <button onclick="location.hash='openclaw'">OpenClaw</button>
             <button onclick="location.hash='backups'">Backups</button>
+            <button onclick="location.hash='logs'">Gateway Logs</button>
+            <button onclick="location.hash='audit'">Audit Trail</button>
           </div>
           <div class="toolbar">
             <button id="refreshBtn">Refresh</button>
@@ -849,8 +1076,25 @@
           </div>
 
           <div class="grid2" style="margin-bottom:12px;">
-            <div class="card"><h3>Quick Actions</h3><button data-action="deploy-ops-console">Deploy Ops Console</button> <button data-action="restart-ops-console">Restart Ops Console</button></div>
+            <div class="card"><h3>Quick Actions</h3><button data-action="deploy-ops-console-unlock">Unlock + Deploy Ops Console</button> <button data-action="deploy-ops-console">Deploy Ops Console</button> <button data-action="restart-ops-console">Restart Ops Console</button></div>
             <div class="card"><h3>Service Actions</h3><button data-action="restart-watcher">Restart Watcher</button> <button class="danger" data-action="restart-homeassistant">Restart Home Assistant</button></div>
+          </div>
+
+          <div class="card" style="margin-bottom:12px;">
+            <h3>Deploy Lock Status</h3>
+            <div class="row"><span>Lock present</span><strong id="deployLockPresent">-</strong></div>
+            <div class="row"><span>Active deploy process</span><strong id="deployLockProc">-</strong></div>
+            <pre id="deployLockDetails" style="margin-top:8px;">Loading…</pre>
+            <button id="refreshDeployLockBtn" style="margin-top:8px;">Refresh Lock Status</button>
+          </div>
+
+          <div class="card" style="margin-bottom:12px;">
+            <h3>Deploy Center</h3>
+            <div class="row"><span>Latest commit</span><strong id="deployLatestCommit">-</strong></div>
+            <div class="row"><span>Latest commit time</span><strong id="deployLatestCommitTime">-</strong></div>
+            <div class="row"><span>Ops process running</span><strong id="deployOpsRunning">-</strong></div>
+            <pre id="deployCenterDetails" style="margin-top:8px;">Loading…</pre>
+            <button id="refreshDeployCenterBtn" style="margin-top:8px;">Refresh Deploy Center</button>
           </div>
 <div class="card">
 <h3>OpenClaw Updates</h3>
@@ -879,15 +1123,6 @@
             </details>
           </div>
 
-          <div class="card" style="margin-bottom:12px;">
-            <h3>OpenClaw Long-Term Memory Plan</h3>
-            <div class="muted">Loaded from <code>OPENCLAW_LONG_TERM_MEMORY_PLAN.md</code> (mithril-os/workspace fallback). Includes weekly results log template.</div>
-            <details style="margin-top:8px;">
-              <summary>Show memory plan + weekly results log</summary>
-              <pre id="memoryPlanMd" style="margin-top:8px; max-height:360px; overflow:auto;">Loading…</pre>
-            </details>
-          </div>
-
           <div class="card">
             <h3>Config Validator</h3>
             <div id="configSummary" class="muted">Loading…</div>
@@ -902,9 +1137,11 @@
     </div>
 
     <script>
-      const views = ["dashboard","agents","skills","watchers","openclaw","models","homeassistant","logs","projects","changelog","designsystem","backups","config"];
+      const views = ["dashboard","agents","openclaw","homeassistant","logs","projects","designsystem","backups","config"];
       let autoTimer = null;
       let cache = {};
+      let projectsLoaded = false;
+      let platformLoaded = false;
       const haColorDrafts = {};
 
       function showUiBootError(msg){
@@ -927,6 +1164,9 @@
       let logsPage = 1;
       let logsRows = [];
       let logsTab = 'gateway';
+      let railfinLiveTimer = null;
+      let railfinTasksPage = 1;
+      const railfinTasksPageSize = 10;
       const queueHistory = [];
 
       function setTheme(theme){
@@ -950,12 +1190,20 @@
         const layout = document.getElementById('layoutRoot');
         layout.classList.toggle('nav-collapsed', Boolean(collapsed));
         localStorage.setItem('mithril-nav-collapsed', collapsed ? '1' : '0');
-        document.getElementById('navToggleLabel').textContent = collapsed ? 'Expand Nav' : 'Minimize Nav';
+        const nextLabel = collapsed ? 'Expand Nav' : 'Minimize Nav';
+        document.getElementById('navToggleLabel').textContent = nextLabel;
+        const btn = document.getElementById('navToggle');
+        if (btn) {
+          btn.title = nextLabel;
+          btn.setAttribute('aria-label', nextLabel);
+        }
+        const icon = document.getElementById('navToggleIcon');
+        if (icon) icon.textContent = collapsed ? '▶' : '◀';
       }
 
       function initNavCollapse(){
         const navEl = document.querySelector('.nav');
-        const hoverDelayMs = 3000;
+        const hoverDelayMs = 1000;
         let collapseTimer = null;
 
         const scheduleCollapse = () => {
@@ -988,9 +1236,22 @@
           document.getElementById(`view-${v}`).classList.toggle("hidden", v !== name);
           const link = document.querySelector(`.nav a[data-view='${v}']`);
           if (!link) return;
-          const diagnosticsActive = (name === 'config' || name === 'backups') && v === 'config';
+          const diagnosticsActive = (name === 'config' || name === 'openclaw' || name === 'backups' || name === 'logs') && v === 'config';
           link.classList.toggle("active", v === name || diagnosticsActive);
         });
+
+        if (name === 'projects') {
+          ensureProjectsLoaded().catch((e) => showUiBootError(`Projects load failed: ${e.message || e}`));
+        } else if (railfinLiveTimer) {
+          clearInterval(railfinLiveTimer);
+          railfinLiveTimer = null;
+        }
+        if (name === 'designsystem') {
+          ensurePlatformLoaded().catch((e) => showUiBootError(`Platform load failed: ${e.message || e}`));
+        }
+        if (name === 'config' || name === 'openclaw' || name === 'backups' || name === 'logs') {
+          ensureDiagnosticsLoaded().catch((e) => showUiBootError(`Diagnostics load failed: ${e.message || e}`));
+        }
       }
 
       function setLogsTab(tab){
@@ -1005,34 +1266,89 @@
         auditBtn.classList.toggle('active', logsTab === 'audit');
         gatewayBtn.classList.toggle('is-active', logsTab === 'gateway');
         auditBtn.classList.toggle('is-active', logsTab === 'audit');
+        if (!logsRows.length || logsTab === 'gateway') {
+          loadLogs();
+        }
       }
 
       function setAgentsTab(tab){
-        const active = tab === 'jobs' ? 'jobs' : 'overview';
+        const active = tab === 'jobs' ? 'jobs' : (tab === 'models' ? 'models' : 'overview');
         const overviewPane = document.getElementById('agentsOverviewPane');
         const jobsPane = document.getElementById('agentsJobsPane');
+        const modelsPane = document.getElementById('agentsModelsPane');
         const overviewBtn = document.getElementById('agentsTabOverview');
         const jobsBtn = document.getElementById('agentsTabJobs');
+        const modelsBtn = document.getElementById('agentsTabModels');
         overviewPane.classList.toggle('hidden', active !== 'overview');
         jobsPane.classList.toggle('hidden', active !== 'jobs');
+        modelsPane.classList.toggle('hidden', active !== 'models');
         overviewBtn.classList.toggle('is-active', active === 'overview');
         jobsBtn.classList.toggle('is-active', active === 'jobs');
+        modelsBtn.classList.toggle('is-active', active === 'models');
         overviewBtn.classList.toggle('active', active === 'overview');
         jobsBtn.classList.toggle('active', active === 'jobs');
+        modelsBtn.classList.toggle('active', active === 'models');
       }
 
       function setPlatformTab(tab){
-        const active = tab === 'policies' ? 'policies' : 'design';
+        const active = tab === 'policies' ? 'policies' : (tab === 'changelog' ? 'changelog' : 'design');
         const designPane = document.getElementById('platformDesignPane');
         const policiesPane = document.getElementById('platformPoliciesPane');
+        const changelogPane = document.getElementById('platformChangelogPane');
         const designBtn = document.getElementById('platformTabDesign');
         const policiesBtn = document.getElementById('platformTabPolicies');
+        const changelogBtn = document.getElementById('platformTabChangelog');
         designPane.classList.toggle('hidden', active !== 'design');
         policiesPane.classList.toggle('hidden', active !== 'policies');
+        changelogPane.classList.toggle('hidden', active !== 'changelog');
         designBtn.classList.toggle('is-active', active === 'design');
         policiesBtn.classList.toggle('is-active', active === 'policies');
+        changelogBtn.classList.toggle('is-active', active === 'changelog');
         designBtn.classList.toggle('active', active === 'design');
         policiesBtn.classList.toggle('active', active === 'policies');
+        changelogBtn.classList.toggle('active', active === 'changelog');
+      }
+
+      async function refreshRailfinLive(){
+        const out = await jget('/api/project-work/railfin');
+        if (out?.ok) {
+          cache.railfinWork = out;
+          renderRailfinWork(out || {});
+        }
+      }
+
+      function setProjectsTab(tab){
+        const allowed = new Set(['overview','railfin','calendar','executive']);
+        const active = allowed.has(tab) ? tab : 'overview';
+        const overviewPane = document.getElementById('projectsOverviewPane');
+        const railfinPane = document.getElementById('projectsRailfinPane');
+        const calendarPane = document.getElementById('projectsCalendarPane');
+        const executivePane = document.getElementById('projectsExecutivePane');
+        const overviewBtn = document.getElementById('projectsTabOverview');
+        const railfinBtn = document.getElementById('projectsTabRailfin');
+        const calendarBtn = document.getElementById('projectsTabCalendar');
+        const executiveBtn = document.getElementById('projectsTabExecutive');
+        overviewPane.classList.toggle('hidden', active !== 'overview');
+        railfinPane.classList.toggle('hidden', active !== 'railfin');
+        calendarPane.classList.toggle('hidden', active !== 'calendar');
+        executivePane.classList.toggle('hidden', active !== 'executive');
+        overviewBtn.classList.toggle('is-active', active === 'overview');
+        railfinBtn.classList.toggle('is-active', active === 'railfin');
+        calendarBtn.classList.toggle('is-active', active === 'calendar');
+        executiveBtn.classList.toggle('is-active', active === 'executive');
+        overviewBtn.classList.toggle('active', active === 'overview');
+        railfinBtn.classList.toggle('active', active === 'railfin');
+        calendarBtn.classList.toggle('active', active === 'calendar');
+        executiveBtn.classList.toggle('active', active === 'executive');
+
+        if (active === 'railfin') {
+          refreshRailfinLive().catch(() => {});
+          if (railfinLiveTimer) clearInterval(railfinLiveTimer);
+          railfinLiveTimer = setInterval(() => { refreshRailfinLive().catch(() => {}); }, 20000);
+        } else if (railfinLiveTimer) {
+          clearInterval(railfinLiveTimer);
+          railfinLiveTimer = null;
+        }
       }
 
       async function jget(url){
@@ -1058,28 +1374,6 @@
         for (let i = 0; i < name.length; i++) h = (h * 33 + name.charCodeAt(i)) >>> 0;
         const hue = h % 360;
         return `--chip-border:hsl(${hue} 58% 46%);--chip-active:hsl(${hue} 72% 52%);`;
-      }
-
-
-      function renderSkillsOverview(data){
-        document.getElementById('skillsRaw').textContent = JSON.stringify(data || {}, null, 2);
-        if (!data?.ok) {
-          document.getElementById('skillsTotal').textContent = '-';
-          document.getElementById('skillsActive').textContent = '-';
-          document.getElementById('skillsInactive').textContent = '-';
-          document.querySelector('#skillsTable tbody').innerHTML = `<tr><td colspan="4" class="bad">${data?.error || 'Unavailable'}</td></tr>`;
-          return;
-        }
-        document.getElementById('skillsTotal').textContent = String(data?.summary?.total ?? 0);
-        document.getElementById('skillsActive').textContent = String(data?.summary?.active ?? 0);
-        document.getElementById('skillsInactive').textContent = String(data?.summary?.inactive ?? 0);
-        const rows = data.rows || [];
-        const tbody = document.querySelector('#skillsTable tbody');
-        if (!rows.length) {
-          tbody.innerHTML = `<tr><td colspan="4" class="muted">No skills found</td></tr>`;
-          return;
-        }
-        tbody.innerHTML = rows.map((r) => `<tr><td><strong>${r.id}</strong></td><td>${r.description || ''}</td><td>${r.active ? '<span class="status-pill ok">active</span>' : '<span class="status-pill warn">inactive</span>'}</td><td class="muted">${r.source || '-'}</td></tr>`).join('');
       }
 
       function renderWatchersTable(rows){
@@ -1318,14 +1612,37 @@
       function renderBackupsPage(backups){
         const health = backups.backupHealth || 'warning';
         const healthCls = health === 'healthy' ? 'ok' : (health === 'failed' ? 'bad' : 'warn');
+        const fmt = (iso) => {
+          if (!iso) return '-';
+          const dt = new Date(iso);
+          return Number.isNaN(dt.getTime()) ? String(iso) : dt.toLocaleString();
+        };
+
         document.getElementById('backupHealth').innerHTML = `<span class='status-pill ${healthCls}'>${health.toUpperCase()}</span>`;
+        const localOk = backups.backupHealth === 'healthy';
+        const off = backups.offsite || {};
+        const offsiteOk = Boolean(off.mountReady && off.lastSyncDoneAt);
+        const targetRows = backups.sourceStatus || [];
+        const targetOkCount = targetRows.filter(t => t.ok).length;
+        const targetTotal = targetRows.length || 1;
+        const confidenceScore = Math.round(((localOk ? 45 : 0) + (offsiteOk ? 35 : 0) + (20 * (targetOkCount / targetTotal))));
+        const confCls = confidenceScore >= 85 ? 'ok' : (confidenceScore >= 60 ? 'warn' : 'bad');
+        document.getElementById('backupConfidence').innerHTML = `<span class='status-pill ${confCls}'>${confidenceScore}%</span>`;
         document.getElementById('backupHealthReason').textContent = backups.backupHealthReason || '';
         document.getElementById('backupLatest').textContent = backups.latestSnapshot || '-';
         document.getElementById('backupCount').textContent = String(backups.snapshotCount ?? '-');
         document.getElementById('backupUsage').textContent = backups.backupUsage || '-';
         document.getElementById('backupTimer').textContent = backups.timerLine || '-';
+        document.getElementById('backupLastTrigger').textContent = fmt(backups.lastBackupTriggerAt);
+        document.getElementById('backupNextTrigger').textContent = fmt(backups.nextBackupAt);
         document.getElementById('backupStatusRaw').textContent = backups.serviceStatusText || 'No status';
         document.getElementById('backupLogs').textContent = backups.logsText || 'No logs yet';
+
+        document.getElementById('offsiteMode').textContent = off.mode || '-';
+        document.getElementById('offsiteMount').innerHTML = `<span class='status-pill ${off.mountReady ? 'ok' : 'warn'}'>${off.mountReady ? 'READY' : 'NOT READY'}</span>`;
+        document.getElementById('offsiteLastStart').textContent = fmt(off.lastSyncStartAt);
+        document.getElementById('offsiteLastDone').textContent = fmt(off.lastSyncDoneAt);
+        document.getElementById('offsiteHistory').textContent = off.historyTail || 'No offsite history yet';
 
         document.getElementById('retDaily').textContent = String(backups.retention?.daily ?? '-');
         document.getElementById('retWeekly').textContent = String(backups.retention?.weekly ?? '-');
@@ -1336,6 +1653,12 @@
         tBody.innerHTML = targets.length
           ? targets.map(t => `<tr><td>${t.name}</td><td><span class='status-pill ${t.ok ? 'ok':'warn'}'>${t.ok ? 'OK':'CHECK'}</span></td><td>${t.detail || ''}</td></tr>`).join('')
           : `<tr><td colspan='3' class='muted'>No target status yet</td></tr>`;
+
+        const offTbody = document.querySelector('#offsiteTargetsTable tbody');
+        const offRows = off.targets || [];
+        offTbody.innerHTML = offRows.length
+          ? offRows.map((r) => `<tr><td>${r.name || '-'}</td><td><span class='status-pill ${r.status === 'ok' ? 'ok' : 'warn'}'>${String(r.status || '-').toUpperCase()}</span></td><td>${fmt(r.lastSyncAt)}</td></tr>`).join('')
+          : `<tr><td colspan='3' class='muted'>No offsite target data yet</td></tr>`;
 
         const sBody = document.querySelector('#snapshotsTable tbody');
         const rows = backups.snapshotRows || [];
@@ -1467,6 +1790,180 @@
           const commits = (r.commits || []).map((c) => `<div class="muted">${c.hash || ''} · ${c.subject || ''}</div>`).join('') || '<span class="muted">no commits</span>';
           return `<tr><td><strong>${r.name}</strong><div class="muted">${r.path || ''}</div></td><td>${r.branch || '-'}</td><td>${state}<div class="muted">${r.statusLine || ''}</div></td><td>${commits}</td></tr>`;
         }).join('');
+      }
+
+      function renderRailfinWork(payload){
+        const data = payload?.data || {};
+        const roadmap = data.roadmap || {};
+        const fillList = (id, rows=[]) => {
+          const el = document.getElementById(id);
+          el.innerHTML = (rows || []).length ? rows.map((x)=>`<li>${x}</li>`).join('') : '<li class="muted">None</li>';
+        };
+        fillList('railfinRoadmapNow', roadmap.now || []);
+        fillList('railfinRoadmapNext', roadmap.next || []);
+        fillList('railfinRoadmapLater', roadmap.later || []);
+
+        const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+        const maxTaskId = tasks.reduce((mx, t) => {
+          const m = `${t?.id || ''} ${t?.title || ''}`.match(/task-(\d+)/i);
+          const n = m ? Number(m[1]) : -1;
+          return Math.max(mx, n);
+        }, -1);
+        const syncBadge = document.getElementById('railfinSyncBadge');
+        if (syncBadge) {
+          const source = payload?.source || 'unknown-source';
+          const ts = data?.updatedAt ? new Date(data.updatedAt).toLocaleString() : '-';
+          const maxLabel = maxTaskId >= 0 ? `task-${String(maxTaskId).padStart(5,'0')}` : 'n/a';
+          syncBadge.textContent = `Sync source: ${source} · Last board update: ${ts} · Max task ID: ${maxLabel}`;
+        }
+
+        const count = (s) => tasks.filter((t) => t.status === s).length;
+        document.getElementById('railfinSumTotal').textContent = String(tasks.length);
+        document.getElementById('railfinSumReady').textContent = String(count('ready'));
+        document.getElementById('railfinSumInProgress').textContent = String(count('in_progress'));
+        document.getElementById('railfinSumReview').textContent = String(count('review'));
+        document.getElementById('railfinSumBlocked').textContent = String(count('blocked'));
+        document.getElementById('railfinSumDone').textContent = String(count('done'));
+
+        const mergeQueue = tasks
+          .filter((t) => t.status === 'review' && (t.pr || '').trim())
+          .slice(0, 30)
+          .map((t) => `${t.priority || '-'} | ${t.owner || '-'} | ${t.title || '-'} | PR ${t.pr}${t.branch ? ` | ${t.branch}` : ''}`)
+          .join('\n');
+        document.getElementById('railfinMergeQueue').textContent = mergeQueue || 'No review tasks with PR refs yet.';
+
+        const blockedList = tasks
+          .filter((t) => t.status === 'blocked')
+          .slice(0, 30)
+          .map((t) => `${t.priority || '-'} | ${t.owner || '-'} | ${t.title || '-'}${t.branch ? ` | ${t.branch}` : ''}`)
+          .join('\n');
+        document.getElementById('railfinBlockedList').textContent = blockedList || 'No blocked tasks.';
+
+        const columns = [
+          { key:'backlog', label:'Backlog' },
+          { key:'ready', label:'Ready' },
+          { key:'in_progress', label:'In Progress' },
+          { key:'review', label:'Review' },
+          { key:'done', label:'Done' }
+        ];
+        const kanbanEl = document.getElementById('railfinKanban');
+        if (kanbanEl) {
+          kanbanEl.innerHTML = columns.map((c) => {
+            const colTasks = tasks.filter((t) => t.status === c.key).slice(0, 30);
+            const cards = colTasks.length ? colTasks.map((t) => `
+              <div class='card railfin-k-card' draggable='true' data-railfin-task-id='${t.id}' data-railfin-status='${t.status}' style='margin:0 0 8px; padding:8px;'>
+                <div style='font-weight:600; margin-bottom:4px;'>${t.title || '-'}</div>
+                <div class='muted' style='font-size:12px;'>${t.owner || '-'} · ${t.lane || '-'} · ${t.priority || '-'}</div>
+                <div class='muted' style='font-size:12px; margin-top:4px;'>${t.pr ? `PR ${t.pr}` : (t.branch || t.id || '')}</div>
+                <div class='toolbar' style='margin-top:6px;'>
+                  <button data-railfin-move='${t.id}' data-dir='-1' ${c.key==='backlog'?'disabled':''}>←</button>
+                  <button data-railfin-move='${t.id}' data-dir='1' ${c.key==='done'?'disabled':''}>→</button>
+                  <button data-railfin-set='${t.id}' data-status='blocked'>Block</button>
+                </div>
+              </div>
+            `).join('') : `<div class='muted'>No tasks</div>`;
+            return `<div class='card railfin-k-col' data-railfin-col='${c.key}'><h4 style='margin-top:0;'>${c.label} (${colTasks.length})</h4><div class='railfin-k-dropzone'>${cards}</div></div>`;
+          }).join('');
+        }
+
+        const fOwner = document.getElementById('railfinFilterOwner')?.value || '';
+        const fLane = document.getElementById('railfinFilterLane')?.value || '';
+        const fStatus = document.getElementById('railfinFilterStatus')?.value || '';
+        const fPriority = document.getElementById('railfinFilterPriority')?.value || '';
+        const filtered = tasks.filter((t) =>
+          (!fOwner || t.owner === fOwner) &&
+          (!fLane || t.lane === fLane) &&
+          (!fStatus || t.status === fStatus) &&
+          (!fPriority || t.priority === fPriority)
+        );
+
+        const taskSeq = (t) => {
+          const raw = `${t?.id || ''} ${t?.title || ''}`;
+          const m = raw.match(/task-(\d+)/i);
+          return m ? Number(m[1]) : -1;
+        };
+        const sorted = filtered.slice().sort((a, b) => {
+          const sa = taskSeq(a);
+          const sb = taskSeq(b);
+          if (sb !== sa) return sb - sa;
+          const ta = new Date(a.updatedAt || a.createdAt || 0).getTime();
+          const tb = new Date(b.updatedAt || b.createdAt || 0).getTime();
+          return tb - ta;
+        });
+        const totalPages = Math.max(1, Math.ceil(sorted.length / railfinTasksPageSize));
+        railfinTasksPage = Math.min(Math.max(1, railfinTasksPage), totalPages);
+        const start = (railfinTasksPage - 1) * railfinTasksPageSize;
+        const pageRows = sorted.slice(start, start + railfinTasksPageSize);
+        const pageLabel = document.getElementById('railfinTasksPageLabel');
+        if (pageLabel) pageLabel.textContent = `Page ${railfinTasksPage} / ${totalPages} · ${sorted.length} tasks`;
+
+        const tbody = document.querySelector('#railfinTasksTable tbody');
+        tbody.innerHTML = pageRows.length ? pageRows.map((t) => {
+          const opts = ['backlog','ready','in_progress','review','done','blocked','cancelled']
+            .map((s)=>`<option value='${s}' ${t.status===s?'selected':''}>${s}</option>`).join('');
+          const branch = t.branch || '';
+          const pr = t.pr || '';
+          const commit = t.commit || '';
+          return `<tr>
+            <td><strong>${t.title || '-'}</strong><div class='muted'>${t.id || ''}</div></td>
+            <td>${t.owner || '-'}</td>
+            <td>${t.lane || '-'}</td>
+            <td>${t.priority || '-'}</td>
+            <td><span class='status-pill ${t.status==='done'?'ok':(t.status==='blocked'?'bad':'warn')}'><span>${t.status || '-'}</span></span></td>
+            <td>
+              <input data-railfin-branch='${t.id}' value='${branch}' placeholder='branch' style='width:100%; margin-bottom:4px;' />
+              <div class='toolbar' style='margin:0;'>
+                <input data-railfin-pr='${t.id}' value='${pr}' placeholder='PR' />
+                <input data-railfin-commit='${t.id}' value='${commit}' placeholder='commit' />
+                <button data-railfin-save-refs='${t.id}'>Save</button>
+              </div>
+            </td>
+            <td><select data-railfin-task-status='${t.id}' style='min-width:130px;'>${opts}</select></td>
+          </tr>`;
+        }).join('') : `<tr><td colspan='7' class='muted'>No tasks match current filters.</td></tr>`;
+
+        const activity = Array.isArray(data.activity) ? data.activity : [];
+        document.getElementById('railfinActivity').textContent = activity.slice(0, 80).map((a) => `${a.ts || '-'} | ${a.by || '-'} | ${a.type || '-'} | ${a.note || ''}${a.taskId ? ` (${a.taskId})` : ''}`).join('\n') || 'No activity yet.';
+      }
+
+      function renderTaskCalendar(payload){
+        const summary = payload?.summary || {};
+        document.getElementById('calendarTotalItems').textContent = String(summary.calendarItems ?? 0);
+        document.getElementById('calendarReminderItems').textContent = String(summary.reminders ?? 0);
+        document.getElementById('calendarTotalDays').textContent = String(summary.days ?? 0);
+        document.getElementById('calendarModeLabel').textContent = String(payload?.mode || '-');
+        const host = document.getElementById('calendarDays');
+        const days = Array.isArray(payload?.days) ? payload.days : [];
+        host.innerHTML = days.length ? days.slice(0, 40).map((d) => {
+          const items = (d.items || []).slice(0, 30).map((it) => {
+            if (it.kind === 'reminder') {
+              return `<div class='calendar-item'><strong>⏰ Reminder</strong> · ${it.title || '-'}<div class='muted'>${it.note || ''} · ${new Date(it.at).toLocaleString()}</div></div>`;
+            }
+            return `<div class='calendar-item'><strong>${it.projectId || 'project'}</strong> · ${it.title}<div class='muted'>${it.owner || '-'} · ${it.lane || '-'} · ${it.priority || '-'} · ${it.status || '-'} · ${new Date(it.at).toLocaleString()}</div></div>`;
+          }).join('');
+          return `<div class='calendar-day'><h4 style='margin:0 0 6px;'>${d.date} <span class='muted'>(${d.count})</span></h4>${items}</div>`;
+        }).join('') : `<div class='muted'>No calendar items found.</div>`;
+      }
+
+      function renderProductivityTasks(payload){
+        const host = document.getElementById('productivityTasksList');
+        const rows = Array.isArray(payload?.rows) ? payload.rows : [];
+        host.innerHTML = rows.length ? rows.slice(0, 120).map((r) =>
+          `<div class='calendar-item'><strong>${r.title || '-'}</strong><div class='muted'>${r.source || '-'}#L${r.line || '-'} · ${r.status || 'open'}</div></div>`
+        ).join('') : `<div class='muted'>No tracked tasks found in productivity vault.</div>`;
+      }
+
+      function renderExecutiveSummaries(payload){
+        const rows = Array.isArray(payload?.data?.summaries) ? payload.data.summaries : [];
+        const host = document.getElementById('execTiles');
+        host.innerHTML = rows.length ? rows.slice(0, 60).map((r) => {
+          const day = (r.ts || '').slice(0, 10) || '-';
+          return `<article class='exec-tile'>
+            <div class='exec-meta'><span>📅 ${day}</span><span>👤 ${r.by || '-'}</span><span>🆔 ${r.id || '-'}</span></div>
+            <h4>${r.title || '-'}</h4>
+            <div>${(r.summary || '').replace(/</g,'&lt;')}</div>
+          </article>`;
+        }).join('') : `<div class='muted'>No executive summaries yet.</div>`;
       }
 
       function renderPoliciesOverview(data){
@@ -1749,39 +2246,85 @@
           btn.addEventListener('click', async () => {
             const entity_id = btn.dataset.entity;
             const action = btn.dataset.haAction;
-            if (action === 'toggle') {
-              await jpost('/api/ha/entity/action', { entity_id, action: 'toggle' });
-            } else {
-              const b = el.querySelector(`input[type='range'][data-entity='${entity_id}'][data-kind='brightness']`);
-              const h = el.querySelector(`input[type='range'][data-entity='${entity_id}'][data-kind='hue']`);
-              const s = el.querySelector(`input[type='range'][data-entity='${entity_id}'][data-kind='sat']`);
-              const brightnessPct = Number(b?.value || 100);
-              const hue = Number(h?.value || 0);
-              const saturation = Number(s?.value || 100);
+            try {
               btn.disabled = true;
-              btn.classList.add('is-active');
-              await jpost('/api/ha/entity/action', { entity_id, action: 'turn_on', brightnessPct, hue, saturation });
-            }
-            const refreshAfterMs = action === 'apply-lighting' ? 900 : 0;
-            if (refreshAfterMs) await new Promise((resolve) => setTimeout(resolve, refreshAfterMs));
-            const fresh = await jget('/api/ha/areas');
-            renderHaArea('haOffice', fresh.grouped?.office || []);
-            renderHaArea('haBedroom', fresh.grouped?.bedroom || []);
-            renderHaArea('haLivingRoom', fresh.grouped?.living_room || []);
-            renderHaArea('haDiningRoom', fresh.grouped?.dining_room || []);
-            renderHaArea('haOther', fresh.grouped?.other || []);
-            document.getElementById('haRaw').textContent = JSON.stringify(fresh, null, 2);
-            if (action !== 'toggle') {
-              const freshBtn = document.querySelector(`button[data-ha-action='apply-lighting'][data-entity='${entity_id}']`);
-              if (freshBtn) {
-                freshBtn.classList.remove('flash-once');
-                void freshBtn.offsetWidth;
-                freshBtn.classList.add('flash-once');
-                setTimeout(() => freshBtn.classList.remove('flash-once'), 360);
+              if (action === 'toggle') {
+                await jpost('/api/ha/entity/action', { entity_id, action: 'toggle' });
+              } else {
+                const b = el.querySelector(`input[type='range'][data-entity='${entity_id}'][data-kind='brightness']`);
+                const h = el.querySelector(`input[type='range'][data-entity='${entity_id}'][data-kind='hue']`);
+                const s = el.querySelector(`input[type='range'][data-entity='${entity_id}'][data-kind='sat']`);
+                const brightnessPct = Number(b?.value || 100);
+                const hue = Number(h?.value || 0);
+                const saturation = Number(s?.value || 100);
+                btn.classList.add('is-active');
+                await jpost('/api/ha/entity/action', { entity_id, action: 'turn_on', brightnessPct, hue, saturation });
               }
+
+              // HA service calls can take a moment to settle state. Refresh with a short delay
+              // to avoid stale UI (especially noticeable on toggle actions).
+              const refreshAfterMs = action === 'apply-lighting' ? 900 : 700;
+              await new Promise((resolve) => setTimeout(resolve, refreshAfterMs));
+              await refreshHaAreas();
+
+              if (action !== 'toggle') {
+                const freshBtn = document.querySelector(`button[data-ha-action='apply-lighting'][data-entity='${entity_id}']`);
+                if (freshBtn) {
+                  freshBtn.classList.remove('flash-once');
+                  void freshBtn.offsetWidth;
+                  freshBtn.classList.add('flash-once');
+                  setTimeout(() => freshBtn.classList.remove('flash-once'), 360);
+                }
+              }
+            } finally {
+              btn.disabled = false;
             }
           });
         });
+      }
+
+      function renderHaBlinds(data){
+        const el = document.getElementById('haBlindsList');
+        const items = data?.items || [];
+        if (!items.length) {
+          el.innerHTML = `<div class='muted'>No blinds/covers found.</div>`;
+          return;
+        }
+        el.innerHTML = items.map((b) => {
+          const state = String(b.state || '-');
+          const pos = Number.isFinite(Number(b.currentPosition)) ? `${Math.round(Number(b.currentPosition))}%` : '-';
+          return `
+            <div class='ha-blind-row'>
+              <div>
+                <strong>${b.name || b.entity_id}</strong>
+                <div class='ha-blind-meta'>
+                  <span class='${state === 'open' ? 'active-badge' : 'inactive-badge'}'>${state}</span>
+                  <span>position: ${pos}</span>
+                  <span class='ha-info'>i<span class='ha-tooltip'>${b.entity_id}</span></span>
+                </div>
+              </div>
+              <div class='ha-blind-actions'>
+                <button class='ha-nav-btn' data-ha-cover-action='open_cover' data-entity='${b.entity_id}'>Open</button>
+                <button class='ha-nav-btn' data-ha-cover-action='stop_cover' data-entity='${b.entity_id}'>Stop</button>
+                <button class='ha-nav-btn' data-ha-cover-action='close_cover' data-entity='${b.entity_id}'>Close</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      async function refreshHaAreas(){
+        const [fresh, blinds] = await Promise.all([
+          jget('/api/ha/areas'),
+          jget('/api/ha/blinds')
+        ]);
+        renderHaArea('haOffice', fresh.grouped?.office || []);
+        renderHaArea('haBedroom', fresh.grouped?.bedroom || []);
+        renderHaArea('haLivingRoom', fresh.grouped?.living_room || []);
+        renderHaArea('haDiningRoom', fresh.grouped?.dining_room || []);
+        renderHaArea('haOther', fresh.grouped?.other || []);
+        renderHaBlinds(blinds);
+        document.getElementById('haRaw').textContent = JSON.stringify({ ...fresh, blinds }, null, 2);
       }
 
       async function loadLogs(){
@@ -1798,12 +2341,155 @@
         renderLogsTable(logsRows);
       }
 
+      async function ensureProjectsLoaded(){
+        if (projectsLoaded) return;
+        const mode = document.getElementById('calendarMode')?.value || 'updated';
+        const [projects, railfinWork, calendar, executive, productivityTasks] = await Promise.all([
+          jget('/api/project-monitor/overview'),
+          jget('/api/project-work/railfin'),
+          jget(`/api/tasks/calendar?mode=${encodeURIComponent(mode)}`),
+          jget('/api/executive-summaries'),
+          jget('/api/productivity/tasks')
+        ]);
+        cache.projects = projects;
+        cache.railfinWork = railfinWork;
+        cache.calendar = calendar;
+        cache.executive = executive;
+        cache.productivityTasks = productivityTasks;
+        renderProjectsOverview(projects || {});
+        renderRailfinWork(railfinWork || {});
+        renderTaskCalendar(calendar || {});
+        renderExecutiveSummaries(executive || {});
+        renderProductivityTasks(productivityTasks || {});
+        projectsLoaded = true;
+      }
+
+      async function ensurePlatformLoaded(){
+        if (platformLoaded) return;
+        const [policies, changelog] = await Promise.all([
+          jget('/api/policies/overview'),
+          jget('/api/changelog/public')
+        ]);
+        cache.policies = policies;
+        cache.changelog = changelog;
+        renderPoliciesOverview(policies || {});
+        renderPublicChangelog(changelog || {});
+        platformLoaded = true;
+      }
+
+      async function ensureAgentJobsLoaded(){
+        if (cache.jobs && cache.workBoard) return;
+        const [jobs, workBoard] = await Promise.all([
+          jget('/api/scheduled-jobs'),
+          jget('/api/work/overview?limit=300')
+        ]);
+        cache.jobs = jobs;
+        cache.workBoard = workBoard;
+        renderScheduledJobs(jobs || {});
+        renderJobsTable(workBoard || {});
+      }
+
+      async function loadDeployLockStatus(){
+        const data = await jget('/api/deploy/lock-status');
+        if (!data?.ok) {
+          document.getElementById('deployLockPresent').textContent = 'ERROR';
+          document.getElementById('deployLockProc').textContent = '-';
+          document.getElementById('deployLockDetails').textContent = data?.error || 'Unable to load lock status';
+          return;
+        }
+        document.getElementById('deployLockPresent').innerHTML = `<span class='status-pill ${data.lockPresent ? 'warn':'ok'}'>${data.lockPresent ? 'YES' : 'NO'}</span>`;
+        document.getElementById('deployLockProc').textContent = data.activeProcesses ? 'YES' : 'NO';
+        const details = [];
+        for (const l of (data.locks || [])) {
+          details.push(`${l.path} | age=${l.ageSec ?? '-'}s | size=${l.size}`);
+        }
+        if (data.activeProcesses) {
+          details.push('');
+          details.push('Processes:');
+          details.push(data.activeProcesses);
+        }
+        document.getElementById('deployLockDetails').textContent = details.join('\n') || 'No lock files found.';
+      }
+
+      async function loadDeployCenter(){
+        const data = await jget('/api/deploy/center');
+        if (!data?.ok) {
+          document.getElementById('deployLatestCommit').textContent = 'ERROR';
+          document.getElementById('deployLatestCommitTime').textContent = '-';
+          document.getElementById('deployOpsRunning').textContent = '-';
+          document.getElementById('deployCenterDetails').textContent = data?.error || 'Unable to load deploy center';
+          return;
+        }
+        document.getElementById('deployLatestCommit').textContent = data.latestCommit?.hash || '-';
+        document.getElementById('deployLatestCommitTime').textContent = data.latestCommit?.time ? new Date(data.latestCommit.time).toLocaleString() : '-';
+        document.getElementById('deployOpsRunning').innerHTML = `<span class='status-pill ${data.opsRunning ? 'ok':'warn'}'>${data.opsRunning ? 'YES' : 'NO'}</span>`;
+        const lines = [];
+        if (data.latestCommit?.subject) lines.push(`Commit: ${data.latestCommit.subject}`);
+        if (data.deployLogMtime) lines.push(`Deploy log updated: ${new Date(data.deployLogMtime).toLocaleString()}`);
+        if (data.activeDeployProcesses) {
+          lines.push('');
+          lines.push('Active deploy-related processes:');
+          lines.push(data.activeDeployProcesses);
+        }
+        if (data.deployLogTail) {
+          lines.push('');
+          lines.push('Deploy log tail:');
+          lines.push(data.deployLogTail);
+        }
+        document.getElementById('deployCenterDetails').textContent = lines.join('\n') || 'No deploy metadata available.';
+      }
+
+      async function ensureDiagnosticsLoaded(){
+        if (cache.commits && cache.configDiag && cache.audit && cache.upgradeChecklist && cache.backupRestoreChecklist) { await loadDeployLockStatus(); await loadDeployCenter(); return; }
+        const [configDiag, audit, commits, upgradeChecklist, backupRestoreChecklist] = await Promise.all([
+          jget('/api/config/diagnostics'),
+          jget('/api/audit/trail'),
+          jget('/api/git/commits?limit=25'),
+          jget('/api/docs/openclaw-upgrade-checklist'),
+          jget('/api/docs/backup-restore-checklist')
+        ]);
+        cache.configDiag = configDiag;
+        cache.audit = audit;
+        cache.commits = commits;
+        cache.upgradeChecklist = upgradeChecklist;
+        cache.backupRestoreChecklist = backupRestoreChecklist;
+        renderConfigValidator(configDiag || {});
+        renderCommitTimeline(commits || {});
+        document.getElementById('auditRaw').textContent = JSON.stringify(audit || {}, null, 2);
+        if (upgradeChecklist?.ok) {
+          document.getElementById('upgradeChecklistMd').textContent = upgradeChecklist.content || '';
+        } else {
+          try {
+            const mdFallback = await fetch('/openclaw-upgrade-checklist.md', { cache: 'no-store' }).then(r => r.ok ? r.text() : '');
+            document.getElementById('upgradeChecklistMd').textContent = mdFallback || (upgradeChecklist?.error || 'Checklist unavailable');
+          } catch {
+            document.getElementById('upgradeChecklistMd').textContent = upgradeChecklist?.error || 'Checklist unavailable';
+          }
+        }
+
+        if (backupRestoreChecklist?.ok) {
+          document.getElementById('backupRestoreChecklistMd').textContent = backupRestoreChecklist.content || '';
+        } else {
+          try {
+            const mdFallback = await fetch('/backup-restore-checklist.md', { cache: 'no-store' }).then(r => r.ok ? r.text() : '');
+            document.getElementById('backupRestoreChecklistMd').textContent = mdFallback || (backupRestoreChecklist?.error || 'Checklist unavailable');
+          } catch {
+            document.getElementById('backupRestoreChecklistMd').textContent = backupRestoreChecklist?.error || 'Checklist unavailable';
+          }
+        }
+
+        await loadDeployLockStatus();
+        await loadDeployCenter();
+      }
+
       async function loadAll(){
         const stamp = document.getElementById('stamp');
         stamp.textContent = 'Refreshing…';
+        projectsLoaded = false;
+        platformLoaded = false;
 
         try {
-          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, skills, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard, upgradeChecklist, backupRestoreChecklist, memoryPlan] = await Promise.all([
+          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, docker, haAreas, haBlinds, backups] = await Promise.all([
             jget('/api/status'),
             jget('/api/openclaw/overview'),
             jget('/api/openclaw/deep'),
@@ -1812,26 +2498,15 @@
             jget('/api/agents/files'),
             jget('/api/agent-control/overview'),
             jget('/api/openclaw/models'),
-            jget('/api/project-monitor/overview'),
-            jget('/api/policies/overview'),
-            jget('/api/changelog/public'),
-            jget('/api/skills/overview'),
             jget('/api/watchers'),
             jget('/api/services/health'),
-            jget('/api/config/diagnostics'),
-            jget('/api/audit/trail'),
-            jget('/api/git/commits?limit=25'),
             jget('/api/system/docker'),
             jget('/api/ha/areas'),
-            jget('/api/backups/status'),
-            jget('/api/scheduled-jobs'),
-            jget('/api/work/overview?limit=300'),
-            jget('/api/docs/openclaw-upgrade-checklist'),
-            jget('/api/docs/backup-restore-checklist'),
-            jget('/api/docs/openclaw-memory-plan')
+            jget('/api/ha/blinds'),
+            jget('/api/backups/status')
           ]);
 
-          cache = { status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, projects, policies, changelog, skills, watchers, services, configDiag, audit, commits, docker, haAreas, backups, jobs, workBoard, upgradeChecklist, backupRestoreChecklist, memoryPlan };
+          cache = { ...cache, status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, docker, haAreas, haBlinds, backups };
           stamp.textContent = `Updated: ${status.timestamp}`;
 
           document.getElementById('currentAgentName').textContent = 'OddEye';
@@ -1848,6 +2523,26 @@
             document.getElementById('dockerBlock').innerHTML = `<span class='bad'>${docker.error}</span>`;
           }
 
+          const localBackupOk = backups?.backupHealth === 'healthy';
+          const offsiteDone = backups?.offsite?.lastSyncDoneAt || null;
+          const offsiteMountReady = Boolean(backups?.offsite?.mountReady);
+          const offsiteHealthy = offsiteMountReady && Boolean(offsiteDone);
+          const localBadge = `<span class='status-pill ${localBackupOk ? 'ok' : 'warn'}'>${localBackupOk ? 'HEALTHY' : (backups?.backupHealth || 'UNKNOWN').toUpperCase()}</span>`;
+          const offsiteBadge = `<span class='status-pill ${offsiteHealthy ? 'ok' : 'warn'}'>${offsiteHealthy ? 'HEALTHY' : 'CHECK'}</span>`;
+          const fmtTs = (iso) => {
+            if (!iso) return '-';
+            const dt = new Date(iso);
+            return Number.isNaN(dt.getTime()) ? String(iso) : dt.toLocaleString();
+          };
+          document.getElementById('backupsBlock').innerHTML = `
+            <div class='row'><span>Local backup</span><strong>${localBadge}</strong></div>
+            <div class='row'><span>Last local trigger</span><strong>${fmtTs(backups?.lastBackupTriggerAt)}</strong></div>
+            <div class='row'><span>Next local trigger</span><strong>${fmtTs(backups?.nextBackupAt)}</strong></div>
+            <div class='row'><span>Offsite sync</span><strong>${offsiteBadge}</strong></div>
+            <div class='row'><span>Mount ready</span><strong>${offsiteMountReady ? 'YES' : 'NO'}</strong></div>
+            <div class='row'><span>Last offsite done</span><strong>${fmtTs(offsiteDone)}</strong></div>
+          `;
+
           renderWatchersTable(watchers.rows || []);
           renderServicesTable(services.rows || []);
 
@@ -1863,54 +2558,22 @@
           renderAgentMdUI(agentsFiles.rows || []);
           renderAgentControlOverview(agentControl || {});
           renderModelsTiles(models);
-          renderProjectsOverview(projects || {});
-          renderPoliciesOverview(policies || {});
-          renderPublicChangelog(changelog || {});
-          renderSkillsOverview(skills || {});
           document.getElementById('modelsRaw').textContent = JSON.stringify(models, null, 2);
           renderHaArea('haOffice', haAreas.grouped?.office || []);
           renderHaArea('haBedroom', haAreas.grouped?.bedroom || []);
           renderHaArea('haLivingRoom', haAreas.grouped?.living_room || []);
           renderHaArea('haDiningRoom', haAreas.grouped?.dining_room || []);
           renderHaArea('haOther', haAreas.grouped?.other || []);
-          document.getElementById('haRaw').textContent = JSON.stringify(haAreas, null, 2);
+          renderHaBlinds(haBlinds || {});
+          document.getElementById('haRaw').textContent = JSON.stringify({ ...haAreas, blinds: haBlinds }, null, 2);
 
           renderBackupsPage(backups);
-          renderScheduledJobs(jobs);
-          renderConfigValidator(configDiag);
-          renderCommitTimeline(commits);
-          renderJobsTable(workBoard);
-          if (upgradeChecklist?.ok) {
-            document.getElementById('upgradeChecklistMd').textContent = upgradeChecklist.content || '';
-          } else {
-            try {
-              const mdFallback = await fetch('/openclaw-upgrade-checklist.md', { cache: 'no-store' }).then(r => r.ok ? r.text() : '');
-              document.getElementById('upgradeChecklistMd').textContent = mdFallback || (upgradeChecklist?.error || 'Checklist unavailable');
-            } catch {
-              document.getElementById('upgradeChecklistMd').textContent = upgradeChecklist?.error || 'Checklist unavailable';
-            }
-          }
 
-          if (backupRestoreChecklist?.ok) {
-            document.getElementById('backupRestoreChecklistMd').textContent = backupRestoreChecklist.content || '';
-          } else {
-            try {
-              const mdFallback = await fetch('/backup-restore-checklist.md', { cache: 'no-store' }).then(r => r.ok ? r.text() : '');
-              document.getElementById('backupRestoreChecklistMd').textContent = mdFallback || (backupRestoreChecklist?.error || 'Checklist unavailable');
-            } catch {
-              document.getElementById('backupRestoreChecklistMd').textContent = backupRestoreChecklist?.error || 'Checklist unavailable';
-            }
-          }
-
-          if (memoryPlan?.ok) {
-            document.getElementById('memoryPlanMd').textContent = memoryPlan.content || '';
-          } else {
-            document.getElementById('memoryPlanMd').textContent = memoryPlan?.error || 'OpenClaw memory plan unavailable';
-          }
-
-          document.getElementById('auditRaw').textContent = JSON.stringify(audit, null, 2);
-
-          await loadLogs();
+          const currentView = (location.hash || '#dashboard').replace('#','');
+          if (currentView === 'projects') await ensureProjectsLoaded();
+          if (currentView === 'designsystem' || currentView === 'policies' || currentView === 'changelog') await ensurePlatformLoaded();
+          if (currentView === 'agents' || currentView === 'jobs' || currentView === 'watchers') await ensureAgentJobsLoaded();
+          if (currentView === 'config' || currentView === 'openclaw' || currentView === 'backups' || currentView === 'logs' || currentView === 'audit') await ensureDiagnosticsLoaded();
         } catch (e) {
           const msg = `Error: ${e.message || e}`;
           stamp.textContent = msg;
@@ -1922,14 +2585,43 @@
         function route(){
           let h = (location.hash || '#dashboard').replace('#','');
           if (h === 'services' || h === 'actions') h = 'config';
-          if (h === 'audit') h = 'logs';
+          if (h === 'audit') {
+            h = 'logs';
+            setTimeout(() => setLogsTab('audit'), 0);
+          } else if (h === 'logs') {
+            setTimeout(() => setLogsTab('gateway'), 0);
+          }
           if (h === 'jobs') {
             h = 'agents';
             setTimeout(() => setAgentsTab('jobs'), 0);
           }
+          if (h === 'watchers') {
+            h = 'agents';
+            setTimeout(() => setAgentsTab('jobs'), 0);
+          }
+          if (h === 'models') {
+            h = 'agents';
+            setTimeout(() => setAgentsTab('models'), 0);
+          }
           if (h === 'policies') {
             h = 'designsystem';
             setTimeout(() => setPlatformTab('policies'), 0);
+          }
+          if (h === 'changelog') {
+            h = 'designsystem';
+            setTimeout(() => setPlatformTab('changelog'), 0);
+          }
+          if (h === 'railfin') {
+            h = 'projects';
+            setTimeout(() => setProjectsTab('railfin'), 0);
+          } else if (h === 'project-calendar') {
+            h = 'projects';
+            setTimeout(() => setProjectsTab('calendar'), 0);
+          } else if (h === 'executive') {
+            h = 'projects';
+            setTimeout(() => setProjectsTab('executive'), 0);
+          } else if (h === 'projects') {
+            setTimeout(() => setProjectsTab('overview'), 0);
           }
           showView(views.includes(h) ? h : 'dashboard');
         }
@@ -1947,14 +2639,231 @@
       toggleHaCard('toggleHaOtherBtn', 'haOtherCard');
       toggleHaCard('toggleHaRawBtn', 'haRawCard');
 
+      document.querySelectorAll('button[data-ha-group][data-ha-group-action]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const area = btn.dataset.haGroup;
+          const action = btn.dataset.haGroupAction;
+          const label = btn.textContent?.trim() || `${area} ${action}`;
+          const needsConfirm = area === 'all' && action === 'turn_off';
+          if (needsConfirm && !confirm(`Run ${label}?`)) return;
+          const prev = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = 'Running…';
+          try {
+            await jpost('/api/ha/group/action', { area, action });
+            await refreshHaAreas();
+          } finally {
+            btn.disabled = false;
+            btn.textContent = prev;
+          }
+        });
+      });
+
+      document.addEventListener('click', async (ev) => {
+        const btn = ev.target.closest('button[data-ha-cover-action][data-entity]');
+        if (!btn) return;
+        const entity_id = btn.dataset.entity;
+        const action = btn.dataset.haCoverAction;
+        const prev = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '…';
+        try {
+          await jpost('/api/ha/cover/action', { entity_id, action });
+          await refreshHaAreas();
+        } finally {
+          btn.disabled = false;
+          btn.textContent = prev;
+        }
+      });
+
+      document.querySelectorAll('button[data-ha-cover-group-action]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const action = btn.dataset.haCoverGroupAction;
+          const label = btn.textContent?.trim() || action;
+          const needsConfirm = action === 'close_cover';
+          if (needsConfirm && !confirm(`Run ${label}?`)) return;
+          const prev = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = 'Running…';
+          try {
+            await jpost('/api/ha/cover/group-action', { action });
+            await refreshHaAreas();
+          } finally {
+            btn.disabled = false;
+            btn.textContent = prev;
+          }
+        });
+      });
+
       document.getElementById('refreshBtn').addEventListener('click', loadAll);
+
+      document.getElementById('railfinAddTaskBtn').addEventListener('click', async () => {
+        const title = document.getElementById('railfinTaskTitle').value.trim();
+        const owner = document.getElementById('railfinTaskOwner').value;
+        const lane = document.getElementById('railfinTaskLane').value;
+        const priority = document.getElementById('railfinTaskPriority').value;
+        const branch = document.getElementById('railfinTaskBranch').value.trim();
+        const pr = document.getElementById('railfinTaskPr').value.trim();
+        const commit = document.getElementById('railfinTaskCommit').value.trim();
+        if (!title) return;
+        await jpost('/api/project-work/railfin/task', { title, owner, lane, priority, branch, pr, commit });
+        document.getElementById('railfinTaskTitle').value = '';
+        document.getElementById('railfinTaskBranch').value = '';
+        document.getElementById('railfinTaskPr').value = '';
+        document.getElementById('railfinTaskCommit').value = '';
+        projectsLoaded = false;
+        await ensureProjectsLoaded();
+      });
+
+      document.getElementById('railfinAddLogBtn').addEventListener('click', async () => {
+        const note = document.getElementById('railfinLogNote').value.trim();
+        const by = document.getElementById('railfinLogBy').value;
+        if (!note) return;
+        await jpost('/api/project-work/railfin/activity', { note, by, type: 'note' });
+        document.getElementById('railfinLogNote').value = '';
+        projectsLoaded = false;
+        await ensureProjectsLoaded();
+      });
+
+      document.getElementById('railfinSyncNowBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('railfinSyncNowBtn');
+        const prev = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Syncing…';
+        try {
+          await jpost('/api/project-work/railfin/sync', {});
+          await refreshRailfinLive();
+        } finally {
+          btn.disabled = false;
+          btn.textContent = prev;
+        }
+      });
+
+      document.getElementById('calendarRefreshBtn').addEventListener('click', async () => {
+        const mode = document.getElementById('calendarMode').value || 'updated';
+        const out = await jget(`/api/tasks/calendar?mode=${encodeURIComponent(mode)}`);
+        cache.calendar = out;
+        renderTaskCalendar(out || {});
+      });
+
+      document.getElementById('execAddBtn').addEventListener('click', async () => {
+        const title = document.getElementById('execTitle').value.trim();
+        const summary = document.getElementById('execSummary').value.trim();
+        const by = document.getElementById('execBy').value.trim() || 'main';
+        if (!title || !summary) return;
+        await jpost('/api/executive-summaries', { title, summary, by });
+        document.getElementById('execTitle').value = '';
+        document.getElementById('execSummary').value = '';
+        const out = await jget('/api/executive-summaries');
+        cache.executive = out;
+        renderExecutiveSummaries(out || {});
+      });
+
+      document.addEventListener('change', async (ev) => {
+        const filterSel = ev.target.closest('#railfinFilterOwner,#railfinFilterLane,#railfinFilterStatus,#railfinFilterPriority');
+        if (filterSel) {
+          railfinTasksPage = 1;
+          renderRailfinWork(cache.railfinWork || {});
+          return;
+        }
+
+        const sel = ev.target.closest('select[data-railfin-task-status]');
+        if (!sel) return;
+        const taskId = sel.dataset.railfinTaskStatus;
+        const status = sel.value;
+        await jpost(`/api/project-work/railfin/task/${encodeURIComponent(taskId)}/status`, { status, by: 'railfin-coo' });
+        projectsLoaded = false;
+        await ensureProjectsLoaded();
+      });
+
+      document.addEventListener('click', async (ev) => {
+        const quick = ev.target.closest('button[data-railfin-quick]');
+        if (quick) {
+          const mode = quick.dataset.railfinQuick;
+          const ownerEl = document.getElementById('railfinFilterOwner');
+          const laneEl = document.getElementById('railfinFilterLane');
+          const statusEl = document.getElementById('railfinFilterStatus');
+          const priEl = document.getElementById('railfinFilterPriority');
+          ownerEl.value = ''; laneEl.value = ''; statusEl.value = ''; priEl.value = '';
+          if (mode === 'mine-dev') laneEl.value = 'dev';
+          if (mode === 'mine-ui') laneEl.value = 'ui';
+          if (mode === 'mine-sec') laneEl.value = 'sec';
+          if (mode === 'blocked') statusEl.value = 'blocked';
+          if (mode === 'merge') statusEl.value = 'review';
+          railfinTasksPage = 1;
+          renderRailfinWork(cache.railfinWork || {});
+          return;
+        }
+
+        const moveBtn = ev.target.closest('button[data-railfin-move]');
+        if (moveBtn) {
+          const taskId = moveBtn.dataset.railfinMove;
+          const dir = Number(moveBtn.dataset.dir || 0);
+          const tasks = cache.railfinWork?.data?.tasks || [];
+          const t = tasks.find((x) => x.id === taskId);
+          if (!t) return;
+          const order = ['backlog','ready','in_progress','review','done'];
+          const i = order.indexOf(t.status);
+          const n = Math.max(0, Math.min(order.length - 1, i + dir));
+          const status = order[n];
+          await jpost(`/api/project-work/railfin/task/${encodeURIComponent(taskId)}/status`, { status, by: 'railfin-coo' });
+          projectsLoaded = false;
+          await ensureProjectsLoaded();
+          return;
+        }
+
+        const setBtn = ev.target.closest('button[data-railfin-set]');
+        if (setBtn) {
+          const taskId = setBtn.dataset.railfinSet;
+          const status = setBtn.dataset.status || 'blocked';
+          await jpost(`/api/project-work/railfin/task/${encodeURIComponent(taskId)}/status`, { status, by: 'railfin-coo' });
+          projectsLoaded = false;
+          await ensureProjectsLoaded();
+          return;
+        }
+
+        const btn = ev.target.closest('button[data-railfin-save-refs]');
+        if (!btn) return;
+        const taskId = btn.dataset.railfinSaveRefs;
+        const branch = document.querySelector(`input[data-railfin-branch='${taskId}']`)?.value?.trim() || '';
+        const pr = document.querySelector(`input[data-railfin-pr='${taskId}']`)?.value?.trim() || '';
+        const commit = document.querySelector(`input[data-railfin-commit='${taskId}']`)?.value?.trim() || '';
+        const prev = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        try {
+          await jpost(`/api/project-work/railfin/task/${encodeURIComponent(taskId)}/refs`, { branch, pr, commit, by: 'railfin-coo' });
+          projectsLoaded = false;
+          await ensureProjectsLoaded();
+        } finally {
+          btn.disabled = false;
+          btn.textContent = prev;
+        }
+      });
+
       document.getElementById('logsTabGateway').addEventListener('click', () => setLogsTab('gateway'));
       document.getElementById('logsTabAudit').addEventListener('click', () => setLogsTab('audit'));
       document.getElementById('agentsTabOverview').addEventListener('click', () => setAgentsTab('overview'));
-      document.getElementById('agentsTabJobs').addEventListener('click', () => { setAgentsTab('jobs'); loadJobs(); });
+      document.getElementById('agentsTabJobs').addEventListener('click', () => { setAgentsTab('jobs'); ensureAgentJobsLoaded(); loadJobs(); });
+      document.getElementById('agentsTabModels').addEventListener('click', () => setAgentsTab('models'));
       document.getElementById('platformTabDesign').addEventListener('click', () => setPlatformTab('design'));
       document.getElementById('platformTabPolicies').addEventListener('click', () => setPlatformTab('policies'));
+      document.getElementById('platformTabChangelog').addEventListener('click', () => setPlatformTab('changelog'));
+      document.getElementById('projectsTabOverview').addEventListener('click', () => setProjectsTab('overview'));
+      document.getElementById('projectsTabRailfin').addEventListener('click', () => setProjectsTab('railfin'));
+      document.getElementById('projectsTabCalendar').addEventListener('click', () => setProjectsTab('calendar'));
+      document.getElementById('projectsTabExecutive').addEventListener('click', () => setProjectsTab('executive'));
+      document.getElementById('railfinTasksPrev').addEventListener('click', () => { railfinTasksPage = Math.max(1, railfinTasksPage - 1); renderRailfinWork(cache.railfinWork || {}); });
+      document.getElementById('railfinTasksNext').addEventListener('click', () => { railfinTasksPage = railfinTasksPage + 1; renderRailfinWork(cache.railfinWork || {}); });
+      document.getElementById('calendarMode').addEventListener('change', async () => {
+        const mode = document.getElementById('calendarMode').value || 'updated';
+        const out = await jget(`/api/tasks/calendar?mode=${encodeURIComponent(mode)}`);
+        cache.calendar = out;
+        renderTaskCalendar(out || {});
+      });
       document.getElementById('loadLogsBtn').addEventListener('click', () => { logsPage = 1; loadLogs(); });
+      document.getElementById('refreshDeployLockBtn').addEventListener('click', loadDeployLockStatus);
+      document.getElementById('refreshDeployCenterBtn').addEventListener('click', loadDeployCenter);
       document.getElementById('jobsRefreshBtn').addEventListener('click', loadJobs);
       document.getElementById('jobsKindFilter').addEventListener('change', loadJobs);
       document.getElementById('jobsStatusFilter').addEventListener('change', loadJobs);
@@ -1970,16 +2879,36 @@
         document.getElementById('backupStatusRaw').textContent = JSON.stringify(out, null, 2);
         await loadAll();
       });
-      document.getElementById('commitsPrev').addEventListener('click', () => { commitsPage = Math.max(1, commitsPage - 1); renderCommitTimeline(cache.commits || { ok:true, rows:[] }); });
-      document.getElementById('commitsNext').addEventListener('click', () => { commitsPage = commitsPage + 1; renderCommitTimeline(cache.commits || { ok:true, rows:[] }); });
+      document.getElementById('runOffsiteBtn').addEventListener('click', async () => {
+        if (!confirm('Run offsite sync now?')) return;
+        const out = await jpost('/api/backups/run-offsite', {});
+        document.getElementById('offsiteHistory').textContent = out.ok ? (out.history || 'Offsite sync completed.') : JSON.stringify(out, null, 2);
+        await loadAll();
+      });
+      document.getElementById('commitsPrev').addEventListener('click', async () => { commitsPage = Math.max(1, commitsPage - 1); await ensureDiagnosticsLoaded(); renderCommitTimeline(cache.commits || { ok:true, rows:[] }); });
+      document.getElementById('commitsNext').addEventListener('click', async () => { commitsPage = commitsPage + 1; await ensureDiagnosticsLoaded(); renderCommitTimeline(cache.commits || { ok:true, rows:[] }); });
 
       document.querySelectorAll('button[data-action]').forEach(btn => {
         btn.addEventListener('click', async () => {
           const action = btn.dataset.action;
-          if (!confirm(`Run action: ${action}?`)) return;
-          const out = await jpost(`/api/actions/${action}`, { confirm: 'yes' });
-          document.getElementById('actionOutput').textContent = JSON.stringify(out, null, 2);
-          await loadAll();
+          const risky = new Set(['restart-homeassistant','update-openclaw-gateway','restart-openclaw-gateway']);
+          const confirmText = risky.has(action)
+            ? `Run HIGH-IMPACT action: ${action}?`
+            : `Run action: ${action}?`;
+          if (!confirm(confirmText)) return;
+
+          const prevLabel = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = 'Running…';
+          try {
+            const out = await jpost(`/api/actions/${action}`, { confirm: 'yes' });
+            document.getElementById('actionOutput').textContent = JSON.stringify(out, null, 2);
+            await loadAll();
+          } finally {
+            btn.disabled = false;
+            btn.textContent = prevLabel;
+            await loadDeployLockStatus();
+          }
         });
       });
 
