@@ -1545,7 +1545,7 @@ app.get("/api/skills/overview", async (_req, res) => {
         if (seen.has(id)) continue;
         seen.add(id);
         const conf = configured[id] || null;
-        const active = conf?.enabled === true;
+        const active = conf ? (conf?.enabled !== false) : true;
         rows.push({ id, description: description || "(no description)", active, source: root, configured: Boolean(conf) });
       }
     } catch {
