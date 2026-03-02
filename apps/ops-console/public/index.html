@@ -424,6 +424,7 @@
           <a data-view="homeassistant" href="#homeassistant"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M6 10v11h12V10"/><path d="M10 21v-5h4v5"/></svg>Home Assistant</a>
           <a class="active" data-view="dashboard" href="#dashboard"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Dashboard</a>
           <a data-view="agents" href="#agents"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><path d="M12 6V3"/></svg>Agents</a>
+          <a data-view="skills" href="#skills"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/></svg>Skills</a>
           <a data-view="projects" href="#projects"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h18"/></svg>Projects</a>
           <a data-view="designsystem" href="#designsystem"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Platform</a>
           <a data-view="config" href="#config"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z"/></svg>Diagnostics</a>
@@ -610,6 +611,24 @@
         </section>
 
         
+
+        <section id="view-skills" class="hidden">
+          <h2>Agent Skills</h2>
+          <div class="card" style="margin-bottom:12px;">
+            <div class="row"><span>Total skills</span><strong id="skillsTotal">-</strong></div>
+            <div class="row"><span>Active</span><strong id="skillsActive">-</strong></div>
+            <div class="row"><span>Inactive</span><strong id="skillsInactive">-</strong></div>
+            <div class="muted">Synced from OpenClaw config + skill directories.</div>
+          </div>
+          <div class="card">
+            <table id="skillsTable">
+              <thead><tr><th>Skill</th><th>Description</th><th>Active</th><th>Source</th></tr></thead>
+              <tbody><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="card" style="margin-top:12px;"><details><summary>Skills Raw JSON</summary><pre id="skillsRaw">Loading…</pre></details></div>
+        </section>
+
 
         <section id="view-openclaw" class="hidden">
           <h2>Diagnostics</h2>
@@ -1137,7 +1156,7 @@
     </div>
 
     <script>
-      const views = ["dashboard","agents","openclaw","homeassistant","logs","projects","designsystem","backups","config"];
+      const views = ["dashboard","agents","skills","openclaw","homeassistant","logs","projects","designsystem","backups","config"];
       let autoTimer = null;
       let cache = {};
       let projectsLoaded = false;
@@ -1374,6 +1393,28 @@
         for (let i = 0; i < name.length; i++) h = (h * 33 + name.charCodeAt(i)) >>> 0;
         const hue = h % 360;
         return `--chip-border:hsl(${hue} 58% 46%);--chip-active:hsl(${hue} 72% 52%);`;
+      }
+
+
+      function renderSkillsOverview(data){
+        document.getElementById('skillsRaw').textContent = JSON.stringify(data || {}, null, 2);
+        if (!data?.ok) {
+          document.getElementById('skillsTotal').textContent = '-';
+          document.getElementById('skillsActive').textContent = '-';
+          document.getElementById('skillsInactive').textContent = '-';
+          document.querySelector('#skillsTable tbody').innerHTML = `<tr><td colspan="4" class="bad">${data?.error || 'Unavailable'}</td></tr>`;
+          return;
+        }
+        document.getElementById('skillsTotal').textContent = String(data?.summary?.total ?? 0);
+        document.getElementById('skillsActive').textContent = String(data?.summary?.active ?? 0);
+        document.getElementById('skillsInactive').textContent = String(data?.summary?.inactive ?? 0);
+        const rows = data.rows || [];
+        const tbody = document.querySelector('#skillsTable tbody');
+        if (!rows.length) {
+          tbody.innerHTML = `<tr><td colspan="4" class="muted">No skills found</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = rows.map((r) => `<tr><td><strong>${r.id}</strong></td><td>${r.description || ''}</td><td>${r.active ? '<span class="status-pill ok">active</span>' : '<span class="status-pill warn">inactive</span>'}</td><td class="muted">${r.source || '-'}</td></tr>`).join('');
       }
 
       function renderWatchersTable(rows){
@@ -2368,7 +2409,8 @@
         if (platformLoaded) return;
         const [policies, changelog] = await Promise.all([
           jget('/api/policies/overview'),
-          jget('/api/changelog/public')
+          jget('/api/changelog/public'),
+          jget('/api/skills/overview')
         ]);
         cache.policies = policies;
         cache.changelog = changelog;
@@ -2489,7 +2531,7 @@
         platformLoaded = false;
 
         try {
-          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, docker, haAreas, haBlinds, backups] = await Promise.all([
+          const [status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, docker, haAreas, haBlinds, backups, skills] = await Promise.all([
             jget('/api/status'),
             jget('/api/openclaw/overview'),
             jget('/api/openclaw/deep'),
@@ -2544,6 +2586,7 @@
           `;
 
           renderWatchersTable(watchers.rows || []);
+          renderSkillsOverview(skills || {});
           renderServicesTable(services.rows || []);
 
           document.getElementById('metricAgents').textContent = String((agents.agentIds || []).length || 1);

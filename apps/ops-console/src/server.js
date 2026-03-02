@@ -1505,6 +1505,53 @@ app.get("/api/openclaw/overview", async (_req, res) => {
   });
 });
 
+
+
+app.get("/api/skills/overview", async (_req, res) => {
+  const cfg = await readConfig();
+  const parsed = cfg.ok ? (cfg.parsed || {}) : {};
+  const configured = parsed?.skills?.entries || {};
+
+  const roots = [
+    "/home/node/.openclaw/workspace/skills",
+    "/app/skills",
+  ];
+
+  const rows = [];
+  const seen = new Set();
+
+  for (const root of roots) {
+    try {
+      const dirents = await fs.readdir(root, { withFileTypes: true });
+      for (const d of dirents) {
+        if (!d.isDirectory()) continue;
+        const id = d.name;
+        const skillPath = path.join(root, id, "SKILL.md");
+        let description = "";
+        try {
+          const md = await fs.readFile(skillPath, "utf8");
+          const m = md.match(/description:\s*(.+)/i);
+          if (m) description = String(m[1] || "").trim();
+        } catch {
+          continue;
+        }
+
+        if (seen.has(id)) continue;
+        seen.add(id);
+        const conf = configured[id] || null;
+        const active = conf?.enabled === true;
+        rows.push({ id, description: description || "(no description)", active, source: root, configured: Boolean(conf) });
+      }
+    } catch {
+      // ignore missing roots
+    }
+  }
+
+  rows.sort((a, b) => a.id.localeCompare(b.id));
+  const summary = { total: rows.length, active: rows.filter((r) => r.active).length, inactive: rows.filter((r) => !r.active).length };
+  return res.json({ ok: true, summary, rows });
+});
+
 app.get("/api/openclaw/deep", async (_req, res) => {
   const data = await getOpenclawDeep();
   if (!data.ok) return res.status(500).json(data);
