@@ -618,6 +618,7 @@
             <div class="row"><span>Total skills</span><strong id="skillsTotal">-</strong></div>
             <div class="row"><span>Active</span><strong id="skillsActive">-</strong></div>
             <div class="row"><span>Inactive</span><strong id="skillsInactive">-</strong></div>
+            <div class="row"><span>Endpoint health</span><strong id="skillsHealth" class="warn">checking</strong></div>
             <div class="muted">Synced from OpenClaw config + skill directories.</div>
           </div>
           <div class="card">
@@ -1398,16 +1399,23 @@
 
       function renderSkillsOverview(data){
         document.getElementById('skillsRaw').textContent = JSON.stringify(data || {}, null, 2);
+        const health = document.getElementById('skillsHealth');
         if (!data?.ok) {
           document.getElementById('skillsTotal').textContent = '-';
           document.getElementById('skillsActive').textContent = '-';
           document.getElementById('skillsInactive').textContent = '-';
+          if (health) { health.textContent = 'DOWN'; health.className = 'bad'; }
           document.querySelector('#skillsTable tbody').innerHTML = `<tr><td colspan="4" class="bad">${data?.error || 'Unavailable'}</td></tr>`;
           return;
         }
         document.getElementById('skillsTotal').textContent = String(data?.summary?.total ?? 0);
         document.getElementById('skillsActive').textContent = String(data?.summary?.active ?? 0);
         document.getElementById('skillsInactive').textContent = String(data?.summary?.inactive ?? 0);
+        if (health) {
+          const ok = Number(data?.summary?.total ?? 0) > 0;
+          health.textContent = ok ? 'OK' : 'WARN';
+          health.className = ok ? 'ok' : 'warn';
+        }
         const rows = data.rows || [];
         const tbody = document.querySelector('#skillsTable tbody');
         if (!rows.length) {
