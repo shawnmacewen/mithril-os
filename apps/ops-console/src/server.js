@@ -1512,10 +1512,16 @@ app.get("/api/skills/overview", async (_req, res) => {
   const parsed = cfg.ok ? (cfg.parsed || {}) : {};
   const configured = parsed?.skills?.entries || {};
 
+  const ws = String(parsed?.agents?.defaults?.workspace || "").trim();
+  const stateDir = ws.includes('/.openclaw/workspace') ? ws.replace('/workspace', '') : '';
+
   const roots = [
+    ws ? path.join(ws, 'skills') : null,
+    stateDir ? path.join(stateDir, 'workspace/skills') : null,
+    "/home/mini-home-lab/.openclaw/workspace/skills",
     "/home/node/.openclaw/workspace/skills",
     "/app/skills",
-  ];
+  ].filter(Boolean);
 
   const rows = [];
   const seen = new Set();
