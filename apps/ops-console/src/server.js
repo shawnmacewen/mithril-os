@@ -37,10 +37,6 @@ const REVIEW_LOG_FILE = process.env.REVIEW_LOG_FILE || "/mithril-os/ops-artifact
 const ROUTING_INSIGHTS_FILE = process.env.ROUTING_INSIGHTS_FILE || "/mithril-os/ops-artifacts/routing-insights.json";
 const PROJECTS_CONFIG_FILE = process.env.PROJECTS_CONFIG_FILE || "/mithril-os/config/projects-monitor.json";
 const POLICIES_CONFIG_FILE = process.env.POLICIES_CONFIG_FILE || "/mithril-os/config/policies.json";
-const PROJECT_WORK_DIR = process.env.PROJECT_WORK_DIR || "/mithril-os/config/project-work";
-const EXEC_SUMMARIES_FILE = process.env.EXEC_SUMMARIES_FILE || "/mithril-os/config/executive-summaries.json";
-const PRODUCTIVITY_VAULT_DIR = process.env.PRODUCTIVITY_VAULT_DIR || "/home/node/.openclaw/workspace/productivity/Personal Assistant";
-const CRON_JOBS_FILE = process.env.CRON_JOBS_FILE || "/home/node/.openclaw/cron/jobs.json";
 
 app.use((req, res, next) => {
   // Internal ops UI: prefer freshness over asset caching to avoid stale frontend state.
@@ -49,20 +45,6 @@ app.use((req, res, next) => {
 });
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(express.json());
-
-const API_CACHE = new Map();
-function cacheGet(key) {
-  const row = API_CACHE.get(key);
-  if (!row) return null;
-  if (Date.now() > row.expiresAt) {
-    API_CACHE.delete(key);
-    return null;
-  }
-  return row.value;
-}
-function cacheSet(key, value, ttlMs) {
-  API_CACHE.set(key, { value, expiresAt: Date.now() + ttlMs });
-}
 
 function tcpCheck(host, port, timeoutMs = 1500) {
   return new Promise((resolve) => {
@@ -263,411 +245,6 @@ async function readPoliciesConfig() {
     return { ok: true, source: POLICIES_CONFIG_FILE, policies: rows };
   } catch {
     return { ok: true, source: "default", policies: [] };
-  }
-}
-
-function defaultProjectWork(projectId) {
-  const now = new Date().toISOString();
-  return {
-    projectId,
-    updatedAt: now,
-    roadmap: {
-      now: ["Stabilize multi-agent lanes (coo/dev/ui/sec)", "Track work with explicit status + ownership"],
-      next: ["Build release readiness checklist", "Automate merge queue visibility"],
-      later: ["Cross-project reusable project tooling templates"],
-    },
-    tasks: [],
-    activity: [
-      { ts: now, type: "bootstrap", by: "main", note: `Initialized project work tracker for ${projectId}` },
-    ],
-  };
-}
-
-async function findRailfinTasksDoc() {
-  const candidates = [
-    "/home/mini-home-lab/work/railfin/docs/tasks.md",
-    "/work/railfin/docs/tasks.md",
-    "/home/mini-home-lab/work/railfin.io/docs/tasks.md",
-    "/work/railfin.io/docs/tasks.md",
-  ];
-  for (const p of candidates) {
-    try {
-      await fs.access(p);
-      return p;
-    } catch {
-      // next
-    }
-  }
-  return null;
-}
-
-async function refreshRailfinRepoIfPossible() {
-  const repos = [
-    "/work/railfin",
-    "/home/mini-home-lab/work/railfin",
-    "/work/railfin.io",
-    "/home/mini-home-lab/work/railfin.io",
-  ];
-  for (const repo of repos) {
-    try {
-      await fs.access(path.join(repo, ".git"));
-      await exec(`git -C ${repo} fetch origin --quiet && git -C ${repo} pull --ff-only origin main`, { timeout: 15000 });
-      return { ok: true, repo };
-    } catch {
-      // try next repo or silently continue
-    }
-  }
-  return { ok: false };
-}
-
-function parseRailfinTasksMarkdown(mdText) {
-  const lines = String(mdText || "").split(/\r?\n/);
-  const out = [];
-
-  // Format A: section headers (current railfin docs style)
-  // ## task-00037 — DEV — Title
-  let cur = null;
-  const pushCur = () => {
-    if (!cur) return;
-    out.push({
-      id: `tsk_sync_${cur.taskKey || createHash("sha1").update(cur.title).digest("hex").slice(0, 10)}`,
-      title: cur.title,
-      owner: cur.owner,
-      lane: cur.lane,
-      priority: cur.priority || "p2",
-      branch: cur.branch || "",
-      pr: cur.pr || "",
-      commit: cur.commit || "",
-      status: cur.status || "ready",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      source: "docs/tasks.md",
-    });
-  };
-
-  const laneMap = (raw) => {
-    const k = String(raw || "").trim().toLowerCase();
-    if (k === "dev") return { lane: "dev", owner: "railfin-dev" };
-    if (k === "ui") return { lane: "ui", owner: "railfin-ui" };
-    if (k === "sec") return { lane: "sec", owner: "railfin-sec" };
-    return { lane: "coo", owner: "railfin-coo" };
-  };
-
-  const normalizeStatus = (s) => {
-    const x = String(s || "").toLowerCase();
-    if (x.includes("done")) return "done";
-    if (x.includes("review")) return "review";
-    if (x.includes("progress")) return "in_progress";
-    if (x.includes("block")) return "blocked";
-    if (x.includes("backlog")) return "backlog";
-    return "ready";
-  };
-
-  for (const line of lines) {
-    const head = line.match(/^\s*##\s*(task-[0-9]+)\s*[—-]\s*([A-Za-z]+)\s*[—-]\s*(.+)$/);
-    if (head) {
-      pushCur();
-      const laneOwner = laneMap(head[2]);
-      cur = {
-        taskKey: head[1].toLowerCase(),
-        title: String(head[3] || "").trim(),
-        lane: laneOwner.lane,
-        owner: laneOwner.owner,
-        priority: "p2",
-        status: "ready",
-        branch: "",
-        pr: "",
-        commit: "",
-      };
-      continue;
-    }
-
-    if (cur) {
-      const st = line.match(/^\s*[-*]\s*Status:\s*\*\*(.+?)\*\*/i);
-      if (st) { cur.status = normalizeStatus(st[1]); continue; }
-      const br = line.match(/^\s*[-*]\s*Branch:\s*`([^`]+)`/i);
-      if (br) { cur.branch = br[1].trim(); continue; }
-      const pr = line.match(/^\s*[-*]\s*PR:\s*`?([^`]+)`?/i);
-      if (pr) { cur.pr = pr[1].trim(); continue; }
-      const cm = line.match(/^\s*[-*]\s*Commit:\s*`([^`]+)`/i);
-      if (cm) { cur.commit = cm[1].trim(); continue; }
-      const p1 = line.match(/^\s*[-*]\s*Priority:\s*\*\*(p[123])\*\*/i);
-      if (p1) { cur.priority = p1[1].toLowerCase(); continue; }
-    }
-  }
-  pushCur();
-
-  // Format B fallback: markdown checkbox list
-  if (!out.length) {
-    for (const line of lines) {
-      const m = line.match(/^\s*[-*]\s+\[( |x|X)\]\s+(.+)$/);
-      if (!m) continue;
-      const checked = m[1].toLowerCase() === "x";
-      let title = m[2].trim();
-      let lane = "coo";
-      let owner = "railfin-coo";
-      const lower = title.toLowerCase();
-      if (lower.includes("[dev]") || lower.includes("(dev)")) { lane = "dev"; owner = "railfin-dev"; }
-      if (lower.includes("[ui]") || lower.includes("(ui)")) { lane = "ui"; owner = "railfin-ui"; }
-      if (lower.includes("[sec]") || lower.includes("(sec)")) { lane = "sec"; owner = "railfin-sec"; }
-      if (lower.includes("[coo]") || lower.includes("(coo)")) { lane = "coo"; owner = "railfin-coo"; }
-      title = title.replace(/\[(dev|ui|sec|coo)\]/ig, "").replace(/\((dev|ui|sec|coo)\)/ig, "").trim();
-      const id = `tsk_sync_${createHash("sha1").update(title).digest("hex").slice(0, 10)}`;
-      out.push({ id, title, owner, lane, priority: "p2", branch: "", pr: "", commit: "", status: checked ? "done" : "ready", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), source: "docs/tasks.md" });
-    }
-  }
-
-  return out;
-}
-
-async function syncRailfinFromTasksDoc(doc) {
-  await refreshRailfinRepoIfPossible();
-  const tasksDoc = await findRailfinTasksDoc();
-  if (!tasksDoc) return { synced: false, reason: "missing-tasks-doc" };
-  const raw = await fs.readFile(tasksDoc, "utf8");
-  const tasks = parseRailfinTasksMarkdown(raw);
-  doc.tasks = tasks;
-  doc.activity = Array.isArray(doc.activity) ? doc.activity : [];
-  doc.activity.unshift({ ts: new Date().toISOString(), type: "sync", by: "main", note: `Synced ${tasks.length} tasks from docs/tasks.md` });
-  return { synced: true, tasksDoc, count: tasks.length };
-}
-
-function taskSeqFromAny(task) {
-  const raw = `${task?.id || ""} ${task?.title || ""}`;
-  const m = raw.match(/task-(\d+)/i);
-  return m ? Number(m[1]) : -1;
-}
-
-function taskKeyFromAny(task) {
-  const seq = taskSeqFromAny(task);
-  return seq >= 0 ? `task-${String(seq).padStart(5, "0")}` : String(task?.id || "task-00000");
-}
-
-function laneTokenFromTask(task) {
-  const lane = String(task?.lane || "").toLowerCase();
-  if (lane === "dev") return "DEV";
-  if (lane === "ui") return "UI";
-  if (lane === "sec") return "SEC";
-  return "COO";
-}
-
-function statusLabelFromTask(task) {
-  const s = String(task?.status || "ready").toLowerCase();
-  if (s === "in_progress") return "In Progress";
-  if (s === "done") return "Done";
-  if (s === "review") return "Review";
-  if (s === "blocked") return "Blocked";
-  if (s === "backlog") return "Backlog";
-  return "Ready";
-}
-
-async function writeRailfinTasksDocFromBoard(doc) {
-  const tasksDoc = await findRailfinTasksDoc();
-  if (!tasksDoc) return { ok: false, reason: "missing-tasks-doc" };
-
-  // Merge strategy: never drop tasks that already exist in docs/tasks.md.
-  // Board updates should patch matching task IDs, while preserving externally added/newer tasks.
-  const existingRaw = await fs.readFile(tasksDoc, "utf8");
-  const existing = parseRailfinTasksMarkdown(existingRaw);
-  const merged = new Map();
-  for (const t of existing) merged.set(taskKeyFromAny(t), t);
-
-  const boardTasks = Array.isArray(doc?.tasks) ? doc.tasks.slice() : [];
-  for (const t of boardTasks) merged.set(taskKeyFromAny(t), t);
-
-  const tasks = Array.from(merged.values());
-  tasks.sort((a, b) => {
-    const sa = taskSeqFromAny(a);
-    const sb = taskSeqFromAny(b);
-    if (sb !== sa) return sb - sa;
-    const ta = new Date(a.updatedAt || a.createdAt || 0).getTime();
-    const tb = new Date(b.updatedAt || b.createdAt || 0).getTime();
-    return tb - ta;
-  });
-
-  const lines = ["# Tasks", ""];
-  for (const t of tasks) {
-    const taskKey = taskKeyFromAny(t);
-    lines.push(`## ${taskKey} — ${laneTokenFromTask(t)} — ${String(t.title || "Untitled")}`);
-    lines.push("");
-    lines.push(`- Status: **${statusLabelFromTask(t)}**`);
-    lines.push(`- Branch: \`${String(t.branch || "")}\``);
-    if (String(t.pr || "").trim()) lines.push(`- PR: \`${String(t.pr).trim()}\``);
-    if (String(t.commit || "").trim()) lines.push(`- Commit: \`${String(t.commit).trim()}\``);
-    lines.push("");
-  }
-
-  await fs.writeFile(tasksDoc, `${lines.join("\n")}\n`, "utf8");
-  return { ok: true, tasksDoc, count: tasks.length };
-}
-
-async function readProjectWork(projectId) {
-  const safeId = String(projectId || "").toLowerCase().replace(/[^a-z0-9_-]/g, "-");
-  const file = path.join(PROJECT_WORK_DIR, `${safeId}.json`);
-  let parsed = null;
-  try {
-    const raw = await fs.readFile(file, "utf8");
-    parsed = JSON.parse(raw);
-  } catch {
-    parsed = defaultProjectWork(safeId);
-  }
-
-  if (safeId === "railfin") {
-    try {
-      const sync = await syncRailfinFromTasksDoc(parsed);
-      if (sync.synced) {
-        await writeProjectWork(safeId, parsed);
-        return { ok: true, source: `${file} (synced from docs/tasks.md)`, data: parsed };
-      }
-    } catch {
-      // return existing state if sync fails
-    }
-  }
-
-  return { ok: true, source: parsed?.projectId ? file : "default", data: parsed, file };
-}
-
-async function writeProjectWork(projectId, data) {
-  const safeId = String(projectId || "").toLowerCase().replace(/[^a-z0-9_-]/g, "-");
-  const file = path.join(PROJECT_WORK_DIR, `${safeId}.json`);
-  await fs.mkdir(PROJECT_WORK_DIR, { recursive: true });
-  await fs.writeFile(file, `${JSON.stringify({ ...data, projectId: safeId, updatedAt: new Date().toISOString() }, null, 2)}\n`, "utf8");
-  return { ok: true, file };
-}
-
-function defaultExecutiveSummaries() {
-  return {
-    updatedAt: new Date().toISOString(),
-    summaries: [],
-  };
-}
-
-async function readExecutiveSummaries() {
-  try {
-    const raw = await fs.readFile(EXEC_SUMMARIES_FILE, "utf8");
-    const parsed = JSON.parse(raw);
-    return { ok: true, source: EXEC_SUMMARIES_FILE, data: parsed };
-  } catch {
-    return { ok: true, source: "default", data: defaultExecutiveSummaries() };
-  }
-}
-
-async function writeExecutiveSummaries(data) {
-  await fs.mkdir(path.dirname(EXEC_SUMMARIES_FILE), { recursive: true });
-  await fs.writeFile(EXEC_SUMMARIES_FILE, `${JSON.stringify({ ...data, updatedAt: new Date().toISOString() }, null, 2)}\n`, "utf8");
-  return { ok: true, file: EXEC_SUMMARIES_FILE };
-}
-
-async function readAllProjectTasks() {
-  await fs.mkdir(PROJECT_WORK_DIR, { recursive: true });
-  const entries = await fs.readdir(PROJECT_WORK_DIR, { withFileTypes: true });
-  const out = [];
-  for (const e of entries) {
-    if (!e.isFile() || !e.name.endsWith(".json")) continue;
-    try {
-      const file = path.join(PROJECT_WORK_DIR, e.name);
-      const raw = await fs.readFile(file, "utf8");
-      const parsed = JSON.parse(raw);
-      const projectId = String(parsed.projectId || e.name.replace(/\.json$/i, ""));
-      for (const t of (Array.isArray(parsed.tasks) ? parsed.tasks : [])) {
-        out.push({ projectId, ...t });
-      }
-    } catch {
-      // keep going
-    }
-  }
-  return out;
-}
-
-async function listMarkdownFiles(rootDir, maxFiles = 400) {
-  const out = [];
-  async function walk(dir) {
-    if (out.length >= maxFiles) return;
-    let entries = [];
-    try {
-      entries = await fs.readdir(dir, { withFileTypes: true });
-    } catch {
-      return;
-    }
-    for (const e of entries) {
-      if (out.length >= maxFiles) break;
-      const p = path.join(dir, e.name);
-      if (e.isDirectory()) {
-        if (e.name.startsWith('.')) continue;
-        await walk(p);
-      } else if (e.isFile() && e.name.toLowerCase().endsWith('.md')) {
-        out.push(p);
-      }
-    }
-  }
-  await walk(rootDir);
-  return out;
-}
-
-function parseTasksFromMarkdown(content, source) {
-  const rows = [];
-  const lines = String(content || '').split(/\r?\n/);
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const m = line.match(/^\s*[-*]\s+\[( |x|X)\]\s+(.+)$/);
-    if (m) {
-      rows.push({
-        title: m[2].trim(),
-        status: m[1].trim().toLowerCase() === 'x' ? 'done' : 'open',
-        source,
-        line: i + 1,
-      });
-      continue;
-    }
-    if (line.includes('|') && /^\s*\|/.test(line)) {
-      const parts = line.split('|').map((x) => x.trim()).filter(Boolean);
-      if (!parts.length) continue;
-      const first = (parts[0] || '').toLowerCase();
-      if (!first || first === 'task' || first.startsWith('---')) continue;
-      if (/^[-:]+$/.test(parts[0])) continue;
-      rows.push({ title: parts[0], status: 'open', source, line: i + 1 });
-    }
-  }
-  return rows;
-}
-
-async function readProductivityTasks() {
-  const files = await listMarkdownFiles(PRODUCTIVITY_VAULT_DIR, 500);
-  const tasks = [];
-  for (const file of files) {
-    try {
-      const text = await fs.readFile(file, 'utf8');
-      const rel = file.startsWith(PRODUCTIVITY_VAULT_DIR) ? file.slice(PRODUCTIVITY_VAULT_DIR.length + 1) : file;
-      tasks.push(...parseTasksFromMarkdown(text, rel));
-    } catch {
-      // continue
-    }
-  }
-  return tasks;
-}
-
-async function readCronReminderRows() {
-  try {
-    const raw = await fs.readFile(CRON_JOBS_FILE, 'utf8');
-    const parsed = JSON.parse(raw);
-    const jobs = Array.isArray(parsed?.jobs) ? parsed.jobs : [];
-    return jobs
-      .filter((j) => j && j.enabled !== false)
-      .map((j) => {
-        const nextMs = Number(j?.state?.nextRunAtMs || 0);
-        const at = Number.isFinite(nextMs) && nextMs > 0 ? new Date(nextMs).toISOString() : null;
-        const text = String(j?.payload?.text || j?.payload?.message || j?.name || '').trim();
-        return {
-          id: String(j.id || ''),
-          name: String(j.name || ''),
-          at,
-          dateKey: at ? at.slice(0, 10) : null,
-          text,
-        };
-      })
-      .filter((r) => r.at);
-  } catch {
-    return [];
   }
 }
 
@@ -1505,6 +1082,65 @@ app.get("/api/openclaw/overview", async (_req, res) => {
   });
 });
 
+
+
+app.get("/api/skills/overview", async (_req, res) => {
+  const cfg = await readConfig();
+  const parsed = cfg.ok ? (cfg.parsed || {}) : {};
+  const configured = parsed?.skills?.entries || {};
+
+  const roots = [
+    "/home/node/.openclaw/workspace/skills",
+    "/app/skills",
+  ];
+
+  const rows = [];
+  const seen = new Set();
+
+  for (const root of roots) {
+    try {
+      const dirents = await fs.readdir(root, { withFileTypes: true });
+      for (const d of dirents) {
+        if (!d.isDirectory()) continue;
+        const id = d.name;
+        const skillPath = path.join(root, id, "SKILL.md");
+        let exists = false;
+        let description = "";
+        try {
+          const md = await fs.readFile(skillPath, "utf8");
+          exists = true;
+          const m = md.match(/description:\s*(.+)/i);
+          if (m) description = String(m[1] || "").trim();
+        } catch {
+          continue;
+        }
+
+        if (!exists || seen.has(id)) continue;
+        seen.add(id);
+        const conf = configured[id] || null;
+        const enabled = conf?.enabled === true;
+        rows.push({
+          id,
+          description: description || "(no description)",
+          active: enabled,
+          source: root,
+          configured: Boolean(conf),
+        });
+      }
+    } catch {
+      // ignore missing roots
+    }
+  }
+
+  rows.sort((a, b) => a.id.localeCompare(b.id));
+  const summary = {
+    total: rows.length,
+    active: rows.filter((r) => r.active).length,
+    inactive: rows.filter((r) => !r.active).length,
+  };
+
+  return res.json({ ok: true, summary, rows });
+});
 app.get("/api/openclaw/deep", async (_req, res) => {
   const data = await getOpenclawDeep();
   if (!data.ok) return res.status(500).json(data);
@@ -2244,6 +1880,23 @@ app.get("/api/docs/backup-restore-checklist", async (_req, res) => {
   return res.status(404).json({ ok: false, error: "Backup restore checklist not found" });
 });
 
+app.get("/api/docs/openclaw-memory-plan", async (_req, res) => {
+  const candidates = [
+    "/mithril-os/docs/OPENCLAW_LONG_TERM_MEMORY_PLAN.md",
+    "/home/node/.openclaw/workspace/docs/OPENCLAW_LONG_TERM_MEMORY_PLAN.md",
+    path.join(OPS_REPO_DIR, "docs/OPENCLAW_LONG_TERM_MEMORY_PLAN.md"),
+  ];
+  for (const p of candidates) {
+    try {
+      const content = await fs.readFile(p, "utf8");
+      return res.json({ ok: true, source: p, content });
+    } catch {
+      // try next
+    }
+  }
+  return res.status(404).json({ ok: false, error: "OpenClaw long-term memory plan not found" });
+});
+
 async function sendProjectsOverview(res) {
   const cfg = await readProjectsConfig();
   const rows = [];
@@ -2271,234 +1924,6 @@ app.get("/api/project-monitor/overview", async (_req, res) => {
 // Backward compatibility for previously shipped frontend path
 app.get("/api/projects/overview", async (_req, res) => {
   await sendProjectsOverview(res);
-});
-
-app.get("/api/project-work/:projectId", async (req, res) => {
-  const projectId = String(req.params.projectId || "railfin");
-  const out = await readProjectWork(projectId);
-  if (!out.ok) return res.status(500).json(out);
-  return res.json({ ok: true, source: out.source, data: out.data });
-});
-
-app.post("/api/project-work/:projectId/sync", async (req, res) => {
-  const projectId = String(req.params.projectId || "railfin");
-  if (projectId !== "railfin") return res.status(400).json({ ok: false, error: "manual sync only supported for railfin" });
-
-  const out = await readProjectWork(projectId);
-  if (!out.ok) return res.status(500).json(out);
-  const doc = out.data || defaultProjectWork("railfin");
-
-  const sync = await syncRailfinFromTasksDoc(doc);
-  if (!sync?.synced) {
-    return res.status(404).json({ ok: false, error: "tasks.md not found", detail: sync?.reason || "missing-tasks-doc" });
-  }
-  await writeProjectWork(projectId, doc);
-
-  const maxTaskId = (Array.isArray(doc.tasks) ? doc.tasks : []).reduce((mx, t) => Math.max(mx, taskSeqFromAny(t)), -1);
-  return res.json({
-    ok: true,
-    synced: true,
-    source: sync.tasksDoc,
-    count: Array.isArray(doc.tasks) ? doc.tasks.length : 0,
-    maxTaskId: maxTaskId >= 0 ? `task-${String(maxTaskId).padStart(5, "0")}` : null,
-  });
-});
-
-app.post("/api/project-work/:projectId/task", async (req, res) => {
-  const projectId = String(req.params.projectId || "railfin");
-  const title = String(req.body?.title || "").trim();
-  const owner = String(req.body?.owner || "railfin-coo").trim();
-  const lane = String(req.body?.lane || "dev").trim();
-  const priority = String(req.body?.priority || "p2").trim();
-  const branch = String(req.body?.branch || "").trim();
-  const pr = String(req.body?.pr || "").trim();
-  const commit = String(req.body?.commit || "").trim();
-  if (!title) return res.status(400).json({ ok: false, error: "title required" });
-
-  const out = await readProjectWork(projectId);
-  const doc = out.data;
-  const id = `tsk_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-  const task = {
-    id,
-    title,
-    owner,
-    lane,
-    priority,
-    branch,
-    pr,
-    commit,
-    status: "ready",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  doc.tasks = Array.isArray(doc.tasks) ? doc.tasks : [];
-  doc.activity = Array.isArray(doc.activity) ? doc.activity : [];
-  doc.tasks.unshift(task);
-  doc.activity.unshift({ ts: new Date().toISOString(), type: "task_created", by: "main", taskId: id, note: `${title} → ${owner}` });
-  await writeProjectWork(projectId, doc);
-  if (projectId === "railfin") await writeRailfinTasksDocFromBoard(doc);
-  return res.json({ ok: true, task });
-});
-
-app.post("/api/project-work/:projectId/task/:taskId/status", async (req, res) => {
-  const projectId = String(req.params.projectId || "railfin");
-  const taskId = String(req.params.taskId || "");
-  const status = String(req.body?.status || "").trim();
-  const by = String(req.body?.by || "main").trim();
-  if (!taskId || !status) return res.status(400).json({ ok: false, error: "taskId and status required" });
-
-  const out = await readProjectWork(projectId);
-  const doc = out.data;
-  doc.tasks = Array.isArray(doc.tasks) ? doc.tasks : [];
-  doc.activity = Array.isArray(doc.activity) ? doc.activity : [];
-  const idx = doc.tasks.findIndex((t) => t.id === taskId);
-  if (idx === -1) return res.status(404).json({ ok: false, error: "task not found" });
-  doc.tasks[idx].status = status;
-  doc.tasks[idx].updatedAt = new Date().toISOString();
-  doc.activity.unshift({ ts: new Date().toISOString(), type: "task_status", by, taskId, note: `status → ${status}` });
-  await writeProjectWork(projectId, doc);
-  if (projectId === "railfin") await writeRailfinTasksDocFromBoard(doc);
-  return res.json({ ok: true, task: doc.tasks[idx] });
-});
-
-app.post("/api/project-work/:projectId/task/:taskId/refs", async (req, res) => {
-  const projectId = String(req.params.projectId || "railfin");
-  const taskId = String(req.params.taskId || "");
-  const by = String(req.body?.by || "main").trim();
-  const branch = String(req.body?.branch || "").trim();
-  const pr = String(req.body?.pr || "").trim();
-  const commit = String(req.body?.commit || "").trim();
-  if (!taskId) return res.status(400).json({ ok: false, error: "taskId required" });
-
-  const out = await readProjectWork(projectId);
-  const doc = out.data;
-  doc.tasks = Array.isArray(doc.tasks) ? doc.tasks : [];
-  doc.activity = Array.isArray(doc.activity) ? doc.activity : [];
-  const idx = doc.tasks.findIndex((t) => t.id === taskId);
-  if (idx === -1) return res.status(404).json({ ok: false, error: "task not found" });
-
-  doc.tasks[idx].branch = branch;
-  doc.tasks[idx].pr = pr;
-  doc.tasks[idx].commit = commit;
-  doc.tasks[idx].updatedAt = new Date().toISOString();
-  doc.activity.unshift({ ts: new Date().toISOString(), type: "task_refs", by, taskId, note: `refs updated (branch=${branch || '-'}, pr=${pr || '-'}, commit=${commit || '-'})` });
-  await writeProjectWork(projectId, doc);
-  if (projectId === "railfin") await writeRailfinTasksDocFromBoard(doc);
-  return res.json({ ok: true, task: doc.tasks[idx] });
-});
-
-app.post("/api/project-work/:projectId/activity", async (req, res) => {
-  const projectId = String(req.params.projectId || "railfin");
-  const by = String(req.body?.by || "main").trim();
-  const note = String(req.body?.note || "").trim();
-  const type = String(req.body?.type || "note").trim();
-  if (!note) return res.status(400).json({ ok: false, error: "note required" });
-
-  const out = await readProjectWork(projectId);
-  const doc = out.data;
-  doc.activity = Array.isArray(doc.activity) ? doc.activity : [];
-  doc.activity.unshift({ ts: new Date().toISOString(), type, by, note });
-  await writeProjectWork(projectId, doc);
-  return res.json({ ok: true });
-});
-
-app.get("/api/tasks/calendar", async (req, res) => {
-  const mode = String(req.query?.mode || "updated").toLowerCase();
-  const field = mode === "created" ? "createdAt" : "updatedAt";
-  const tasks = await readAllProjectTasks();
-  const reminderRows = await readCronReminderRows();
-  const rows = tasks
-    .map((t) => {
-      const ts = t[field] || t.updatedAt || t.createdAt || null;
-      if (!ts) return null;
-      const d = new Date(ts);
-      if (Number.isNaN(d.getTime())) return null;
-      return {
-        kind: "task",
-        projectId: String(t.projectId || "-"),
-        id: String(t.id || ""),
-        title: String(t.title || "Untitled task"),
-        owner: String(t.owner || "-"),
-        lane: String(t.lane || "-"),
-        priority: String(t.priority || "-"),
-        status: String(t.status || "-"),
-        at: d.toISOString(),
-        dateKey: d.toISOString().slice(0, 10),
-      };
-    })
-    .filter(Boolean);
-
-  const reminderItems = reminderRows.map((r) => ({
-    kind: "reminder",
-    id: r.id,
-    title: r.name || "Reminder",
-    note: r.text || "",
-    at: r.at,
-    dateKey: r.dateKey,
-  }));
-
-  const all = [...reminderItems, ...rows].sort((a, b) => String(b.at || "").localeCompare(String(a.at || "")));
-  const byDate = {};
-  for (const r of all) {
-    if (!r?.dateKey) continue;
-    if (!byDate[r.dateKey]) byDate[r.dateKey] = [];
-    byDate[r.dateKey].push(r);
-  }
-
-  return res.json({
-    ok: true,
-    mode,
-    summary: {
-      totalTasks: tasks.length,
-      reminders: reminderItems.length,
-      calendarItems: all.length,
-      days: Object.keys(byDate).length,
-    },
-    days: Object.entries(byDate).map(([date, items]) => ({ date, count: items.length, items })),
-  });
-});
-
-app.get("/api/productivity/tasks", async (req, res) => {
-  const includeDone = String(req.query?.includeDone || "false").toLowerCase() === "true";
-  const tasks = await readProductivityTasks();
-  const rows = includeDone ? tasks : tasks.filter((t) => t.status !== 'done');
-  return res.json({
-    ok: true,
-    source: PRODUCTIVITY_VAULT_DIR,
-    summary: {
-      total: tasks.length,
-      open: tasks.filter((t) => t.status !== 'done').length,
-      done: tasks.filter((t) => t.status === 'done').length,
-    },
-    rows: rows.slice(0, 500),
-  });
-});
-
-app.get("/api/executive-summaries", async (_req, res) => {
-  const out = await readExecutiveSummaries();
-  const data = out.data || defaultExecutiveSummaries();
-  data.summaries = Array.isArray(data.summaries) ? data.summaries : [];
-  return res.json({ ok: true, source: out.source, data });
-});
-
-app.post("/api/executive-summaries", async (req, res) => {
-  const title = String(req.body?.title || "").trim();
-  const summary = String(req.body?.summary || "").trim();
-  const by = String(req.body?.by || "main").trim();
-  if (!title || !summary) return res.status(400).json({ ok: false, error: "title and summary required" });
-
-  const out = await readExecutiveSummaries();
-  const doc = out.data || defaultExecutiveSummaries();
-  doc.summaries = Array.isArray(doc.summaries) ? doc.summaries : [];
-  doc.summaries.unshift({
-    id: `exec_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
-    ts: new Date().toISOString(),
-    title,
-    summary,
-    by,
-  });
-  await writeExecutiveSummaries(doc);
-  return res.json({ ok: true, item: doc.summaries[0] });
 });
 
 app.get("/api/policies/overview", async (_req, res) => {
@@ -2628,84 +2053,6 @@ app.post("/api/ha/entity/action", async (req, res) => {
   if (!result.ok) return res.status(500).json(result);
 
   res.json({ ok: true, result: result.data || null });
-});
-
-app.post("/api/ha/group/action", async (req, res) => {
-  const area = String(req.body?.area || "all").toLowerCase();
-  const action = String(req.body?.action || "turn_off").toLowerCase();
-  const service = action === "turn_on" ? "turn_on" : "turn_off";
-
-  const states = await haRequest("/api/states");
-  if (!states.ok) return res.status(500).json(states);
-
-  const lights = (states.data || [])
-    .filter((s) => s.entity_id?.startsWith("light."))
-    .map((s) => ({ entity_id: s.entity_id, area: inferArea(s) }));
-
-  const selected = area === "all" ? lights : lights.filter((e) => e.area === area);
-  const entityIds = selected.map((e) => e.entity_id);
-  if (!entityIds.length) return res.json({ ok: true, updated: 0, note: "No light entities matched selection." });
-
-  const result = await haRequest(`/api/services/light/${service}`, { method: "POST", body: { entity_id: entityIds } });
-  if (!result.ok) return res.status(500).json(result);
-
-  res.json({ ok: true, area, action: service, updated: entityIds.length, entityIds });
-});
-
-app.get("/api/ha/blinds", async (_req, res) => {
-  const states = await haRequest("/api/states");
-  if (!states.ok) return res.status(500).json(states);
-
-  const covers = (states.data || [])
-    .filter((s) => s.entity_id?.startsWith("cover."))
-    .map((s) => ({
-      entity_id: s.entity_id,
-      area: inferArea(s),
-      name: s.attributes?.friendly_name || s.entity_id,
-      state: s.state,
-      currentPosition: Number.isFinite(Number(s.attributes?.current_position)) ? Number(s.attributes?.current_position) : null,
-      supportedFeatures: Number(s.attributes?.supported_features || 0),
-    }));
-
-  const blinds = covers.filter((c) => /blind/i.test(c.entity_id) || /blind/i.test(c.name));
-  const selected = blinds.length ? blinds : covers;
-
-  res.json({ ok: true, items: selected, total: selected.length, source: blinds.length ? "blinds-filter" : "all-covers" });
-});
-
-app.post("/api/ha/cover/action", async (req, res) => {
-  const entityId = String(req.body?.entity_id || "");
-  const action = String(req.body?.action || "open_cover").toLowerCase();
-  if (!entityId || !entityId.startsWith("cover.")) return res.status(400).json({ ok: false, error: "cover entity_id required" });
-
-  const allowed = new Set(["open_cover", "close_cover", "stop_cover"]);
-  const service = allowed.has(action) ? action : "stop_cover";
-  const result = await haRequest(`/api/services/cover/${service}`, { method: "POST", body: { entity_id: entityId } });
-  if (!result.ok) return res.status(500).json(result);
-
-  res.json({ ok: true, entity_id: entityId, action: service, result: result.data || null });
-});
-
-app.post("/api/ha/cover/group-action", async (req, res) => {
-  const action = String(req.body?.action || "close_cover").toLowerCase();
-  const states = await haRequest("/api/states");
-  if (!states.ok) return res.status(500).json(states);
-
-  const covers = (states.data || [])
-    .filter((s) => s.entity_id?.startsWith("cover."))
-    .map((s) => ({ entity_id: s.entity_id, name: s.attributes?.friendly_name || s.entity_id }));
-  const blinds = covers.filter((c) => /blind/i.test(c.entity_id) || /blind/i.test(c.name));
-  const selected = blinds.length ? blinds : covers;
-
-  const allowed = new Set(["open_cover", "close_cover", "stop_cover"]);
-  const service = allowed.has(action) ? action : "stop_cover";
-  const entityIds = selected.map((c) => c.entity_id);
-  if (!entityIds.length) return res.json({ ok: true, updated: 0, note: "No cover entities matched selection." });
-
-  const result = await haRequest(`/api/services/cover/${service}`, { method: "POST", body: { entity_id: entityIds } });
-  if (!result.ok) return res.status(500).json(result);
-
-  res.json({ ok: true, action: service, updated: entityIds.length, entityIds });
 });
 
 app.get("/api/watchers", async (_req, res) => {
@@ -2915,20 +2262,13 @@ app.post("/api/delegations/handoff/complete", async (req, res) => {
 });
 
 app.get("/api/backups/status", async (_req, res) => {
-  const cached = cacheGet("backups-status");
-  if (cached) return res.json(cached);
-
   const latest = await shell("readlink -f /backup/latest || true", 2000);
   const timers = await shell("systemctl list-timers --all --no-pager | grep mithril-backup || true", 2500);
-  const backupTimerDetail = await shell("systemctl show mithril-backup.timer -p NextElapseUSecRealtime -p LastTriggerUSec --value || true", 2500);
   const service = await shell("systemctl status mithril-backup.service --no-pager -n 40 || true", 3500);
   const snaps = await shell("find /backup/snapshots -mindepth 1 -maxdepth 1 -type d | wc -l", 2000);
   const usage = await shell("du -sh /backup 2>/dev/null || true", 2000);
   const list = await shell("find /backup/snapshots -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -r | head -n 40", 3000);
   const logs = await shell("journalctl -u mithril-backup.service -n 140 --no-pager || true", 4000);
-  const offsiteLogs = await shell("tail -n 220 /backup/backup-history.log 2>/dev/null || true", 3000);
-  const offsiteRoot = await shell("test -d /mnt/synology_backup/backups && echo yes || echo no", 1200);
-  const offsiteTargets = await shell("for d in openclaw mithril-os bw-shell railfin-io homeassistant productivity-vault; do if [ -d \"/mnt/synology_backup/backups/$d/latest\" ]; then t=$(find \"/mnt/synology_backup/backups/$d/latest\" -type f -printf '%TY-%Tm-%Td %TH:%TM:%TS\\n' 2>/dev/null | sort -r | head -n1 | cut -d'.' -f1); echo \"$d|ok|${t:-unknown}\"; else echo \"$d|missing|-\"; fi; done", 5000);
 
   const snapshotNames = list.stdout.trim() ? list.stdout.trim().split("\n") : [];
   const snapshotRows = [];
@@ -2974,72 +2314,34 @@ app.get("/api/backups/status", async (_req, res) => {
   }
 
   const logText = logs.stdout || "";
-  const offsiteHistoryText = offsiteLogs.stdout || "";
-  const sourceLogText = `${logText}\n${offsiteHistoryText}`;
-
-  const [srcOpenclaw, srcHA, srcMithril, srcBWShell, srcRailfin, srcObsidian] = await Promise.all([
-    shell("test -d /home/mini-home-lab/.openclaw && echo yes || echo no", 800),
-    shell("test -d /home/mini-home-lab/homelab/homeassistant/config && echo yes || echo no", 800),
-    shell("test -d /mithril-os && echo yes || echo no", 800),
-    shell("test -d '/home/mini-home-lab/.openclaw/workspace/work/bw-shell' && echo yes || echo no", 800),
-    shell("test -d '/home/mini-home-lab/work/railfin.io' && echo yes || echo no", 800),
-    shell("test -d '/home/mini-home-lab/.openclaw/workspace/productivity/Personal Assistant' && echo yes || echo no", 800),
-  ]);
-
-  const sourceExists = {
-    openclaw: srcOpenclaw.stdout.trim() === "yes",
-    homeassistant: srcHA.stdout.trim() === "yes",
-    mithril: srcMithril.stdout.trim() === "yes",
-    bwshell: srcBWShell.stdout.trim() === "yes",
-    railfin: srcRailfin.stdout.trim() === "yes",
-    obsidian: srcObsidian.stdout.trim() === "yes",
-  };
-
-  const statusFrom = (ok, exists) => {
-    if (ok) return { ok: true, detail: "copied" };
-    if (!exists) return { ok: false, detail: "missing source" };
-    return { ok: false, detail: "empty source or not confirmed" };
-  };
-
-  const openclawState = statusFrom(sourceLogText.includes("ok: copied /home/mini-home-lab/.openclaw"), sourceExists.openclaw);
-  const haState = statusFrom(sourceLogText.includes("ok: copied /home/mini-home-lab/homelab/homeassistant/config"), sourceExists.homeassistant);
-  const mithrilState = statusFrom(sourceLogText.includes("ok: copied /mithril-os"), sourceExists.mithril);
-  const bwState = statusFrom(sourceLogText.includes("ok: copied /home/mini-home-lab/.openclaw/workspace/work/bw-shell"), sourceExists.bwshell);
-  const railfinState = statusFrom(sourceLogText.includes("ok: copied /home/mini-home-lab/work/railfin.io"), sourceExists.railfin);
-  const obsidianCopied = /ok:\s+copied\s+obsidian\s+vault/i.test(sourceLogText);
-  const obsidianState = statusFrom(obsidianCopied, sourceExists.obsidian);
-
   const sourceStatus = [
-    { key: "openclaw", name: "OpenClaw", ...openclawState },
-    { key: "homeassistant", name: "Home Assistant", ...haState },
-    { key: "mithril", name: "Mithril-OS", ...mithrilState },
-    { key: "bwshell", name: "BW-Shell", ...bwState },
-    { key: "railfin", name: "Railfin", ...railfinState },
-    { key: "obsidian", name: "Obsidian Vault", ...obsidianState },
+    {
+      key: "openclaw",
+      name: "OpenClaw",
+      ok: logText.includes("ok: copied /home/mini-home-lab/.openclaw"),
+      detail: logText.includes("ok: copied /home/mini-home-lab/.openclaw") ? "copied" : "not confirmed",
+    },
+    {
+      key: "homeassistant",
+      name: "Home Assistant",
+      ok: logText.includes("ok: copied /home/mini-home-lab/homelab/homeassistant/config"),
+      detail: logText.includes("ok: copied /home/mini-home-lab/homelab/homeassistant/config") ? "copied" : "not confirmed",
+    },
+    {
+      key: "mithril",
+      name: "Mithril-OS",
+      ok: logText.includes("ok: copied /mithril-os"),
+      detail: logText.includes("ok: copied /mithril-os") ? "copied" : "not confirmed",
+    },
+    {
+      key: "obsidian",
+      name: "Obsidian Vault",
+      ok: /ok:\s+copied\s+obsidian\s+vault/i.test(logText),
+      detail: /ok:\s+copied\s+obsidian\s+vault/i.test(logText) ? "copied" : "not confirmed",
+    },
   ];
 
-  const timerValues = (backupTimerDetail.stdout || "").split("\n").map((x) => x.trim()).filter(Boolean);
-  const nextBackupAt = timerValues[0] || null;
-  const lastBackupTriggerAt = timerValues[1] || null;
-  const offsiteLastStartMatch = offsiteHistoryText.match(/\[(.*?)\]\s+offsite sync start \(smb\):.*$/gm);
-  const offsiteLastDoneMatch = offsiteHistoryText.match(/\[(.*?)\]\s+offsite sync done.*$/gm);
-  const parseBracketIso = (line) => {
-    const m = String(line || "").match(/^\[([^\]]+)\]/);
-    return m ? m[1] : null;
-  };
-  const offsiteLastStart = offsiteLastStartMatch?.length ? parseBracketIso(offsiteLastStartMatch[offsiteLastStartMatch.length - 1]) : null;
-  const offsiteLastDone = offsiteLastDoneMatch?.length ? parseBracketIso(offsiteLastDoneMatch[offsiteLastDoneMatch.length - 1]) : null;
-
-  const offsiteTargetRows = (offsiteTargets.stdout || "")
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .map((l) => {
-      const [name, status, lastSyncAt] = l.split("|");
-      return { name, status, lastSyncAt };
-    });
-
-  const payload = {
+  res.json({
     ok: true,
     latestSnapshot,
     latestSnapshotName: latestName,
@@ -3054,37 +2356,14 @@ app.get("/api/backups/status", async (_req, res) => {
     retention: { daily: 14, weekly: 8, monthly: 6 },
     sourceStatus,
     logsText: logText,
-    nextBackupAt,
-    lastBackupTriggerAt,
-    offsite: {
-      mode: "smb",
-      mountReady: offsiteRoot.stdout.trim() === "yes",
-      lastSyncStartAt: offsiteLastStart,
-      lastSyncDoneAt: offsiteLastDone,
-      targets: offsiteTargetRows,
-      historyTail: offsiteHistoryText.split("\n").slice(-60).join("\n"),
-    },
-  };
-
-  cacheSet("backups-status", payload, 20000);
-  res.json(payload);
+  });
 });
 
 app.post("/api/backups/run", async (_req, res) => {
   const run = await shell("sudo -n systemctl start mithril-backup.service || systemctl start mithril-backup.service", 8000);
   if (!run.ok) return res.status(500).json(run);
   const status = await shell("systemctl status mithril-backup.service --no-pager -n 30 || true", 3000);
-  API_CACHE.delete("backups-status");
   return res.json({ ok: true, run, status: status.stdout });
-});
-
-app.post("/api/backups/run-offsite", async (_req, res) => {
-  const cmd = "sudo OFFSITE_SYNC=1 MODE=smb SMB_MOUNT=/mnt/synology_backup SMB_ROOT=backups /mithril-os/scripts/backup-offsite-synology.sh";
-  const run = await shell(cmd, 120000);
-  if (!run.ok) return res.status(500).json(run);
-  const tail = await shell("tail -n 120 /backup/backup-history.log 2>/dev/null || true", 3000);
-  API_CACHE.delete("backups-status");
-  return res.json({ ok: true, run, history: tail.stdout || "" });
 });
 
 async function getScheduledJobsRows() {
@@ -3195,55 +2474,6 @@ app.get("/api/work/overview", async (req, res) => {
   res.json({ ok: true, summary, rows: rows.slice(0, limit) });
 });
 
-app.get("/api/deploy/center", async (_req, res) => {
-  const [latestCommit, deployLogStat, procOps, procDeploy, deployLogTail] = await Promise.all([
-    shell("git -C /mithril-os log -1 --pretty=format:'%h|%cI|%s'", 1500),
-    shell("if [ -f /tmp/mithril-os-ops-console.log ]; then stat -c '%Y' /tmp/mithril-os-ops-console.log; fi", 1200),
-    shell("ps -eo pid,etimes,cmd | grep -E 'node .*ops-console|npm run dev' | grep -v grep || true", 1500),
-    shell("ps -eo pid,etimes,cmd | grep -E '/mithril-os/scripts/deploy-ops-console.sh|flock.*ops-console' | grep -v grep || true", 1500),
-    shell("tail -n 30 /tmp/mithril-os-ops-console.log 2>/dev/null || true", 1200),
-  ]);
-
-  const [hash, time, subject] = String(latestCommit.stdout || "").split("|");
-  const mtimeSec = Number((deployLogStat.stdout || "").trim() || 0);
-
-  res.json({
-    ok: true,
-    latestCommit: hash ? { hash, time, subject } : null,
-    deployLogMtime: mtimeSec ? new Date(mtimeSec * 1000).toISOString() : null,
-    opsRunning: Boolean((procOps.stdout || "").trim()),
-    activeDeployProcesses: (procDeploy.stdout || "").trim(),
-    deployLogTail: (deployLogTail.stdout || "").trim(),
-  });
-});
-
-app.get("/api/deploy/lock-status", async (_req, res) => {
-  const lockPathA = "/tmp/mithril-ops-console-deploy.lock";
-  const lockPathB = "/var/lock/mithril-ops-console-deploy.lock";
-  const [a, b, proc] = await Promise.all([
-    shell(`if [ -e ${JSON.stringify(lockPathA)} ]; then stat -c '%n|%Y|%s' ${JSON.stringify(lockPathA)}; fi`, 1200),
-    shell(`if [ -e ${JSON.stringify(lockPathB)} ]; then stat -c '%n|%Y|%s' ${JSON.stringify(lockPathB)}; fi`, 1200),
-    shell("ps -eo pid,etimes,cmd | grep -E '/mithril-os/scripts/deploy-ops-console.sh|flock.*ops-console' | grep -v grep || true", 1500),
-  ]);
-
-  const nowSec = Math.floor(Date.now() / 1000);
-  const parseLock = (line) => {
-    if (!line) return null;
-    const [path, mtime, size] = String(line).trim().split("|");
-    const mt = Number(mtime || 0);
-    return {
-      path,
-      mtimeSec: mt || null,
-      ageSec: mt ? Math.max(0, nowSec - mt) : null,
-      size: Number(size || 0),
-    };
-  };
-
-  const locks = [parseLock(a.stdout.trim()), parseLock(b.stdout.trim())].filter(Boolean);
-  const lockPresent = locks.length > 0;
-  res.json({ ok: true, lockPresent, locks, activeProcesses: proc.stdout.trim() || "" });
-});
-
 app.post("/api/actions/:action", async (req, res) => {
   const action = req.params.action;
   const confirm = String(req.body?.confirm || "").toLowerCase() === "yes";
@@ -3252,8 +2482,6 @@ app.post("/api/actions/:action", async (req, res) => {
   let result;
   if (action === "deploy-ops-console") {
     result = await shell("/mithril-os/scripts/deploy-ops-console.sh", 20000);
-  } else if (action === "deploy-ops-console-unlock") {
-    result = await shell("sudo pkill -f '/mithril-os/scripts/deploy-ops-console.sh' || true; sudo pkill -f 'flock.*ops-console' || true; sudo rm -f /tmp/mithril-ops-console-deploy.lock /var/lock/mithril-ops-console-deploy.lock || true; /mithril-os/scripts/deploy-ops-console.sh", 30000);
   } else if (action === "restart-ops-console") {
     result = await shell("pkill -f 'node src/server.js' || true; cd /mithril-os/apps/ops-console && nohup npm run dev >/tmp/mithril-os-ops-console.log 2>&1 &", 8000);
   } else if (action === "restart-watcher") {
