@@ -2326,6 +2326,63 @@ app.get("/api/projects/overview", async (_req, res) => {
   await sendProjectsOverview(res);
 });
 
+
+
+app.get("/api/railfin/compliance", async (_req, res) => {
+  const files = {
+    status: "/home/node/railfin/docs/agent-reports/COMPLIANCE_STATUS.md",
+    dev: "/home/node/railfin/docs/agent-reports/railfin-dev.md",
+    ui: "/home/node/railfin/docs/agent-reports/railfin-ui.md",
+    sec: "/home/node/railfin/docs/agent-reports/railfin-sec.md",
+    coo: "/home/node/railfin/docs/agent-reports/railfin-coo.md",
+    summary: "/home/node/railfin/docs/agent-reports/SUMMARY.md",
+    template: "/home/node/railfin/docs/agent-reports/TEMPLATE.md",
+  };
+
+  async function statFile(fp) {
+    try {
+      const st = await fs.stat(fp);
+      const content = await fs.readFile(fp, "utf8");
+      const lines = content.split(/\r?\n/).length;
+      const hasEntries = lines > 4;
+      return { ok: true, path: fp, mtimeMs: st.mtimeMs, size: st.size, lines, hasEntries };
+    } catch (e) {
+      return { ok: false, path: fp, error: String(e?.message || e) };
+    }
+  }
+
+  const reportStats = {};
+  for (const [k, fp] of Object.entries(files)) reportStats[k] = await statFile(fp);
+
+  let board = { ok: false };
+  try {
+    const out = await readProjectWork("railfin");
+    if (out.ok) {
+      const tasks = Array.isArray(out?.data?.tasks) ? out.data.tasks : [];
+      const count = (s) => tasks.filter((t) => String(t?.status || "").toLowerCase() === s).length;
+      board = {
+        ok: true,
+        source: out.source,
+        total: tasks.length,
+        ready: count("ready"),
+        inProgress: count("in_progress"),
+        review: count("review"),
+        blocked: count("blocked"),
+        done: count("done"),
+      };
+    }
+  } catch (e) {
+    board = { ok: false, error: String(e?.message || e) };
+  }
+
+  const laneHealth = {
+    dev: reportStats.dev.ok ? (reportStats.dev.hasEntries ? "ok" : "warn") : "down",
+    ui: reportStats.ui.ok ? (reportStats.ui.hasEntries ? "ok" : "warn") : "down",
+    sec: reportStats.sec.ok ? (reportStats.sec.hasEntries ? "ok" : "warn") : "down",
+  };
+
+  return res.json({ ok: true, ts: new Date().toISOString(), files: reportStats, laneHealth, board });
+});
 app.get("/api/project-work/:projectId", async (req, res) => {
   const projectId = String(req.params.projectId || "railfin");
   const out = await readProjectWork(projectId);

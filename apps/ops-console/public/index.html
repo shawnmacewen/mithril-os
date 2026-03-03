@@ -810,6 +810,13 @@
                 <div id="railfinSyncBadge" class="muted" style="flex:1;">Sync: loading…</div>
                 <button id="railfinSyncNowBtn">Sync Now</button>
               </div>
+              <div class="card" style="margin:0 0 10px;">
+                <h4 style="margin-top:0;">Compliance / Reporting Health</h4>
+                <div class="row"><span>Lane health</span><strong id="railfinLaneHealth">loading…</strong></div>
+                <div class="row"><span>Report files</span><strong id="railfinReportFiles">-</strong></div>
+                <div class="row"><span>Compliance snapshot</span><strong id="railfinComplianceMtime">-</strong></div>
+                <div class="muted" id="railfinComplianceHint">Waiting for compliance daemon...</div>
+              </div>
             <div class="grid2">
               <div>
                 <h4 style="margin:6px 0;">Roadmap</h4>
@@ -1335,10 +1342,17 @@
       }
 
       async function refreshRailfinLive(){
-        const out = await jget('/api/project-work/railfin');
+        const [out, compliance] = await Promise.all([
+          jget('/api/project-work/railfin'),
+          jget('/api/railfin/compliance')
+        ]);
         if (out?.ok) {
           cache.railfinWork = out;
           renderRailfinWork(out || {});
+        }
+        if (compliance?.ok) {
+          cache.railfinCompliance = compliance;
+          renderRailfinCompliance(compliance || {});
         }
       }
 
@@ -1920,6 +1934,34 @@
           }).join('');
         }
 
+
+      function renderRailfinCompliance(payload){
+        const laneHealthEl = document.getElementById('railfinLaneHealth');
+        const filesEl = document.getElementById('railfinReportFiles');
+        const mtimeEl = document.getElementById('railfinComplianceMtime');
+        const hintEl = document.getElementById('railfinComplianceHint');
+        if (!laneHealthEl || !filesEl || !mtimeEl || !hintEl) return;
+        if (!payload?.ok) {
+          laneHealthEl.textContent = 'UNAVAILABLE';
+          filesEl.textContent = '-';
+          mtimeEl.textContent = '-';
+          hintEl.textContent = payload?.error || 'Compliance endpoint unavailable';
+          return;
+        }
+        const lh = payload.laneHealth || {};
+        const fmt = (v) => v === 'ok' ? 'OK' : (v === 'warn' ? 'WARN' : 'DOWN');
+        laneHealthEl.textContent = `dev:${fmt(lh.dev)} · ui:${fmt(lh.ui)} · sec:${fmt(lh.sec)}`;
+        const files = payload.files || {};
+        const present = ['dev','ui','sec','coo','summary','status'].filter((k) => files[k]?.ok).length;
+        filesEl.textContent = `${present}/6 readable`;
+        const ts = files?.status?.mtimeMs ? new Date(files.status.mtimeMs).toLocaleString() : '-';
+        mtimeEl.textContent = ts;
+        const board = payload.board || {};
+        hintEl.textContent = board.ok
+          ? `Board: ${board.total || 0} tasks · blocked ${board.blocked || 0} · in_progress ${board.inProgress || 0}`
+          : 'Board sync details unavailable';
+      }
+
         const fOwner = document.getElementById('railfinFilterOwner')?.value || '';
         const fLane = document.getElementById('railfinFilterLane')?.value || '';
         const fStatus = document.getElementById('railfinFilterStatus')?.value || '';
@@ -2398,20 +2440,23 @@
       async function ensureProjectsLoaded(){
         if (projectsLoaded) return;
         const mode = document.getElementById('calendarMode')?.value || 'updated';
-        const [projects, railfinWork, calendar, executive, productivityTasks] = await Promise.all([
+        const [projects, railfinWork, railfinCompliance, calendar, executive, productivityTasks] = await Promise.all([
           jget('/api/project-monitor/overview'),
           jget('/api/project-work/railfin'),
+          jget('/api/railfin/compliance'),
           jget(`/api/tasks/calendar?mode=${encodeURIComponent(mode)}`),
           jget('/api/executive-summaries'),
           jget('/api/productivity/tasks')
         ]);
         cache.projects = projects;
         cache.railfinWork = railfinWork;
+        cache.railfinCompliance = railfinCompliance;
         cache.calendar = calendar;
         cache.executive = executive;
         cache.productivityTasks = productivityTasks;
         renderProjectsOverview(projects || {});
         renderRailfinWork(railfinWork || {});
+        renderRailfinCompliance(railfinCompliance || {});
         renderTaskCalendar(calendar || {});
         renderExecutiveSummaries(executive || {});
         renderProductivityTasks(productivityTasks || {});
