@@ -1356,6 +1356,33 @@
         }
       }
 
+      function renderRailfinCompliance(payload){
+        const laneHealthEl = document.getElementById('railfinLaneHealth');
+        const filesEl = document.getElementById('railfinReportFiles');
+        const mtimeEl = document.getElementById('railfinComplianceMtime');
+        const hintEl = document.getElementById('railfinComplianceHint');
+        if (!laneHealthEl || !filesEl || !mtimeEl || !hintEl) return;
+        if (!payload?.ok) {
+          laneHealthEl.textContent = 'UNAVAILABLE';
+          filesEl.textContent = '-';
+          mtimeEl.textContent = '-';
+          hintEl.textContent = payload?.error || 'Compliance endpoint unavailable';
+          return;
+        }
+        const lh = payload.laneHealth || {};
+        const fmt = (v) => v === 'ok' ? 'OK' : (v === 'warn' ? 'WARN' : 'DOWN');
+        laneHealthEl.textContent = `dev:${fmt(lh.dev)} · ui:${fmt(lh.ui)} · sec:${fmt(lh.sec)}`;
+        const files = payload.files || {};
+        const present = ['dev','ui','sec','coo','summary','status'].filter((k) => files[k]?.ok).length;
+        filesEl.textContent = `${present}/6 readable`;
+        const ts = files?.status?.mtimeMs ? new Date(files.status.mtimeMs).toLocaleString() : '-';
+        mtimeEl.textContent = ts;
+        const board = payload.board || {};
+        hintEl.textContent = board.ok
+          ? `Board: ${board.total || 0} tasks · blocked ${board.blocked || 0} · in_progress ${board.inProgress || 0}`
+          : 'Board sync details unavailable';
+      }
+
       function setProjectsTab(tab){
         const allowed = new Set(['overview','railfin','calendar','executive']);
         const active = allowed.has(tab) ? tab : 'overview';
@@ -1934,33 +1961,6 @@
           }).join('');
         }
 
-
-      function renderRailfinCompliance(payload){
-        const laneHealthEl = document.getElementById('railfinLaneHealth');
-        const filesEl = document.getElementById('railfinReportFiles');
-        const mtimeEl = document.getElementById('railfinComplianceMtime');
-        const hintEl = document.getElementById('railfinComplianceHint');
-        if (!laneHealthEl || !filesEl || !mtimeEl || !hintEl) return;
-        if (!payload?.ok) {
-          laneHealthEl.textContent = 'UNAVAILABLE';
-          filesEl.textContent = '-';
-          mtimeEl.textContent = '-';
-          hintEl.textContent = payload?.error || 'Compliance endpoint unavailable';
-          return;
-        }
-        const lh = payload.laneHealth || {};
-        const fmt = (v) => v === 'ok' ? 'OK' : (v === 'warn' ? 'WARN' : 'DOWN');
-        laneHealthEl.textContent = `dev:${fmt(lh.dev)} · ui:${fmt(lh.ui)} · sec:${fmt(lh.sec)}`;
-        const files = payload.files || {};
-        const present = ['dev','ui','sec','coo','summary','status'].filter((k) => files[k]?.ok).length;
-        filesEl.textContent = `${present}/6 readable`;
-        const ts = files?.status?.mtimeMs ? new Date(files.status.mtimeMs).toLocaleString() : '-';
-        mtimeEl.textContent = ts;
-        const board = payload.board || {};
-        hintEl.textContent = board.ok
-          ? `Board: ${board.total || 0} tasks · blocked ${board.blocked || 0} · in_progress ${board.inProgress || 0}`
-          : 'Board sync details unavailable';
-      }
 
         const fOwner = document.getElementById('railfinFilterOwner')?.value || '';
         const fLane = document.getElementById('railfinFilterLane')?.value || '';
