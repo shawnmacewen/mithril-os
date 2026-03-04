@@ -88,8 +88,9 @@
       .layout { display:grid; grid-template-columns:208px 1fr; min-height:100vh; position:relative; z-index:1; transition:grid-template-columns .2s ease; }
       .layout.nav-collapsed { grid-template-columns:84px 1fr; }
       .nav { background:var(--panel); border-right:1px solid var(--border); padding:16px; display:flex; flex-direction:column; overflow:hidden; position:sticky; top:0; height:100vh; }
-      .brand { font-weight:700; margin-bottom:18px; display:flex; align-items:center; gap:10px; }
-      .brand small { color:var(--muted); display:block; font-weight:500; margin-top:4px; }
+      .brand { font-weight:700; margin-bottom:18px; display:flex; align-items:center; gap:10px; min-height:44px; }
+      .brand .brand-text { display:flex; flex-direction:column; line-height:1.08; white-space:nowrap; overflow:hidden; }
+      .brand small { color:var(--muted); display:block; font-weight:500; margin-top:4px; white-space:nowrap; }
       .brand .brand-icon { display:block; width:34px; height:34px; border-radius:8px; object-fit:cover; object-position:center; background:transparent; margin-left:-5px; }
       .nav-links { flex:1; }
       .nav a { display:flex; align-items:center; gap:10px; color:var(--nav-text); text-decoration:none; padding:10px 12px; border-radius:6px; margin-bottom:6px; white-space:nowrap; }
