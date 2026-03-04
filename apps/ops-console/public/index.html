@@ -2749,9 +2749,6 @@
         btn.addEventListener('click', async () => {
           const area = btn.dataset.haGroup;
           const action = btn.dataset.haGroupAction;
-          const label = btn.textContent?.trim() || `${area} ${action}`;
-          const needsConfirm = area === 'all' && action === 'turn_off';
-          if (needsConfirm && !confirm(`Run ${label}?`)) return;
           const prev = btn.textContent;
           btn.disabled = true;
           btn.textContent = 'Running…';
