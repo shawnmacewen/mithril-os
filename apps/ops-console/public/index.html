@@ -85,7 +85,7 @@
       .bg-layer.far { opacity:.55; transform:translateY(var(--parallax-far,0px)); }
       .bg-layer.mid { opacity:.38; transform:translateY(var(--parallax-mid,0px)) scale(1.03); }
       .bg-layer.near { opacity:.24; transform:translateY(var(--parallax-near,0px)) scale(1.06); }
-      .layout { display:grid; grid-template-columns:208px 1fr; min-height:100vh; position:relative; z-index:1; transition:grid-template-columns .2s ease; }
+      .layout { display:grid; grid-template-columns:208px 1fr; min-height:100vh; position:relative; z-index:1; transition:grid-template-columns .14s ease-out; }
       .layout.nav-collapsed { grid-template-columns:84px 1fr; }
       .nav { background:var(--panel); border-right:1px solid var(--border); padding:16px; display:flex; flex-direction:column; overflow:hidden; position:sticky; top:0; height:100vh; }
       .brand { font-weight:700; margin-bottom:18px; display:flex; align-items:center; gap:10px; min-height:44px; }
@@ -93,10 +93,10 @@
       .brand small { color:var(--muted); display:block; font-weight:500; margin-top:4px; white-space:nowrap; }
       .brand .brand-icon { display:block; width:34px; height:34px; border-radius:8px; object-fit:cover; object-position:center; background:transparent; margin-left:-5px; }
       .nav-links { flex:1; }
-      .nav a { display:flex; align-items:center; gap:10px; color:var(--nav-text); text-decoration:none; padding:10px 12px; border-radius:6px; margin-bottom:6px; white-space:nowrap; }
+      .nav a { display:flex; align-items:center; justify-content:flex-start; gap:10px; color:var(--nav-text); text-decoration:none; padding:10px 12px; border-radius:6px; margin-bottom:6px; white-space:nowrap; }
       .nav a.active,.nav a:hover { background:color-mix(in srgb, var(--highlight) 16%, transparent); }
-      .nav .nav-label { display:inline-block; transition:opacity .12s ease, max-width .12s ease, margin .12s ease; max-width:140px; opacity:1; }
-      .nav-icon { display:block; width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; flex:0 0 20px; opacity:.95; }
+      .nav .nav-label { display:inline-block; transition:opacity .14s ease-out, max-width .14s ease-out, margin .14s ease-out; max-width:140px; opacity:1; }
+      .nav-icon { display:block; width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; flex:0 0 20px; min-width:20px; opacity:.95; }
       .nav a[data-view='dashboard'] .nav-icon { color:#8b5cf6; }
       .nav a[data-view='homeassistant'] .nav-icon { color:#22c55e; }
       .nav a[data-view='agents'] .nav-icon { color:#06b6d4; }
@@ -106,9 +106,9 @@
       .layout.nav-collapsed .brand .brand-text,
       .layout.nav-collapsed .brand small { font-size:0; }
       .layout.nav-collapsed .nav .nav-label { opacity:0; max-width:0; margin:0; overflow:hidden; }
-      .layout.nav-collapsed .brand { padding-left:5px; }
+      .layout.nav-collapsed .brand { padding-left:0; }
       .layout.nav-collapsed .brand .brand-icon { display:block; }
-      .layout.nav-collapsed .nav a { justify-content:center; padding:10px 8px; }
+      .layout.nav-collapsed .nav a { justify-content:flex-start; padding:10px 12px; }
       .layout.nav-collapsed .nav .nav-icon { width:20px; height:20px; margin:0; }
       .main { padding:20px; }
       .toolbar { display:flex; gap:10px; align-items:center; margin:8px 0 18px; flex-wrap:wrap; }
