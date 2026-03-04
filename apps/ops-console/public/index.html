@@ -95,7 +95,8 @@
       .nav-links { flex:1; }
       .nav a { display:flex; align-items:center; gap:10px; color:var(--nav-text); text-decoration:none; padding:10px 12px; border-radius:6px; margin-bottom:6px; white-space:nowrap; }
       .nav a.active,.nav a:hover { background:color-mix(in srgb, var(--highlight) 16%, transparent); }
-      .nav-icon { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; flex:0 0 auto; opacity:.95; }
+      .nav .nav-label { display:inline-block; transition:opacity .12s ease, max-width .12s ease, margin .12s ease; max-width:140px; opacity:1; }
+      .nav-icon { display:block; width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; flex:0 0 20px; opacity:.95; }
       .nav a[data-view='dashboard'] .nav-icon { color:#8b5cf6; }
       .nav a[data-view='homeassistant'] .nav-icon { color:#22c55e; }
       .nav a[data-view='agents'] .nav-icon { color:#06b6d4; }
@@ -103,12 +104,12 @@
       .nav a[data-view='policies'] .nav-icon { color:#f97316; }
       .nav a[data-view='config'] .nav-icon { color:#14b8a6; }
       .layout.nav-collapsed .brand .brand-text,
-      .layout.nav-collapsed .brand small,
-      .layout.nav-collapsed .nav a { font-size:0; }
+      .layout.nav-collapsed .brand small { font-size:0; }
+      .layout.nav-collapsed .nav .nav-label { opacity:0; max-width:0; margin:0; overflow:hidden; }
       .layout.nav-collapsed .brand { padding-left:5px; }
       .layout.nav-collapsed .brand .brand-icon { display:block; }
       .layout.nav-collapsed .nav a { justify-content:center; padding:10px 8px; }
-      .layout.nav-collapsed .nav .nav-icon { width:22px; height:22px; margin:0; }
+      .layout.nav-collapsed .nav .nav-icon { width:20px; height:20px; margin:0; }
       .main { padding:20px; }
       .toolbar { display:flex; gap:10px; align-items:center; margin:8px 0 18px; flex-wrap:wrap; }
       .cards { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); }
@@ -422,12 +423,12 @@
         <div class="brand"><img class="brand-icon" src="/assets/mithril-nav-icon-v2-crystal.svg" alt="mirthril-os" /><span class="brand-text">mirthril-os<small>Ops Console · v2.1</small></span></div>
 
         <div class="nav-links">
-          <a data-view="homeassistant" href="#homeassistant"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M6 10v11h12V10"/><path d="M10 21v-5h4v5"/></svg>Home Assistant</a>
-          <a class="active" data-view="dashboard" href="#dashboard"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Dashboard</a>
-          <a data-view="agents" href="#agents"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><path d="M12 6V3"/></svg>Agents</a>
-          <a data-view="projects" href="#projects"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h18"/></svg>Projects</a>
-          <a data-view="designsystem" href="#designsystem"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Platform</a>
-          <a data-view="config" href="#config"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z"/></svg>Diagnostics</a>
+          <a data-view="homeassistant" href="#homeassistant"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M6 10v11h12V10"/><path d="M10 21v-5h4v5"/></svg><span class="nav-label">Home Assistant</span></a>
+          <a class="active" data-view="dashboard" href="#dashboard"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg><span class="nav-label">Dashboard</span></a>
+          <a data-view="agents" href="#agents"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"/><circle cx="9" cy="12" r="1.4"/><circle cx="15" cy="12" r="1.4"/><path d="M12 6V3"/></svg><span class="nav-label">Agents</span></a>
+          <a data-view="projects" href="#projects"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h18"/></svg><span class="nav-label">Projects</span></a>
+          <a data-view="designsystem" href="#designsystem"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="nav-label">Platform</span></a>
+          <a data-view="config" href="#config"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2h.1a1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9h.1a1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1v.1a1 1 0 0 0 .9.6H20a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6z"/></svg><span class="nav-label">Diagnostics</span></a>
         </div>
 
         <div class="theme-wrap">
