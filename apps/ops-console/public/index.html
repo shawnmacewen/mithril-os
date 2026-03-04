@@ -623,8 +623,8 @@
           </div>
           <div class="card">
             <table id="skillsTable">
-              <thead><tr><th>Skill</th><th>Description</th><th>Active</th><th>Source</th></tr></thead>
-              <tbody><tr><td colspan="4" class="muted">Loading…</td></tr></tbody>
+              <thead><tr><th>Skill</th><th>Description</th><th>Active</th></tr></thead>
+              <tbody><tr><td colspan="3" class="muted">Loading…</td></tr></tbody>
             </table>
           </div>
           <div class="card" style="margin-top:12px;"><details><summary>Skills Raw JSON</summary><pre id="skillsRaw">Loading…</pre></details></div>
@@ -798,7 +798,7 @@
               <div class="muted" id="projectsSource">-</div>
             </div>
             <div class="card">
-              <table id="projectsTable"><thead><tr><th>Project</th><th>Branch</th><th>Working tree</th><th>Latest commits</th></tr></thead><tbody><tr><td colspan="4" class="muted">Loading…</td></tr></tbody></table>
+              <table id="projectsTable"><thead><tr><th>Project</th><th>Branch</th><th>Working tree</th><th>Latest commits</th></tr></thead><tbody><tr><td colspan="3" class="muted">Loading…</td></tr></tbody></table>
             </div>
             <div class="card" style="margin-top:12px;"><details><summary>Projects Raw JSON</summary><pre id="projectsRaw">Loading…</pre></details></div>
           </div>
@@ -1451,7 +1451,7 @@
           document.getElementById('skillsActive').textContent = '-';
           document.getElementById('skillsInactive').textContent = '-';
           if (health) { health.textContent = 'DOWN'; health.className = 'bad'; }
-          document.querySelector('#skillsTable tbody').innerHTML = `<tr><td colspan="4" class="bad">${data?.error || 'Unavailable'}</td></tr>`;
+          document.querySelector('#skillsTable tbody').innerHTML = `<tr><td colspan="3" class="bad">${data?.error || 'Unavailable'}</td></tr>`;
           return;
         }
         document.getElementById('skillsTotal').textContent = String(data?.summary?.total ?? 0);
@@ -1465,10 +1465,10 @@
         const rows = data.rows || [];
         const tbody = document.querySelector('#skillsTable tbody');
         if (!rows.length) {
-          tbody.innerHTML = `<tr><td colspan="4" class="muted">No skills found</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="3" class="muted">No skills found</td></tr>`;
           return;
         }
-        tbody.innerHTML = rows.map((r) => `<tr><td><strong>${r.id}</strong></td><td>${r.description || ''}</td><td>${r.active ? '<span class="status-pill ok">active</span>' : '<span class="status-pill warn">inactive</span>'}</td><td class="muted">${r.source || '-'}</td></tr>`).join('');
+        tbody.innerHTML = rows.map((r) => `<tr><td><strong>${r.id}</strong></td><td>${r.description || ''}</td><td>${r.active ? '<span class="status-pill ok">active</span>' : '<span class="status-pill warn">inactive</span>'}</td></tr>`).join('');
       }
 
       function renderWatchersTable(rows){
