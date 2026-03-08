@@ -2638,15 +2638,20 @@
           ]);
 
           cache = { ...cache, status, oc, ocDeep, ocUsage, agents, agentsFiles, agentControl, models, watchers, services, docker, haAreas, haBlinds, backups, skills };
-          stamp.textContent = `Updated: ${status.timestamp}`;
+          stamp.textContent = `Updated: ${status?.timestamp || new Date().toISOString()}`;
+
+          const ocStatus = status?.openclaw || {};
+          const haStatus = status?.homeAssistant || {};
+          const haApi = haStatus?.api || {};
 
           document.getElementById('currentAgentName').textContent = 'OddEye';
-          document.getElementById('currentAgentModel').textContent = `Model: ${status.openclaw.model || models.primaryModel || 'n/a'}`;
+          document.getElementById('currentAgentModel').textContent = `Model: ${ocStatus.model || models?.primaryModel || 'n/a'}`;
 
-          const gw = status.openclaw.gatewayTcp18789;
-          document.getElementById('openclawBlock').innerHTML = `<div class='row'><span>Config readable</span><strong class='${status.openclaw.configReadable?'ok':'bad'}'>${status.openclaw.configReadable}</strong></div><div class='row'><span>Gateway TCP 18789</span><strong class='${gw.ok?'ok':'bad'}'>${gw.ok?'OK':'DOWN'}</strong></div><div class='row'><span>Primary model</span><strong>${status.openclaw.model || 'n/a'}</strong></div><div class='row'><span>Channels</span><strong>${status.openclaw.channels.join(', ') || 'none'}</strong></div><div class='row'><span>Exec security</span><strong>${status.openclaw.execSecurity || 'n/a'}</strong></div><div class='row'><span>Exec ask</span><strong>${status.openclaw.execAsk || 'n/a'}</strong></div>`;
+          const gw = ocStatus.gatewayTcp18789 || {};
+          const channels = Array.isArray(ocStatus.channels) ? ocStatus.channels : [];
+          document.getElementById('openclawBlock').innerHTML = `<div class='row'><span>Config readable</span><strong class='${ocStatus.configReadable?'ok':'bad'}'>${ocStatus.configReadable ?? 'n/a'}</strong></div><div class='row'><span>Gateway TCP 18789</span><strong class='${gw.ok?'ok':'bad'}'>${gw.ok?'OK':'DOWN'}</strong></div><div class='row'><span>Primary model</span><strong>${ocStatus.model || 'n/a'}</strong></div><div class='row'><span>Channels</span><strong>${channels.join(', ') || 'none'}</strong></div><div class='row'><span>Exec security</span><strong>${ocStatus.execSecurity || 'n/a'}</strong></div><div class='row'><span>Exec ask</span><strong>${ocStatus.execAsk || 'n/a'}</strong></div>`;
 
-          document.getElementById('haBlock').innerHTML = `<div class='row'><span>URL</span><strong>${status.homeAssistant.url}</strong></div><div class='row'><span>Token configured</span><strong class='${status.homeAssistant.tokenConfigured?'ok':'bad'}'>${status.homeAssistant.tokenConfigured}</strong></div><div class='row'><span>API status</span><strong class='${status.homeAssistant.api.ok?'ok':'bad'}'>${status.homeAssistant.api.ok ? 'OK' : (status.homeAssistant.api.error || 'DOWN')}</strong></div>`;
+          document.getElementById('haBlock').innerHTML = `<div class='row'><span>URL</span><strong>${haStatus.url || 'n/a'}</strong></div><div class='row'><span>Token configured</span><strong class='${haStatus.tokenConfigured?'ok':'bad'}'>${haStatus.tokenConfigured ?? 'n/a'}</strong></div><div class='row'><span>API status</span><strong class='${haApi.ok?'ok':'bad'}'>${haApi.ok ? 'OK' : (haApi.error || 'DOWN')}</strong></div>`;
 
           if (docker.ok) {
             document.getElementById('dockerBlock').innerHTML = docker.rows.map(r => `<div class='row'><span>${r.name}</span><strong>${r.status}</strong></div>`).join('');
