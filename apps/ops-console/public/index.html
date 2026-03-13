@@ -1049,6 +1049,24 @@
 
           <div class="card" style="margin-top:12px;"><h3>Run Logs</h3><pre id="backupLogs">Loading…</pre></div>
           <div class="card" style="margin-top:12px;"><h3>Offsite Sync History</h3><pre id="offsiteHistory">Loading…</pre></div>
+          <div class="card" style="margin-top:12px;">
+            <h3>Backup Restore Checklist</h3>
+            <div class="muted">Loaded from <code>/mithril-os/docs/BACKUP_RESTORE_CHECKLIST.md</code>.</div>
+            <details style="margin-top:8px;">
+              <summary>Show checklist</summary>
+              <pre id="backupRestoreChecklistBackupsMd" style="margin-top:8px; max-height:360px; overflow:auto;">Loading…</pre>
+            </details>
+          </div>
+
+          <div class="card" style="margin-top:12px;">
+            <h3>Backup Hardening (Phase A)</h3>
+            <div class="muted">Loaded from <code>/mithril-os/docs/BACKUP_HARDENING_PHASE_A.md</code>.</div>
+            <details style="margin-top:8px;">
+              <summary>Show phase A runbook</summary>
+              <pre id="backupHardeningPhaseAMd" style="margin-top:8px; max-height:360px; overflow:auto;">Loading…</pre>
+            </details>
+          </div>
+
           <div class="card" style="margin-top:12px;"><h3>Service status</h3><pre id="backupStatusRaw">Loading…</pre></div>
         </section>
 
@@ -2570,19 +2588,21 @@
       }
 
       async function ensureDiagnosticsLoaded(){
-        if (cache.commits && cache.configDiag && cache.audit && cache.upgradeChecklist && cache.backupRestoreChecklist) { await loadDeployLockStatus(); await loadDeployCenter(); return; }
-        const [configDiag, audit, commits, upgradeChecklist, backupRestoreChecklist] = await Promise.all([
+        if (cache.commits && cache.configDiag && cache.audit && cache.upgradeChecklist && cache.backupRestoreChecklist && cache.backupHardeningPhaseA) { await loadDeployLockStatus(); await loadDeployCenter(); return; }
+        const [configDiag, audit, commits, upgradeChecklist, backupRestoreChecklist, backupHardeningPhaseA] = await Promise.all([
           jget('/api/config/diagnostics'),
           jget('/api/audit/trail'),
           jget('/api/git/commits?limit=25'),
           jget('/api/docs/openclaw-upgrade-checklist'),
-          jget('/api/docs/backup-restore-checklist')
+          jget('/api/docs/backup-restore-checklist'),
+          jget('/api/docs/backup-hardening-phase-a')
         ]);
         cache.configDiag = configDiag;
         cache.audit = audit;
         cache.commits = commits;
         cache.upgradeChecklist = upgradeChecklist;
         cache.backupRestoreChecklist = backupRestoreChecklist;
+        cache.backupHardeningPhaseA = backupHardeningPhaseA;
         renderConfigValidator(configDiag || {});
         renderCommitTimeline(commits || {});
         document.getElementById('auditRaw').textContent = JSON.stringify(audit || {}, null, 2);
@@ -2599,12 +2619,30 @@
 
         if (backupRestoreChecklist?.ok) {
           document.getElementById('backupRestoreChecklistMd').textContent = backupRestoreChecklist.content || '';
+          const br2 = document.getElementById('backupRestoreChecklistBackupsMd'); if (br2) br2.textContent = backupRestoreChecklist.content || '';
         } else {
           try {
             const mdFallback = await fetch('/backup-restore-checklist.md', { cache: 'no-store' }).then(r => r.ok ? r.text() : '');
             document.getElementById('backupRestoreChecklistMd').textContent = mdFallback || (backupRestoreChecklist?.error || 'Checklist unavailable');
+            const br2 = document.getElementById('backupRestoreChecklistBackupsMd'); if (br2) br2.textContent = mdFallback || (backupRestoreChecklist?.error || 'Checklist unavailable');
           } catch {
             document.getElementById('backupRestoreChecklistMd').textContent = backupRestoreChecklist?.error || 'Checklist unavailable';
+            const br2 = document.getElementById('backupRestoreChecklistBackupsMd'); if (br2) br2.textContent = backupRestoreChecklist?.error || 'Checklist unavailable';
+          }
+        }
+
+
+        if (backupHardeningPhaseA?.ok) {
+          const pha = document.getElementById('backupHardeningPhaseAMd');
+          if (pha) pha.textContent = backupHardeningPhaseA.content || '';
+        } else {
+          try {
+            const mdFallback = await fetch('/backup-hardening-phase-a.md', { cache: 'no-store' }).then(r => r.ok ? r.text() : '');
+            const pha = document.getElementById('backupHardeningPhaseAMd');
+            if (pha) pha.textContent = mdFallback || (backupHardeningPhaseA?.error || 'Checklist unavailable');
+          } catch {
+            const pha = document.getElementById('backupHardeningPhaseAMd');
+            if (pha) pha.textContent = backupHardeningPhaseA?.error || 'Checklist unavailable';
           }
         }
 

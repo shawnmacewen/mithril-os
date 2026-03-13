@@ -9,6 +9,9 @@ HISTORY_LOG="$BACKUP_ROOT/backup-history.log"
 KEEP_DAILY="${KEEP_DAILY:-14}"
 KEEP_WEEKLY="${KEEP_WEEKLY:-8}"
 KEEP_MONTHLY="${KEEP_MONTHLY:-6}"
+# Temporary safety mode: disable snapshot pruning until explicitly re-enabled.
+# Set RETENTION_ENABLED=1 to restore pruning behavior.
+RETENTION_ENABLED="${RETENTION_ENABLED:-0}"
 
 # Optional gzip tarballs for portable off-device copy
 MAKE_TARBALLS="${MAKE_TARBALLS:-0}"
@@ -141,50 +144,54 @@ if [ "$MAKE_TARBALLS" = "1" ]; then
   log "ok: tarball created"
 fi
 
-# Retention:
-# Keep newest KEEP_DAILY snapshots, plus weekly (Sundays) and monthly (1st day) representatives.
-mapfile -t snaps < <(find "$SNAPSHOT_ROOT" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -r)
+if [ "$RETENTION_ENABLED" = "1" ]; then
+  # Retention:
+  # Keep newest KEEP_DAILY snapshots, plus weekly (Sundays) and monthly (1st day) representatives.
+  mapfile -t snaps < <(find "$SNAPSHOT_ROOT" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -r)
 
-keep_set_file="$(mktemp)"
+  keep_set_file="$(mktemp)"
 
-# Daily keep
-for s in "${snaps[@]:0:$KEEP_DAILY}"; do
-  echo "$s" >> "$keep_set_file"
-done
-
-# Weekly (first KEEP_WEEKLY Sundays encountered)
-weekly_count=0
-for s in "${snaps[@]}"; do
-  d="${s%%_*}"
-  if [ "$(date -u -d "$d" +%u 2>/dev/null || echo 0)" = "7" ]; then
+  # Daily keep
+  for s in "${snaps[@]:0:$KEEP_DAILY}"; do
     echo "$s" >> "$keep_set_file"
-    weekly_count=$((weekly_count + 1))
-    [ "$weekly_count" -ge "$KEEP_WEEKLY" ] && break
-  fi
-done
+  done
 
-# Monthly (first KEEP_MONTHLY snapshots on day 01 encountered)
-monthly_count=0
-for s in "${snaps[@]}"; do
-  d="${s%%_*}"
-  day="$(date -u -d "$d" +%d 2>/dev/null || echo 00)"
-  if [ "$day" = "01" ]; then
-    echo "$s" >> "$keep_set_file"
-    monthly_count=$((monthly_count + 1))
-    [ "$monthly_count" -ge "$KEEP_MONTHLY" ] && break
-  fi
-done
+  # Weekly (first KEEP_WEEKLY Sundays encountered)
+  weekly_count=0
+  for s in "${snaps[@]}"; do
+    d="${s%%_*}"
+    if [ "$(date -u -d "$d" +%u 2>/dev/null || echo 0)" = "7" ]; then
+      echo "$s" >> "$keep_set_file"
+      weekly_count=$((weekly_count + 1))
+      [ "$weekly_count" -ge "$KEEP_WEEKLY" ] && break
+    fi
+  done
 
-sort -u "$keep_set_file" -o "$keep_set_file"
+  # Monthly (first KEEP_MONTHLY snapshots on day 01 encountered)
+  monthly_count=0
+  for s in "${snaps[@]}"; do
+    d="${s%%_*}"
+    day="$(date -u -d "$d" +%d 2>/dev/null || echo 00)"
+    if [ "$day" = "01" ]; then
+      echo "$s" >> "$keep_set_file"
+      monthly_count=$((monthly_count + 1))
+      [ "$monthly_count" -ge "$KEEP_MONTHLY" ] && break
+    fi
+  done
 
-for s in "${snaps[@]}"; do
-  if ! grep -qx "$s" "$keep_set_file"; then
-    rm -rf "$SNAPSHOT_ROOT/$s"
-    log "retention: pruned $s"
-  fi
-done
+  sort -u "$keep_set_file" -o "$keep_set_file"
 
-rm -f "$keep_set_file"
+  for s in "${snaps[@]}"; do
+    if ! grep -qx "$s" "$keep_set_file"; then
+      rm -rf "$SNAPSHOT_ROOT/$s"
+      log "retention: pruned $s"
+    fi
+  done
+
+  rm -f "$keep_set_file"
+else
+  log "retention: disabled (RETENTION_ENABLED=$RETENTION_ENABLED) — no snapshots pruned"
+fi
 
 log "backup done: snapshot=$SNAP"
 log "latest => $(readlink -f "$LATEST_LINK" || true)"
