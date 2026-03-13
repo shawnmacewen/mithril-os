@@ -22,6 +22,7 @@ SNAP="$SNAPSHOT_ROOT/$TIMESTAMP"
 
 # Sources
 SRC_OPENCLAW="/home/mini-home-lab/.openclaw"
+SRC_OPENCLAW_STACK="/home/mini-home-lab/openclaw"
 SRC_HA_CONFIG="/home/mini-home-lab/homelab/homeassistant/config"
 SRC_MITHRIL="/mithril-os"
 SRC_BW_SHELL="/home/mini-home-lab/.openclaw/workspace/work/bw-shell"
@@ -59,13 +60,20 @@ require_cmd find
 
 log "backup start: snapshot=$SNAP"
 
-mkdir -p "$SNAP/openclaw" "$SNAP/homeassistant" "$SNAP/mithril-os" "$SNAP/bw-shell" "$SNAP/railfin-io" "$SNAP/obsidian" "$SNAP/meta"
+mkdir -p "$SNAP/openclaw" "$SNAP/openclaw-stack" "$SNAP/homeassistant" "$SNAP/mithril-os" "$SNAP/bw-shell" "$SNAP/railfin-io" "$SNAP/obsidian" "$SNAP/meta"
 
 if copy_tree "$SRC_OPENCLAW" "$SNAP/openclaw/.openclaw"; then
   log "ok: copied $SRC_OPENCLAW"
 else
   log "warn: missing $SRC_OPENCLAW"
 fi
+
+if copy_tree "$SRC_OPENCLAW_STACK" "$SNAP/openclaw-stack"; then
+  log "ok: copied $SRC_OPENCLAW_STACK"
+else
+  log "warn: missing $SRC_OPENCLAW_STACK"
+fi
+
 
 if copy_tree "$SRC_HA_CONFIG" "$SNAP/homeassistant/config"; then
   log "ok: copied $SRC_HA_CONFIG"
