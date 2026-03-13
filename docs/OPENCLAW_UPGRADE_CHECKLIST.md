@@ -102,14 +102,21 @@ Symptoms: `fatal: Authentication failed` / `could not read Username`
 
 ---
 
-## 6) Gateway UI tunnel check (optional)
+## 6) Gateway access checks (optional)
+
+Primary local access (preferred):
+
+`http://127.0.0.1:18790/chat?session=main`
+
+Fallback tunnel (when local port is unavailable):
 
 ```bash
 ssh -N -L 62000:127.0.0.1:18790 mini-home-lab@192.168.2.58
 ```
+
 Open:
 
-`http://127.0.0.1:62000/?token=<gateway-token>`
+`http://127.0.0.1:62000/chat?session=main`
 
 ---
 

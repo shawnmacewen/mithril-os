@@ -95,8 +95,17 @@ sudo rm -f /tmp/mithril-ops-console-deploy.lock /var/lock/mithril-ops-console-de
 
 ## Rollback (Targeted)
 
+Use the canonical snapshot layout (v2):
+
 ```bash
-sudo rsync -aHAX --delete /backup/latest/home/mini-home-lab/.openclaw/ /home/mini-home-lab/.openclaw/
-sudo rsync -aHAX --delete /backup/latest/mithril-os/ /mithril-os/
-sudo rsync -aHAX --delete /backup/latest/home/mini-home-lab/homelab/homeassistant/config/ /home/mini-home-lab/homelab/homeassistant/config/
+sudo rsync -aHAX --delete /backup/latest/openclaw/.openclaw/ /home/mini-home-lab/.openclaw/
+sudo rsync -aHAX --delete /backup/latest/openclaw-stack/ /home/mini-home-lab/openclaw/
+sudo rsync -aHAX --delete /backup/latest/mithril-os/repo/ /mithril-os/
+sudo rsync -aHAX --delete /backup/latest/homeassistant/config/ /home/mini-home-lab/homelab/homeassistant/config/
+```
+
+OAuth/auth sanity check after restore:
+
+```bash
+/mithril-os/scripts/check-openclaw-auth-paths.sh
 ```
